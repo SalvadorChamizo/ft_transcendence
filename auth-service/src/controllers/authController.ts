@@ -1,6 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { registerUser, loginUser, validateToken } from "../services/authService"
-import jwt from "jsonwebtoken";
 
 export async function registerController(req: FastifyRequest, reply: FastifyReply) {
    const { username, password } = req.body as { username: string; password: string };
