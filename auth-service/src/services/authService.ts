@@ -30,3 +30,15 @@ export async function loginUser(username: string, password: string) {
 
     return { token };
 }
+
+export function validateToken(token: string) {
+    if (!token)
+        throw new Error("Token is required");
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
+        return decoded;
+    } catch (err) {
+        throw new Error("Invalid or expired token");
+    }
+}
