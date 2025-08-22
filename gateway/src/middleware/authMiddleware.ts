@@ -18,22 +18,11 @@ export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
     }
 
     try {
-        const response = await fetch("http://auth-service:8081/validate", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": authHeader
-            }
-        });
+        const decoded = jwt.verify(token, process.env.JWT_SECRET as string);
 
-        if (!response.ok) {
-            return reply.code(401).send({ error: "Unauthorized: Invalid or expired token "});
-        }
-
-        const data = await response.json();
-        (req as any).user = data.user;
+        (req as any).user = decoded;
 
     }   catch (err) {
-        return reply.code(500).send({ error: "Auth-service unavailable" });
+            return reply.code(401).send({ error: "Unauthorized: Invalid or expired token" });
     }
 }
