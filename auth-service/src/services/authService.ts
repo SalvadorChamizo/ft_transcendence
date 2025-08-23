@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { createUser, findUser } from "../repositories/userRepository";
+import { generateAccessToken } from "./tokenService"
 
 export async function registerUser(username: string, password: string) {
     const user = findUser(username);
@@ -22,11 +22,11 @@ export async function loginUser(username: string, password: string) {
     if (!valid)
         throw new Error("Invalid username or password");
 
-    const token = jwt.sign(
-        { username: user.username },
-        process.env.JWT_SECRET as string,
-        { expiresIn: "1h" }
-    );
+    const token = generateAccessToken(user);
 
     return { token };
+}
+
+export async function logoutUser() {
+    
 }
