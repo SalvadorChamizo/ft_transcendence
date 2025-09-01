@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import dotenv from "dotenv";
+import cors from "@fastify/cors";
 
 import { authMiddleware } from "./middleware/authMiddleware.js";
 import authRoutes from "./routes/authRoutes";
@@ -11,6 +12,12 @@ dotenv.config();
 const app = Fastify({ logger: true });
 
 app.register(authRoutes);
+
+await app.register(cors, {
+  origin: "http://localhost:5173",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true
+});
 
 //----------------------------
 // Protected endpoint example
