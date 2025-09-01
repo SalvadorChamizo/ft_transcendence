@@ -21,8 +21,8 @@ export async function loginController(req: FastifyRequest, reply: FastifyReply) 
 
         reply.setCookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
+            secure: false, //Change in future to true
+            sameSite: "lax", //Change in future to strict
             path: "/auth/refresh",
             maxAge: 7 * 24 * 60 * 60,
         });
