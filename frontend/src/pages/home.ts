@@ -1,6 +1,8 @@
 export function Home(): string {
     return `
-        <h1>Welcome Home</h1>
-        <p>This is the home page.</p>
+        <div class="home-text">
+        <h1 class="main-title">FT_TRANSCENDENCE</h1>
+        <p class="last-project">This is the last project</p>
+        </div>
         `;
 }
