@@ -1,9 +1,99 @@
+.home-page {
+  background: #111;
+  position: relative;
+  min-height: 1000px;
+  gap: 2rem;
+}
+
+.card-flex {
+  padding: 2rem 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3rem;
+}
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(255,255,255,0.0);
+  border-radius: 5px;
+}
+
+@keyframes twinkle {
+  0% {
+    transform: scale(1, 1);
+    background: rgba(255,255,255,0.0);
+    animation-timing-function: ease-in;
+  }
+  60% {
+    transform: scale(0.8, 0.8);
+    background: rgba(255,255,255,1);
+    animation-timing-function: ease-out;
+  }
+  80% {
+    background: rgba(255,255,255,0.00);
+    transform: scale(1, 1);
+  }
+  100% {
+    background: rgba(255,255,255,0.0);
+    transform: scale(1, 1);
+  }
+}
+
+.card {
+  flex: 0 0 250px;
+  max-width: 250px;
+  background: #181741;
+  color: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  padding: 1rem;
+  width: 250px;
+  height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1;
+  margin-top: 2rem;
+}
+
+.card:hover {
+  box-shadow: 0 8px 15px rgba(255, 255, 255, 0.2);
+}
+
+html {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
 body {
+  margin: 0;
+  padding: 0;
+  display:flex;
+  flex-direction: column;
+}
+
+.header-home {
+  flex-direction: column;
+  display: flex;
+  min-height: 100vh;
+  flex: 1 0 auto;
   background-image: url("starfield.jpg");
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
-  min-height: 100vh;
+}
+
+header {
+  background: gray;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
+  flex-direction: column;
+  display: flex;
 }
 
 .navbar {
@@ -54,7 +144,7 @@ body {
   left: 0;
   width: 0;
   height: 2px;
-  background: #9a1818;
+  background: #ffffff;
   content: '';
   transition: width 0.5s ease-in-out;
   display: block;
@@ -74,7 +164,7 @@ body {
   left: 0;
   width: 0;
   height: 2px;
-  background: #222;
+  background: #ffffff;
   content: '';
   transition: width 0.5s ease-in-out;
   display: block;
@@ -114,6 +204,7 @@ body {
 
 .home-text {
   display: flex;
+  padding: 7rem;
   color: rgb(234, 234, 234);
   justify-content: center;
   flex-direction: column;
@@ -128,6 +219,82 @@ body {
 
 .last-project {
   font-size: 1.5rem;
+}
+
+.game-btn {
+  margin-top: 12rem;
+  position: relative;
+  align-self: center;
+  font-family: inherit;
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: 0.05em;
+  border-radius: 0.8em;
+  min-width: unset;
+  width: 20vw;
+  cursor: pointer;
+  border: none;
+  background: linear-gradient(to right, #21225A, #D61729);
+  color: ghostwhite;
+  overflow: hidden;
+}
+
+.game-btn svg {
+  width: 1.2em;
+  height: 1.2em;
+}
+
+.game-btn span {
+  position: relative;
+  z-index: 10;
+  transition: color 0.5s;
+  display: inline-flex;
+  align-items: center;
+  padding: 1em 1.05em 1em 1.05em;
+  
+}
+
+.game-btn::before,
+.game-btn::after {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.game-btn::before {
+  content: "";
+  background: #000;
+  width: 120%;
+  left: -10%;
+  transform: skew(30deg);
+  transition: transform 0.5s cubic-bezier(0.3, 1, 0.8, 1);
+}
+
+.game-btn:hover::before {
+  transform: translate3d(100%, 0, 0);
+}
+
+.game-btn:active {
+  transform: scale(0.95);
+}
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 1.5rem;
+  margin-top: auto;
+  background: rgb(24, 24, 24);
+}
+
+.footer-logo {
+  height: 4rem;
+}
+
+.footer p {
+  color: white;
 }
 
 @media screen and (max-width: 768px) {
