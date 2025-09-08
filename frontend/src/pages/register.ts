@@ -32,7 +32,7 @@ export function registerHandlers() {
       if (data.message) {
         result.textContent = `✅ Registered as ${username}`;
       } else {
-        result.textContent = `❌ Error`;
+        result.textContent = `❌ Error: ${data.error}`;
       }
     } catch (err) {
       result.textContent = "⚠️ Failed to reach server";
