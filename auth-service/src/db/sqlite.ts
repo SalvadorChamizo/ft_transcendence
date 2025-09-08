@@ -16,6 +16,7 @@ db.prepare(`
         user_id INTEGER NOT NULL,
         token TEXT UNIQUE NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        grace_until DATETIME DEFAULT NULL,
         FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
     )
 `).run();
