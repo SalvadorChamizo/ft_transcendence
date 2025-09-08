@@ -1,9 +1,9 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
 
-const publicUrls = ["/auth/login", "/auth/register", "/ping"];
+const publicUrls = ["/auth/login", "/auth/register", "/auth/refresh", "/ping"];
 
-export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
+export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {  
     if (publicUrls.includes(req.url))
         return ;
 
