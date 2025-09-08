@@ -1,67 +1,6 @@
-.home-page {
-  background: #111;
-  position: relative;
-  min-height: 1000px;
-  gap: 2rem;
-}
-
-.card-flex {
-  padding: 2rem 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 3rem;
-}
-
-.star {
-  position: absolute;
-  width: 2px;
-  height: 2px;
-  background: rgba(255,255,255,0.0);
-  border-radius: 5px;
-}
-
-@keyframes twinkle {
-  0% {
-    transform: scale(1, 1);
-    background: rgba(255,255,255,0.0);
-    animation-timing-function: ease-in;
-  }
-  60% {
-    transform: scale(0.8, 0.8);
-    background: rgba(255,255,255,1);
-    animation-timing-function: ease-out;
-  }
-  80% {
-    background: rgba(255,255,255,0.00);
-    transform: scale(1, 1);
-  }
-  100% {
-    background: rgba(255,255,255,0.0);
-    transform: scale(1, 1);
-  }
-}
-
-.card {
-  flex: 0 0 250px;
-  max-width: 250px;
-  background: #181741;
-  color: #fff;
-  border-radius: 1rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  padding: 1rem;
-  width: 250px;
-  height: 300px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 1;
-  margin-top: 2rem;
-}
-
-.card:hover {
-  box-shadow: 0 8px 15px rgba(255, 255, 255, 0.2);
-}
+/* ********************************* */
+/*              General              */
+/* ********************************* */
 
 html {
   height: 100%;
@@ -76,16 +15,9 @@ body {
   flex-direction: column;
 }
 
-.header-home {
-  flex-direction: column;
-  display: flex;
-  min-height: 100vh;
-  flex: 1 0 auto;
-  background-image: url("starfield.jpg");
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: center;
-}
+/* ******************************** */
+/*              Header              */
+/* ******************************** */
 
 header {
   background: gray;
@@ -95,6 +27,8 @@ header {
   flex-direction: column;
   display: flex;
 }
+
+/* navbar */
 
 .navbar {
   width: 100%;
@@ -195,11 +129,19 @@ header {
   display: block;
 }
 
-/* Mobile (≤ 768px) */
-.icon {
-  display: none;
-  font-size: 1.5rem;
-  cursor: pointer;
+/* ******************************** */
+/*               Home               */
+/* ******************************** */
+
+.header-home {
+  flex-direction: column;
+  display: flex;
+  min-height: 100vh;
+  flex: 1 0 auto;
+  background-image: url("starfield.jpg");
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: center;
 }
 
 .home-text {
@@ -280,6 +222,94 @@ header {
 .game-btn:active {
   transform: scale(0.95);
 }
+
+.home-page {
+  background: #111;
+  position: relative;
+  min-height: 800px;
+  gap: 2rem;
+  display:flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.home-page h1 {
+  font-size: 3rem;
+  color: white;
+  margin: 0 auto;
+}
+
+.card-flex {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 3rem;
+}
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(255,255,255,0.0);
+  border-radius: 5px;
+}
+
+@keyframes twinkle {
+  0% {
+    transform: scale(1, 1);
+    background: rgba(255,255,255,0.0);
+    animation-timing-function: ease-in;
+  }
+  60% {
+    transform: scale(0.8, 0.8);
+    background: rgba(255,255,255,1);
+    animation-timing-function: ease-out;
+  }
+  80% {
+    background: rgba(255,255,255,0.00);
+    transform: scale(1, 1);
+  }
+  100% {
+    background: rgba(255,255,255,0.0);
+    transform: scale(1, 1);
+  }
+}
+
+.card {
+  flex: 0 0 250px;
+  max-width: 250px;
+  background: #181741;
+  color: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  width: 250px;
+  height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 1;
+  margin-top: 2rem;
+}
+
+.p-emoji {
+  font-size:3rem;
+}
+
+.card:hover {
+  box-shadow: 0 8px 15px rgba(255, 255, 255, 0.2);
+}
+
+
+
+
+/* Mobile (≤ 768px) */
+.icon {
+  display: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
 
 .footer {
   display: flex;
