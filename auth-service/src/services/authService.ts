@@ -34,5 +34,9 @@ export async function loginUser(username: string, password: string) {
 }
 
 export function logoutUser(refreshToken: string) {
-    refreshTokenRepo.delete(refreshToken);
+    const tokenData = refreshTokenRepo.findByToken(refreshToken);
+    if (!tokenData)
+        return ;
+
+    refreshTokenRepo.deleteAllForUser(tokenData.user_id);
 }
