@@ -31,7 +31,7 @@ export function getConversations(userId: number) {
     const conversations = conversationRepo.getConversationsForUser(userId);
     
     // Return conversations with user information
-    return conversations.map(conversation => ({
+    return conversations.map((conversation: any) => ({
         id: conversation.id,
         otherUserId: conversation.participant1_id === userId ? conversation.participant2_id : conversation.participant1_id,
         createdAt: conversation.created_at,
