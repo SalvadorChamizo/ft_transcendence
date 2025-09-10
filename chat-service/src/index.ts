@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import dotenv from "dotenv";
 import cors from "@fastify/cors";
 import websocket from "@fastify/websocket";
+import { chatRoutes } from "./routes/chatRoutes";
 
 // Loads .env variables into process.env
 dotenv.config();
@@ -33,7 +34,9 @@ app.get("/ping", async () => {
     return { pong: true };
 });
 
-// ALL: Register chat routes
+// Register chat routes
+await app.register(chatRoutes);
+
 // ALL: Register WebSocket handlers
 // ALL: Initialize database
 
