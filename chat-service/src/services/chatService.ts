@@ -39,16 +39,18 @@ export function getConversations(userId: number) {
     }));
 }
 
-export function getMessages(conversationId: number, userId: number, limit: number = 50) {
-    // 1. Validate that user participates in the conversation
-    const conversation = conversationRepo.findConversation(userId, 0); // We need to check by ID instead
-    // For now, we'll get messages directly (validation can be added later)
+export function getMessages(otherUserId: number, userId: number, limit: number = 50) {
+    // 1. Find the conversation between the two users
+    const conversation = conversationRepo.findConversation(userId, otherUserId);
+    if (!conversation) {
+        return []; // No conversation exists yet
+    }
     
     // 2. Get messages from the conversation
-    const messages = messageRepo.getRecentMessages(conversationId, limit);
+    const messages = messageRepo.getRecentMessages(conversation.id, limit);
     
     // 3. Mark messages as read for this user
-    messageRepo.markMessagesAsRead(conversationId, userId);
+    messageRepo.markMessagesAsRead(conversation.id, userId);
     
     // 4. Return messages in chronological order (oldest first)
     return messages.reverse();

@@ -32,7 +32,7 @@ export async function getConversationsController(req: FastifyRequest, reply: Fas
 }
 
 export async function getMessagesController(req: FastifyRequest, reply: FastifyReply) {
-    const { id: conversationId } = req.params as { id: string };
+    const { userId: otherUserId } = req.params as { userId: string };
     const { limit } = req.query as { limit?: string };
 
     try {
@@ -40,7 +40,7 @@ export async function getMessagesController(req: FastifyRequest, reply: FastifyR
         const userId = 1; // This will be extracted from JWT token later
         
         const result = chatService.getMessages(
-            parseInt(conversationId), 
+            parseInt(otherUserId), 
             userId, 
             limit ? parseInt(limit) : undefined
         );
