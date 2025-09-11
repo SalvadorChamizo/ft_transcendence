@@ -77,11 +77,13 @@ function gameLoop()
 export function pongPage()
 {
 	return `
-		<h1>Server-Side Pong</h1>
-		<canvas id="pongCanvas" width="800" height="600"></canvas>
-		<p>Use W/S to move Left Paddle, ArrowUp/ArrowDown for Right Paddle</p>
-		<p id="scoreboard">0 : 0</p>
-		<button id="startGameBtn">Start Game</button>
+	
+	<h1>Server-Side Pong</h1>
+	<canvas style="border: 1px solid red" id="pongCanvas" width="800" height="600"></canvas>
+	<p>Use W/S to move Left Paddle, ArrowUp/ArrowDown for Right Paddle</p>
+	<p id="scoreboard">0 : 0</p>
+	<button id="startGameBtn">Start Game</button>
+	
 	`;
 }
 
@@ -115,7 +117,11 @@ export function pongHandlers()
 	// Handle key down events by adding the key to our state.
 	window.addEventListener("keydown", (e) =>
 		{
-			keysPressed.add(e.key);
+			if (["w", "s", "ArrowUp", "ArrowDown"].includes(e.key))
+            {
+                e.preventDefault();
+            }
+            keysPressed.add(e.key);
 		});
 
 		// Handle key up events by removing the key from our state.
