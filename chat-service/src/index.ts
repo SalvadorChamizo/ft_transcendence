@@ -33,7 +33,7 @@ async function startServer() {
 
     // Ping endpoint to test the server
     app.get("/ping", async () => {
-        return { pong: true };
+        return { pong: true, chat: true };
     });
 
     // Register chat routes
