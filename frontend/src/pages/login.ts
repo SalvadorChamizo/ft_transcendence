@@ -73,3 +73,37 @@ export function loginHandlers() {
     }
   };
 }
+
+  const form = document.querySelector<HTMLFormElement>("#login-form")!;
+  const result = document.querySelector<HTMLParagraphElement>("#result")!;
+  const logoutBtn = document.querySelector<HTMLButtonElement>("#logout-btn")!;
+
+  export async function autoLoginUser(username: string, password: string) {
+    // Check if user is already logged in
+    if (isLoggedIn()) {
+      result.textContent = "✅ You are already logged in";
+      form.style.display = "none"; // hide login form
+      logoutBtn.style.display = "block"; // show logout button
+    }
+    try {
+      const res = await fetch("http://localhost:8080/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+        credentials: "include", // include cookies
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.accessToken) {
+        setAccessToken(data.accessToken);
+        result.textContent = `✅ Logged in as ${username}`;
+        form.style.display = "none";
+        logoutBtn.style.display = "block";
+      } else {
+        result.textContent = `❌ ${data.error || "Login failed"}`;
+      }
+    } catch (err) {
+      result.textContent = "⚠️ Failed to reach server";
+    }
+  };

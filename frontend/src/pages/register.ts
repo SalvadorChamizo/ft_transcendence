@@ -39,3 +39,23 @@ export function registerHandlers() {
     }
   };
 }
+
+export async function autoRegisterUser(username: string, password: string) {
+  try {
+    const res = await fetch("http://localhost:8080/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    const data = await res.json();
+    if (data.message) {
+      console.log(`✅ Registered as ${username}`);
+    } else if (data.error && data.error.includes("already exists")) {
+      console.log(`ℹ️ User ${username} already exists`);
+    } else {
+      console.log(`❌ Error: ${data.error}`);
+    }
+  } catch (err) {
+    console.log("⚠️ Failed to reach server");
+  }
+}
