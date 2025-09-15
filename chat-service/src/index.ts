@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "@fastify/cors";
 import websocket from "@fastify/websocket";
 import { chatRoutes } from "./routes/chatRoutes";
+import { websocketRoutes } from "./routes/websocketRoutes";
 import "./db/sqlite"; // Initialize database
 
 // Loads .env variables into process.env
@@ -38,6 +39,9 @@ async function startServer() {
 
     // Register chat routes
     await app.register(chatRoutes);
+
+    // Register WebSocket routes
+    await app.register(websocketRoutes);
 
     // ALL: Register WebSocket handlers
 
