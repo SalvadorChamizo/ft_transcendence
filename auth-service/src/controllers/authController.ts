@@ -3,10 +3,10 @@ import { registerUser, loginUser, logoutUser } from "../services/authService";
 import { rotateTokens} from "../services/tokenService"
 
 export async function registerController(req: FastifyRequest, reply: FastifyReply) {
-   const { username, password } = req.body as { username: string; password: string };
+   const { username, password, email } = req.body as { username: string; password: string; email: string };
 
    try {
-    const result = await registerUser(username, password);
+    const result = await registerUser(username, password, email);
         return reply.send(result);
    } catch (err: any) {
         return reply.code(400).send({ error: err.message });

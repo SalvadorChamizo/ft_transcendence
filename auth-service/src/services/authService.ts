@@ -5,14 +5,14 @@ import { generateAccessToken, generateRefreshToken } from "./tokenService";
 
 const refreshTokenRepo = new RefreshTokenRepository();
 
-export async function registerUser(username: string, password: string) {
+export async function registerUser(username: string, password: string, email: string) {
     const user = findUser(username);
     if (user) {
         throw new Error("User already exists");
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    createUser(username, hashed);
+    createUser(username, hashed, email);
     return { message: "User registered successfully" };
 }
 
