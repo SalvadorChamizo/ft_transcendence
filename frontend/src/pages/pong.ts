@@ -3,9 +3,9 @@
  * @brief Frontend logic for the server-side Pong game page.
  */
 
-import { io } from "socket.io-client";
+import { getAccessToken } from "../state/authState";
 
-let socket: any;
+let socket: WebSocket;
 let ctx: CanvasRenderingContext2D | null = null;
 let animationFrameId: number; // To manage the game loop
 
@@ -60,12 +60,12 @@ const keysPressed = new Set<string>();
  */
 function gameLoop()
 {
-	if (socket)
+	if (socket && socket.readyState === WebSocket.OPEN)
 	{
-		if (keysPressed.has("w")) socket.emit("moveUp", "left");
-		if (keysPressed.has("s")) socket.emit("moveDown", "left");
-		if (keysPressed.has("ArrowUp")) socket.emit("moveUp", "right");
-		if (keysPressed.has("ArrowDown")) socket.emit("moveDown", "right");
+		if (keysPressed.has("w")) socket.send(JSON.stringify({ event: "moveUp", payload: "left" }));
+		if (keysPressed.has("s")) socket.send(JSON.stringify({ event: "moveDown", payload: "left" }));
+		if (keysPressed.has("ArrowUp")) socket.send(JSON.stringify({ event: "moveUp", payload: "right" }));
+		if (keysPressed.has("ArrowDown")) socket.send(JSON.stringify({ event: "moveDown", payload: "right" }));
 	}
 	animationFrameId = requestAnimationFrame(gameLoop);
 }
@@ -95,20 +95,58 @@ export function pongPage()
  * Handle paddle movement input from the users.
  * Draws in the canvas
  */
-export function pongHandlers()
+export async function pongHandlers()
 {
 	const canvas = document.getElementById("pongCanvas") as HTMLCanvasElement;
 	ctx = canvas.getContext("2d");
 
-	socket = io("http://localhost:3000");
-	fetch("http://localhost:3000/game/init", { method: "POST" });
-
-	// Listen for full game state updates from the server.
-	socket.on("gameState", (state: GameState) =>
+	try
+	{
+		const token = getAccessToken();
+		if (!token)
 		{
-			gameState = state;
-			draw();
-		});
+			throw new Error("You must be logged in to play.");
+		}
+
+        socket = new WebSocket(`ws://localhost:8080/socket.io/?token=${token}`);
+        
+		socket.onmessage = (event) =>
+		{
+			const message = JSON.parse(event.data);
+			if (message.event === 'gameState')
+			{
+				gameState = message.data;
+					draw();
+			}
+		};
+
+		socket.onerror = (error) =>
+		{
+			console.error("WebSocket Error:", error);
+			const app = document.getElementById("app")!;
+			app.innerHTML = `<h1>Error connecting to game via WebSocket.</h1>`;
+		};
+
+		const res = await fetch("http://localhost:8080/game/init", { method: "POST", headers: { "Authorization": `Bearer ${token}` }});
+		
+		if (!res.ok) throw new Error(`HTTP ${res.status}`);
+		
+		const data = await res.json();
+	}
+	catch (err)
+	{
+		const app = document.getElementById("app")!;
+		app.innerHTML = `<h1>Error connecting to game: ${(err as Error).message}</h1>`;
+		return;
+	}
+	
+	
+	// Listen for full game state updates from the server.
+	// socket.on("gameState", (state: GameState) =>
+	// 	{
+	// 		gameState = state;
+	// 		draw();
+	// 	});
 
 	// Stop any previous game loop and clear keys
 	cancelAnimationFrame(animationFrameId);
@@ -136,8 +174,8 @@ export function pongHandlers()
 		{
 			startGameBtn.addEventListener("click", () =>
 			{
-				// This sends the request to the server to un-pause the game.
-				fetch("http://localhost:3000/game/resume", { method: "POST" });
+				const token = getAccessToken();
+				fetch("http://localhost:8080/game/resume", { method: "POST", headers: { "Authorization": `Bearer ${token}` }});
 			});
 		}
 

@@ -9,18 +9,49 @@
  */
 import fastify from "fastify";
 import { createServer } from "http";
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
 import { gameController, isPaused } from "./controllers/gameControllers";
-import {
-  getGameState,
-  moveUp,
-  moveDown,
-  updateGame,
-} from "./services/gameServices";
+import { getGameState, moveUp, moveDown, updateGame } from "./services/gameServices";
+
+dotenv.config();
 
 const app = fastify({ logger: true });
 const server = createServer(app.server);
 const io = new Server(server, { cors: { origin: "*" } });
+
+/**
+ * Auth middleware for socker.io
+ * executed for each client trying to connect
+ */
+io.use((socket: Socket, next) =>
+{
+		const token = socket.handshake.auth.token;
+
+		if (!token)
+		{
+			return next(new Error("Authentication error: No token provided."));
+		}
+
+		const JWT_SECRET = process.env.JWT_SECRET;
+		if (!JWT_SECRET)
+		{
+			return next(new Error("Configuration error: JWT_SECRET not set on server."));
+		}
+
+		jwt.verify(token, JWT_SECRET, (err: any, decoded: any) =>
+		{
+			if (err)
+			{
+				console.error("Invalid token:", err.message);
+				return next(new Error("Authentication error: Invalid token."));
+			}
+		// Add user data  for the future, review
+		(socket as any).user = decoded;
+		next(); // valid token connection allowed
+	});
+});
 
 /**
  * Register REST routes with io injected
@@ -76,7 +107,12 @@ io.on("connection", (socket) =>
  * Start server
  */
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, "0.0.0.0", () =>
+server.listen({ port: Number(PORT), host: "0.0.0.0" }, (err, address) =>
+{
+	if (err)
 	{
-		console.log(`Pong server running at http://localhost:${PORT}`);
-	});
+		console.error(err);
+		process.exit(1);
+	}
+	console.log(`Pong server running at ${address}`);
+});
