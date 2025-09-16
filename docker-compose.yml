@@ -41,6 +41,13 @@ services:
     networks:
       - backend
 
+  livechat-service:
+    build: ./chat-service
+    expose:
+      - "8083"
+    networks:
+      - backend
+
   pong-service:
     build:
       context: ./server-side-pong
