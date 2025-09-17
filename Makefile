@@ -9,4 +9,4 @@ down:
 clean:
 	docker system prune -a
 
-re: down clean
+re: down clean up
