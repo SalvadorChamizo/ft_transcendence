@@ -1,6 +1,5 @@
 import { getConversations, sendMessage, getMessages } from "../services/api";
 import { websocketClient, ChatMessage } from "../services/websocketClient";
-import { getCurrentUserId } from "../state/authState";
 
 // Status for active conversation
 let activeConversationId: number | null = null;
@@ -275,9 +274,8 @@ export function chatHandlers() {
             messagesContainer.innerHTML = '<div class="no-messages">No hay mensajes en esta conversación.</div>';
             return;
         }
-        const userId = getCurrentUserId();
         messagesContainer.innerHTML = messages.map(msg => `
-            <div class="message-bubble ${msg.senderId === userId ? 'message-sent' : 'message-received'}">
+            <div class="message-bubble ${msg.isSent ? 'message-sent' : 'message-received'}">
                 <div class="message-content">${msg.content}</div>
                 <div class="message-time">${new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
             </div>
