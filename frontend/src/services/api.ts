@@ -56,3 +56,19 @@ export async function sendMessage(recipientId: number, content: string) {
         throw err;
     }
 }
+
+export async function getMessages(otherUserId: number) {
+    try {
+        const token = getAccessToken();
+        const res = await fetch(`http://localhost:8080/conversations/${otherUserId}/messages`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!res.ok) {
+            throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+        return await res.json();
+    } catch (err) {
+        console.error("Failed to get messages:", err);
+        throw err;
+    }
+}
