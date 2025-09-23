@@ -25,11 +25,15 @@ export async function loginUser(username: string, password: string) {
     if (!valid)
         throw new Error("Invalid username or password");
 
+    return user;
+}
+
+export function createTokensLogin(user: any) {
     const token = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
-
+    
     refreshTokenRepo.add(user.id, refreshToken);
-
+    
     return { token, refreshToken };
 }
 

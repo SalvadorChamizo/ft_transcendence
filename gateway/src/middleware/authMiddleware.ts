@@ -1,7 +1,7 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
 
-const publicUrls = ["/auth/login", "/auth/register", "/auth/refresh", "/ping"];
+const publicUrls = ["/auth/login", "/auth/register", "/auth/refresh", "/ping", "/auth/verify-2fa"];
 
 export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {  
 	console.log(`[Auth Middleware] Processing request for: ${req.url}`); // LOG ADDED
