@@ -8,5 +8,5 @@ export default async function authRoutes(app: FastifyInstance) {
     app.post("/logout", logoutController);
     app.post("/verify-2fa", verify2FAController);
     app.post("/enable-2fa", enable2FAController);
-    app.get("/generate-qr", generateQRController);
+    app.post("/generate-qr", generateQRController);
 }
