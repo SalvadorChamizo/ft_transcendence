@@ -21,7 +21,7 @@ export function updateUser2FA(secret: string, userId: number) {
 }
 
 export function debugUsers() {
-    const rows = db.prepare("SELECT id, username, totp_secret FROM users").all();
+    const rows = db.prepare("SELECT id, username, totp_secret, pending_2fa_secret FROM users").all();
     console.log(rows);
 }
 
@@ -36,6 +36,12 @@ export function activateUser2FA(userId: number, secret: string) {
 }
 
 export function getUserPending2FA(userId: number): string | null {
-    const row = db.prepare("SELECT pending_2fa_secret FROM users WHERE id = ?").get(userId);
-    return row?.pending_2fa_secret ?? null;
+    const stmt = db.prepare("SELECT pending_2fa_secret FROM users WHERE id = ?");
+    const row = stmt.get(userId);
+
+    if (!row || !row.pending_2fa_secret) {
+        return null;
+    }
+
+    return row.pending_2fa_secret;
 }
