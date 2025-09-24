@@ -9,6 +9,7 @@ export function Login(): string {
       <button type="submit">Login</button>
     </form>
     <p id="result"></p>
+    <div id="twofa-section" style="margin-top:2rem;"></div>
     <button id="logout-btn" style="display:none; margin-top:1rem;">Logout</button>
   `;
 }
@@ -28,7 +29,7 @@ export function loginHandlers() {
 
     if (userStr) {
       const user = JSON.parse(userStr) as { id: number; username: string };
-      document.body.innerHTML += Enable2FA();
+      document.querySelector("#twofa-section")!.innerHTML = Enable2FA();
       enable2FAHandlers(user.id, user.username);
     }
   }
@@ -148,6 +149,25 @@ export async function autoLoginUser(username: string, password: string) {
     } catch (err) {
       result.textContent = "⚠️ Failed to reach server";
     }
+
+      logoutBtn.onclick = async () => {
+    try {
+      const token = getAccessToken();
+      await fetch("http://localhost:8080/auth/logout", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+      clearAuth();
+      result.textContent = "⚠️ Logged out successfully";
+      form.style.display = "block";
+      logoutBtn.style.display = "none";
+    } catch {
+      result.textContent = "⚠️ Failed to logout";
+    }
+  };
   };
 
   export function TwoFAForm(userId: number): string {
@@ -163,8 +183,10 @@ export async function autoLoginUser(username: string, password: string) {
 
   export function Enable2FA(): string {
     return `
-      <h2>Enable 2FA</h2>
-      <button id="enable-2fa-btn">Generate QR</button>
+      <h2>Two-Factor Authentication</h2>
+      <button id="enable-2fa-btn">Enable 2FA</button>
+      <button id="show-qr-btn" style="display:none; margin-left:1rem;">Generate QR</button>
+
       <div id="qr-container" style="margin-top:1rem;"></div>
       <form id="verify-2fa-form" style="display:none; margin-top:1rem;">
         <input type="text" id="verify-2fa-code" placeholder="Enter 6-digit code" required />
@@ -175,12 +197,13 @@ export async function autoLoginUser(username: string, password: string) {
   }
 
   export function enable2FAHandlers(userId: number, username: string) {
-    const btn = document.querySelector<HTMLButtonElement>("#enable-2fa-btn")!;
+    const enableBtn = document.querySelector<HTMLButtonElement>("#enable-2fa-btn")!;
+    const showQRBtn = document.querySelector<HTMLButtonElement>("#show-qr-btn")!;
     const qrContainer = document.querySelector<HTMLDivElement>("#qr-container")!;
     const form = document.querySelector<HTMLFormElement>("#verify-2fa-form")!;
     const result = document.querySelector<HTMLParagraphElement>("#enable-2fa-result")!;
 
-    btn.onclick = async () => {
+    enableBtn.onclick = async () => {
       try {
         const token = getAccessToken();
         const res = await fetch("http://localhost:8080/auth/enable-2fa", {
@@ -194,17 +217,40 @@ export async function autoLoginUser(username: string, password: string) {
 
          const data = await res.json();
 
-         if (res.ok && data.qr) {
-          qrContainer.innerHTML = `<img src="${data.qr}" alt="QR Code" />`;
-          form.style.display = "block";
-          result.textContent = "Scan the QR in Google Authenticator, then enter the code below";
+         if (res.ok) {
+          result.textContent = "2FA enabled. Now click 'Generate QR' to continue."
+          showQRBtn.style.display = "inline-block";
+          enableBtn.disabled = true;
          } else {
           result.textContent = `${data.error || "Failed to enable 2FA"}`;
          }
-      } catch (err) {
-          result.textContent = "Failed to reach server";
+      } catch {
+        result.textContent = "Failed to reach server";
       }
     };
+
+         showQRBtn.onclick = async () => {
+          try {
+            const token = getAccessToken();
+            const res = await fetch("http://localhost:8080/auth/generate-qr", {
+              method: "POST",
+              headers: { "Authorization": `Bearer ${token}` },
+              body: JSON.stringify({ username, userId }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok && data.qr) {
+              qrContainer.innerHTML = `<img src="${data.qr}" alt="QR Code />"`;
+              form.style.display = "block";
+              result.textContent = "Scan the QR in your authentication app, then verify the code below.";
+            } else {
+              result.textContent = `${data.error || "Failed to generate the QR Code."}`;
+            }
+          } catch {
+            result.textContent = "Failed to reach server";
+          }
+        };
 
     form.onsubmit = async (e) => {
       e.preventDefault();
@@ -214,9 +260,7 @@ export async function autoLoginUser(username: string, password: string) {
       try {
         const res = await fetch("http://localhost:8080/auth/verify-2fa", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId, code }),
           credentials: "include",
         });

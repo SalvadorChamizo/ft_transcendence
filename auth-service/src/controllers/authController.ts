@@ -2,7 +2,7 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { registerUser, loginUser, logoutUser, createTokensLogin } from "../services/authService";
 import { rotateTokens} from "../services/tokenService"
 import * as speakeasy from "speakeasy";
-import { findUserById, updateUser2FA, debugUsers } from "../repositories/userRepository";
+import { findUserById, updateUser2FA, updateUserPending2FA, getUserPending2FA, activateUser2FA, debugUsers } from "../repositories/userRepository";
 import QRCode from "qrcode";
 
 export async function registerController(req: FastifyRequest, reply: FastifyReply) {
@@ -99,14 +99,18 @@ export async function logoutController(req: FastifyRequest, reply: FastifyReply)
 export async function verify2FAController(req: FastifyRequest, reply: FastifyReply) {
     const { userId, code } = req.body as { userId: number; code: string };
 
-    debugUsers();
     const user = findUserById(userId);
     if (!user || !user.totp_secret) {
         return reply.code(400).send({ error: "2FA not enabled" });
     }
 
+    let secret = user.pending_2fa_secret || user.totp_secret;
+    if (!secret) {
+        return reply.code(400).send({ error: "2FA not set up" });
+    }
+
     const verified = speakeasy.totp.verify({
-        secret: user.totp_secret,
+        secret,
         encoding: "base32",
         token: code,
         window: 1,
@@ -116,35 +120,62 @@ export async function verify2FAController(req: FastifyRequest, reply: FastifyRep
         return reply.code(401).send({ error: "Invalid 2FA code" });
     }
 
-    const { token, refreshToken } = createTokensLogin(user);
-
-    reply.setCookie("refreshToken", refreshToken, {
-        httpOnly: true,
-        secure: false, //Change in future to true
-        sameSite: "lax", //Change in future to strict
-        path: "/auth/refresh",
-        maxAge: 7 * 24 * 60 * 60,
-    });
-
-    return reply.send({ accessToken: token});
+    if (user.pending_2fa_secret) {
+        activateUser2FA(userId, user.pending_2fa_secret);
+        return reply.send({ success: true, message: "2FA enabled successfully" });
+    } else {
+        const { token, refreshToken } = createTokensLogin(user);
+    
+        reply.setCookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: false, //Change in future to true
+            sameSite: "lax", //Change in future to strict
+            path: "/auth/refresh",
+            maxAge: 7 * 24 * 60 * 60,
+        });
+    
+        return reply.send({ accessToken: token});
+    }
 }
 
 export async function enable2FAController(req: FastifyRequest, reply: FastifyReply) {
     try {
         const { username, userId } = req.body as {username: string, userId: number};
         const secret = speakeasy.generateSecret({
-            name: `MyApp (${username})`,
+            name: `ft_transcendence (${username})`,
             length: 20,
         });
 
-        updateUser2FA(secret.base32, userId);
+        updateUserPending2FA(secret.base32, userId);
     
-        const qr = await QRCode.toDataURL(secret.otpauth_url);
-    
-        return reply.send({ qr });
+        return reply.send({ message: "2FA setup started, call /generate-qr to get qr"})
 
     } catch (err: any) {
         console.error("enable2FA error:", err);
         return reply.code(500).send({ error: "Failed to enable 2FA" });
+    }
+}
+
+export async function generateQRController(req: FastifyRequest, reply: FastifyReply) {
+    try {
+        const { username, userId } = req.body as { username: string, userId: number};
+        const pendingSecret = getUserPending2FA(userId);
+
+        if (!pendingSecret) {
+            return reply.code(400).send({ error: "No pending 2FA setup"});
+        }
+
+        const otpauthUrl = speakeasy.otpauthURL({
+            secret: pendingSecret,
+            label: `ft_transcendence`,
+            issuer: "ft_transcendence",
+        });
+        
+        const qr = await QRCode.toDataURL(otpauthUrl);
+
+        return reply.send({ qr });
+    } catch (err: any) {
+        console.error("generateQR error:", err);
+        return reply.code(500).send({ error: "Failed to generate QR"});
     }
 }
