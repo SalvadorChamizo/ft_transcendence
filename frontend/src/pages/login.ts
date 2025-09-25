@@ -57,7 +57,35 @@ export function loginHandlers() {
         result.textContent = `✅ Logged in as ${username}`;
         form.style.display = "none";
         logoutBtn.style.display = "block";
+        } else if (res.ok && data.requires2FA) {
+            document.body.innerHTML = TwoFAForm(data.userId);
 
+            const twofaForm = document.querySelector<HTMLFormElement>("#twofa-form")!;
+            const twofaResult = document.querySelector<HTMLParagraphElement>("#twofa-result")!;
+
+            twofaForm.onsubmit = async (e) => {
+            e.preventDefault();
+
+            const code = (document.querySelector<HTMLInputElement>("#twofa-code")!).value;
+
+            const verifyRes = await fetch("http://localhost:8080/auth/verify-2fa", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ userId: data.userId, code }),
+              credentials: "include",
+            });
+
+            const verifyData = await verifyRes.json();
+            if (verifyRes.ok && verifyData.accessToken) {
+              setAccessToken(verifyData.accessToken);
+              twofaResult.textContent = "✅ 2FA verified, loggen in!";
+              twofaForm.style.display = "none";
+              logoutBtn.style.display = "block"
+            }
+            else {
+              twofaResult.textContent = "❌ Invalid 2FA code"
+            }
+          }
       } else {
         result.textContent = `❌ ${data.error || "Login failed"}`;
       }
@@ -98,6 +126,7 @@ export async function autoLoginUser(username: string, password: string) {
       result.textContent = "✅ You are already logged in";
       form.style.display = "none"; // hide login form
       logoutBtn.style.display = "block"; // show logout button
+      return ;
     }
     try {
       const res = await fetch("http://localhost:8080/auth/login", {
