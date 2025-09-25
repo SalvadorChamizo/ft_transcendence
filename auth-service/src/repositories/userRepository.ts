@@ -31,7 +31,7 @@ export function updateUserPending2FA(secret: string, userId: number) {
 }
 
 export function activateUser2FA(userId: number, secret: string) {
-    const stmt = db.prepare("UPDATE users SET totp_secret = ?, pending_2fa_secret = NULL, is_2fa_enable = 1 WHERE id = ?");
+    const stmt = db.prepare("UPDATE users SET totp_secret = ?, pending_2fa_secret = NULL, is_2fa_enabled = 1 WHERE id = ?");
     stmt.run(secret, userId);
 }
 
