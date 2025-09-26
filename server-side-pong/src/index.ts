@@ -6,11 +6,13 @@
 import fastify from "fastify";
 import websocket, { SocketStream } from "@fastify/websocket";
 import dotenv from "dotenv";
-import { gameController, isPaused } from "./controllers/gameControllers";
+import jwt from "jsonwebtoken";
+import { gameController, isPaused, setPaused } from "./controllers/gameControllers";
 import {
   moveUp,
   moveDown,
   updateGame,
+  resetGame,
 } from "./services/gameServices";
 
 dotenv.config();
@@ -18,26 +20,15 @@ dotenv.config();
 const app = fastify({ logger: true });
 
 export const playerConnections = new Map<string, SocketStream>();
-export const playerSides = new Map<string, "left" | "right" | "both">(); // 🔥 "both" para modo local
+export const playerSides = new Map<string, "left" | "right" | "both">(); // "both" para modo local
 
 app.register(websocket);
 gameController(app);
 
-/**
- * Helper para obtener headers
- */
-function getHeaderValue(req: any, headerName: string): string | undefined {
-  if (typeof req.headers === 'function') {
-    const headers = req.headers();
-    return headers[headerName] || headers[headerName.toLowerCase()];
-  }
-  return req.headers[headerName] || req.headers[headerName.toLowerCase()];
-}
-
 app.get("/", { websocket: true }, (connection: SocketStream, req) => {
   console.log("=== NEW WEBSOCKET CONNECTION ===");
 
-  // 🔥 Extraer token de la query string
+  // 1. Extraer token de la query string
   const token = (req.query as { token: string }).token;
 
   if (!token) {
@@ -46,52 +37,41 @@ app.get("/", { websocket: true }, (connection: SocketStream, req) => {
     return;
   }
 
-  // Extraer playerId
-  let playerId = getHeaderValue(req, "x-player-id");
-  if (!playerId && req.raw?.headers) {
-    playerId = req.raw.headers["x-player-id"] as string;
+  // 2. Verificar el token JWT
+  let decodedToken: { id: string; username: string };
+  try {
+    decodedToken = jwt.verify(token, process.env.JWT_SECRET as string) as any;
+    console.log(`✅ Token verified for user: ${decodedToken.username}`);
+  } catch (err) {
+    console.error("❌ Invalid token!", err);
+    connection.socket.close(4001, "Invalid token");
+    return;
   }
 
-  // 🔥 Extraer game mode del header o query
-  let gameMode = getHeaderValue(req, "x-game-mode") || "local"; // default: local
-  if (req.query && typeof req.query === 'object') {
-    gameMode = (req.query as any).mode || gameMode;
-  }
+  // 3. Usar el ID del token como el único identificador del cliente
+  const clientId = decodedToken.id;
+  console.log(`✅ Player ID from token: ${clientId}`);
 
-  console.log("Game mode:", gameMode);
-
-  let clientId: string;
-  if (!playerId) {
-    clientId = `guest_${Math.random().toString(36).substring(2, 9)}`;
-    console.warn(`⚠️ No x-player-id → guest mode: ${clientId}`);
-  } else {
-    clientId = playerId;
-    console.log(`✅ Player ID: ${clientId}`);
-  }
+  // 4. Extraer game mode de la query (o default a 'local')
+  const gameMode = (req.query as { mode?: string }).mode || "local";
 
   playerConnections.set(clientId, connection);
   
-  // 🔥 ASIGNACIÓN SEGÚN MODO
+  // 5. Asignación de lado según el modo de juego
   let assignedSide: "left" | "right" | "both";
   
   if (gameMode === "local") {
-    // Modo LOCAL: controla ambos lados
     assignedSide = "both";
     playerSides.set(clientId, assignedSide);
     console.log(`🎮 LOCAL MODE: Player ${clientId} controls BOTH paddles`);
   } else {
-    // Modo REMOTE: asignar un lado
-    if (!playerSides.has(clientId)) {
-      const sides = Array.from(playerSides.values());
-      assignedSide = sides.includes("left") ? "right" : "left";
-      playerSides.set(clientId, assignedSide);
-      console.log(`🎮 REMOTE MODE: Player ${clientId} → ${assignedSide} paddle`);
-    } else {
-      assignedSide = playerSides.get(clientId)!;
-    }
+    const sidesInUse = Array.from(playerSides.values());
+    assignedSide = sidesInUse.includes("left") ? "right" : "left";
+    playerSides.set(clientId, assignedSide);
+    console.log(`🎮 REMOTE MODE: Player ${clientId} → ${assignedSide} paddle`);
   }
 
-  // Enviar asignación después del handshake
+  // Enviar asignación al cliente
   setImmediate(() => {
     try {
       connection.socket.send(JSON.stringify({
@@ -105,9 +85,7 @@ app.get("/", { websocket: true }, (connection: SocketStream, req) => {
     }
   });
 
-  /**
-   * 🔥 MANEJAR MENSAJES CON SIDE EXPLÍCITO
-   */
+  // 6. Manejar mensajes del cliente
   connection.socket.on("message", (message: Buffer) => {
     try {
       const msg = JSON.parse(message.toString());
@@ -117,18 +95,15 @@ app.get("/", { websocket: true }, (connection: SocketStream, req) => {
       const playerSide = playerSides.get(clientId);
       if (!playerSide) return;
 
-      // 🔥 El frontend envía { event: "moveUp", side: "left" | "right" }
-      const targetSide = msg.side || "left"; // fallback
+      // El frontend envía { event: "moveUp", payload: "left" | "right" }
+      const targetSide = msg.payload; // Usamos 'payload' como envía el frontend
+      if (!targetSide) return;
 
-      // Si es modo "both", permite cualquier lado
-      // Si es modo single, solo permite su lado asignado
       if (playerSide === "both" || playerSide === targetSide) {
         if (msg.event === "moveUp") {
           moveUp(targetSide);
-          console.log(`🎮 ${clientId} moved ${targetSide} UP`);
         } else if (msg.event === "moveDown") {
           moveDown(targetSide);
-          console.log(`🎮 ${clientId} moved ${targetSide} DOWN`);
         }
       } else {
         console.warn(`⚠️ ${clientId} tried to move ${targetSide} but is assigned to ${playerSide}`);
@@ -146,6 +121,13 @@ app.get("/", { websocket: true }, (connection: SocketStream, req) => {
     console.log(`👋 Player ${clientId} disconnected`);
     playerConnections.delete(clientId);
     playerSides.delete(clientId);
+
+    // Si no quedan jugadores, pausar y resetear el juego
+    if (playerConnections.size === 0) {
+        console.log("All players disconnected. Pausing and resetting game.");
+        setPaused(true);
+        resetGame();
+    }
   });
 });
 
@@ -163,7 +145,7 @@ setInterval(() => {
 
     for (const [playerId, connection] of playerConnections.entries()) {
       try {
-        if (connection.socket.readyState === 1) {
+        if (connection.socket.readyState === 1) { // 1 = OPEN
           connection.socket.send(message);
         }
       } catch (err) {
