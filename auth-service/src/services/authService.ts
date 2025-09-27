@@ -1,4 +1,3 @@
-import bcrypt from "bcrypt";
 import { createUser, findUser } from "../repositories/userRepository";
 import { RefreshTokenRepository } from "../repositories/refreshTokenRepository";
 import { generateAccessToken, generateRefreshToken } from "./tokenService";
@@ -6,28 +5,25 @@ import { generateAccessToken, generateRefreshToken } from "./tokenService";
 const refreshTokenRepo = new RefreshTokenRepository();
 
 export async function registerUser(username: string, password: string, email: string) {
-    const res = await fetch("http://user-management-service:8082/getUser", {
+/*     const res = await fetch("http://user-management-service:8082/getUser", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username }),
     });
 
     const user = await res.json();
-    if (user) {
+    if (user.id) {
         throw new Error("User already exists");
     }
-
-    const hashed = await bcrypt.hash(password, 10);
-    createUser(username, hashed, email);
+*/
 
     const register = await fetch("http://user-management-service:8082/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, hashed, email }),
-      });
+        body: JSON.stringify({ email, username, password }),
+    });
 
-    const result = await register.json();
-    if (result.ok)
+    if (register.ok)
         return { message: "User registered successfully" };
     else
         throw new Error("Failed register in user service");
@@ -41,15 +37,24 @@ export async function loginUser(username: string, password: string) {
     });
 
     const user = await res.json();
-    console.log("user from user-management-service:", user);
 
-    if (!user)
+    console.log("Aqui llega 1");
+    if (!user.id)
         throw new Error("Invalid username or password");
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid)
-        throw new Error("Invalid username or password");
-
+    console.log("Aqui llega 2");
+    console.log("password:", password);
+    console.log("user.id:", user.id);
+    console.log("user.username:", user.username);
+    console.log("user.password:", user.password);
+    const passwordControl = await fetch("http://user-management-service:8082/checkPassword", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+    });
+    if (!passwordControl.ok)
+        throw new Error("Invalid username or password - pito");
+    console.log("Aqui llega por fin");
     return user;
 }
 
