@@ -103,7 +103,7 @@ export async function pongHandlers()
 		const token = getAccessToken();
 		if (!token) throw new Error("You must be logged in to play.");
 
-		socket = new WebSocket(`ws://localhost:8080/ws/pong?token=${token}`);
+		socket = new WebSocket(`ws://localhost:3000/?token=${token}`);
         
         socket.onmessage = (event) =>
 		{
