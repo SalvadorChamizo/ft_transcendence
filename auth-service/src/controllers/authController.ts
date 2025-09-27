@@ -22,7 +22,8 @@ export async function loginController(req: FastifyRequest, reply: FastifyReply) 
     try {
         const user = await loginUser(username, password);
 
-        if (user.is_2fa_enabled) {
+        const authUser = findUserById(user.id);
+        if (authUser.is_2fa_enabled) {
             return reply.send({ requires2FA: true, userId: user.id })
         }
 
