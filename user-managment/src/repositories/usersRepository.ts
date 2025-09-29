@@ -13,6 +13,11 @@ export function findUserByUsername(username: string) {
     return stmt.get(username);
 }
 
+export function findUserById(id: number) {
+    const stmt = db.prepare("SELECT * FROM users WHERE id = ?");
+    return stmt.get(id);
+}
+
 export function findUserByEmail(email: string) {
     const stmt = db.prepare("SELECT * FROM users WHERE email = ?");
     return stmt.get(email);

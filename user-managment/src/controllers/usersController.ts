@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import { FastifyReply, FastifyRequest } from "fastify";
-import { registerUser, getUserByUsername, getUserByEmail } from "../services/usersService";
+import { registerUser, getUserByUsername, getUserById, getUserByEmail } from "../services/usersService";
 
 export async function registerController(req: FastifyRequest, reply: FastifyReply) {
 	const { email, username, password } = req.body as { email: string; username: string; password: string };
@@ -22,14 +22,30 @@ export async function registerController(req: FastifyRequest, reply: FastifyRepl
 	}
 }
 
-export async function userGetter(req: FastifyRequest, reply: FastifyReply) {
+export async function userGetterByUsername(req: FastifyRequest, reply: FastifyReply) {
 	const { username } = req.body as { username: string };
 
 	try {
 		const user = await getUserByUsername(username);
 		return reply.send({
 			id: user.id,
-			username: user.username
+			username: user.username,
+			email: user.email
+		});
+	} catch (err: any) {
+		return reply.code(400).send({ error: err.message });
+	}
+}
+
+export async function userGetterById(req: FastifyRequest, reply: FastifyReply) {
+	const { id } = req.body as { id: number };
+
+	try {
+		const user = await getUserById(id);
+		return reply.send({
+			id: user.id,
+			username: user.username,
+			email: user.email
 		});
 	} catch (err: any) {
 		return reply.code(400).send({ error: err.message });
