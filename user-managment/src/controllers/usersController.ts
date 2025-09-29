@@ -26,7 +26,7 @@ export async function userGetter(req: FastifyRequest, reply: FastifyReply) {
 	const { username } = req.body as { username: string };
 
 	try {
-		const user = await getUser(username);
+		const user = await getUserByUsername(username);
 		return reply.send({
 			id: user.id,
 			username: user.username
@@ -40,7 +40,7 @@ export async function passwordControl(req: FastifyRequest, reply: FastifyReply) 
 	const { username, password } = req.body as { username: string; password: string };
 
 	try {
-		const user = await getUser(username);
+		const user = await getUserByUsername(username);
 		if (!user.id) 
 			throw new Error("User not found");
 		const valid = await bcrypt.compare(password, user.password);
