@@ -8,14 +8,13 @@
     "start": "npx tsx src/index.ts"
   },
   "dependencies": {
-    "@fastify/websocket": "^11.2.0",
+    "@fastify/cors": "^9.0.1",
     "dotenv": "^16.4.5",
-    "fastify": "^5.5.0",
-    "jsonwebtoken": "^9.0.2",
+    "fastify": "^4.28.1",
+    "socket.io": "^4.7.5",
     "uuid": "^10.0.0"
   },
   "devDependencies": {
-    "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^20.14.10",
     "@types/uuid": "^10.0.0",
     "tsx": "^4.16.2",

@@ -3,52 +3,47 @@
  * @brief Frontend logic for the server-side Pong game page.
  */
 
-import { getAccessToken } from "../state/authState";
+import { io } from "socket.io-client";
 
-let socket: WebSocket;
+let socket: any;
 let ctx: CanvasRenderingContext2D | null = null;
 let animationFrameId: number; // To manage the game loop
+let isGameRunning = false;
+const WINNING_SCORE = 10;
 
-interface Paddle
-{
-	y: number;
+interface Paddle {
+    y: number;
 }
 
-interface Ball
-{
-	x: number;
-	y: number;
+interface Ball {
+    x: number;
+    y: number;
 }
 
-interface Scores
-{
-	left: number;
-	right: number;
+interface Scores {
+    left: number;
+    right: number;
 }
 
-interface GameState
-{
-	paddles:
-	{
-		left: Paddle;
-		right: Paddle;
-	};
-	ball: Ball;
-	scores: Scores;
+interface GameState {
+    paddles: {
+        left: Paddle;
+        right: Paddle;
+    };
+    ball: Ball;
+    scores: Scores;
 }
 
 /**
  * @brief Holds the current game state received from the server.
  */
-let gameState: GameState =
-{
-	paddles:
-	{
-		left: { y: 250 },
-		right: { y: 250 },
-	},
-	ball: { x: 400, y: 300 },
-	scores: { left: 0, right: 0 },
+let gameState: GameState = {
+    paddles: {
+        left: { y: 250 },
+        right: { y: 250 },
+    },
+    ball: { x: 400, y: 300 },
+    scores: { left: 0, right: 0 },
 };
 
 // A Set to store the state of currently pressed keys for simultaneous movement.
@@ -60,148 +55,187 @@ const keysPressed = new Set<string>();
  */
 function gameLoop()
 {
-	if (socket && socket.readyState === WebSocket.OPEN)
-	{
-		if (keysPressed.has("w")) socket.send(JSON.stringify({ event: "moveUp", payload: "left" }));
-		if (keysPressed.has("s")) socket.send(JSON.stringify({ event: "moveDown", payload: "left" }));
-		if (keysPressed.has("ArrowUp")) socket.send(JSON.stringify({ event: "moveUp", payload: "right" }));
-		if (keysPressed.has("ArrowDown")) socket.send(JSON.stringify({ event: "moveDown", payload: "right" }));
-	}
-	animationFrameId = requestAnimationFrame(gameLoop);
+    if (socket && isGameRunning)
+    {
+        if (keysPressed.has("w")) {
+            console.log("Frontend: Sending moveUp left");
+            socket.emit("moveUp", "left");
+        }
+        if (keysPressed.has("s")) {
+            console.log("Frontend: Sending moveDown left");
+            socket.emit("moveDown", "left");
+        }
+        if (keysPressed.has("ArrowUp")) {
+            console.log("Frontend: Sending moveUp right");
+            socket.emit("moveUp", "right");
+        }
+        if (keysPressed.has("ArrowDown")) {
+            console.log("Frontend: Sending moveDown right");
+            socket.emit("moveDown", "right");
+        }
+    }
+    animationFrameId = requestAnimationFrame(gameLoop);
 }
 
 /**
  * @brief Returns the HTML markup for the Pong game page.
  * @returns {string} HTML string for the Pong page.
  */
-export function pongPage()
-{
-	return  `
-	<h1>Server-Side Pong</h1>
-	<canvas style="border: 1px solid red" id="pongCanvas" width="800" height="600"></canvas>
-	<p>Use W/S to move Left Paddle, ArrowUp/ArrowDown for Right Paddle</p>
-	<p id="scoreboard">0 : 0</p>
-		
-	`;
+export function pongPage() {
+    return `
+        <h1>Server-Side Pong</h1>
+        <canvas id="pongCanvas" width="800" height="600"></canvas>
+        <div id="gameInfo">
+            <p>Use W/S to move Left Paddle, ArrowUp/ArrowDown for Right Paddle</p>
+            <p>Press 'P' to Pause/Resume</p>
+            <p id="scoreboard">0 : 0</p>
+            <p id="winnerMessage" style="display: none;"></p>
+            <button id="startGameBtn">Start Game</button>
+            <button id="playAgainBtn" style="display: none;">Play Again</button>
+        </div>
+    `;
 }
 
 /**
  * @brief Sets up event handlers and socket connection for the Pong game.
- * Connect to Pong backend microservice
- * Init REST call (optional)
- * Listen for full game state updates from the server.
- * Handle paddle movement input from the users.
- * Draws in the canvas
  */
-export async function pongHandlers()
-{
-	const canvas = document.getElementById("pongCanvas") as HTMLCanvasElement;
-	ctx = canvas.getContext("2d");
+export function pongHandlers() {
+    const canvas = document.getElementById("pongCanvas") as HTMLCanvasElement;
+    ctx = canvas.getContext("2d");
 
-    try
-	{
-		const token = getAccessToken();
-		if (!token) throw new Error("You must be logged in to play.");
+    socket = io("ws://localhost:3000");
 
-		socket = new WebSocket(`ws://localhost:3000/?token=${token}`);
-        
-        socket.onmessage = (event) =>
-		{
-			const message = JSON.parse(event.data);
-			if (message.event === 'gameState')
-			{
-				gameState = message.data;
-				draw();
-			}
-		};
+    function initializeGame() {
+        fetch("http://localhost:8080/game/init", { method: "POST" });
+        isGameRunning = false;
+        const winnerMessage = document.getElementById("winnerMessage") as HTMLElement;
+        const startGameBtn = document.getElementById("startGameBtn") as HTMLButtonElement;
+        const playAgainBtn = document.getElementById("playAgainBtn") as HTMLButtonElement;
 
-		socket.onerror = (error) =>
-		{
-			console.error("WebSocket Error:", error);
-			const app = document.getElementById("app")!;
-			app.innerHTML = `<h1>Error connecting to game via WebSocket.</h1>`;
-		};
+        if (winnerMessage) winnerMessage.style.display = "none";
+        if (startGameBtn) startGameBtn.style.display = "block";
+        if (playAgainBtn) playAgainBtn.style.display = "none";
+    }
 
-		const res = await fetch("http://localhost:8080/game/init", { method: "POST", headers: { "Authorization": `Bearer ${token}` }});
-		if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        
-		const resumeRes = await fetch("http://localhost:8080/game/resume", { method: "POST", headers: { "Authorization": `Bearer ${token}` }});
-		if (!resumeRes.ok) throw new Error(`HTTP ${resumeRes.status} on resume`);
-	}
+    // Listen for full game state updates from the server.
+    socket.on("gameState", (state: GameState) => {
+        gameState = state;
+        draw();
 
-	catch (err)
-	{
-		const app = document.getElementById("app")!;
-		app.innerHTML = `<h1>Error connecting to game: ${(err as Error).message}</h1>`;
-		return;
-	}
-	
-	
-	// Listen for full game state updates from the server.
-	// socket.on("gameState", (state: GameState) =>
-	// 	{
-	// 		gameState = state;
-	// 		draw();
-	// 	});
+        if (!isGameRunning) return;
 
-	// Stop any previous game loop and clear keys
-	cancelAnimationFrame(animationFrameId);
-	keysPressed.clear();
+        const winnerMessage = document.getElementById("winnerMessage") as HTMLElement;
+        if (gameState.scores.left >= WINNING_SCORE) {
+            winnerMessage.textContent = "Player 1 Wins!";
+            winnerMessage.style.display = "block";
+            endGame();
+        } else if (gameState.scores.right >= WINNING_SCORE) {
+            winnerMessage.textContent = "Player 2 Wins!";
+            winnerMessage.style.display = "block";
+            endGame();
+        }
+    });
 
-	// Handle key down events by adding the key to our state.
-	window.addEventListener("keydown", (e) =>
-		{
-			if (["w", "s", "ArrowUp", "ArrowDown"].includes(e.key))
-            {
-                e.preventDefault();
-            }
+    socket.on("gamePaused", ({ paused }: { paused: boolean }) => {
+        console.log("Frontend: Received gamePaused event, paused =", paused);
+        isGameRunning = !paused;
+        console.log("Frontend: isGameRunning is now", isGameRunning);
+    });
+
+    // Stop any previous game loop and clear keys
+    cancelAnimationFrame(animationFrameId);
+    keysPressed.clear();
+
+    // Handle key down events
+    window.addEventListener("keydown", (e) => {
+        // Evitar scroll con flechas
+        if (["ArrowUp", "ArrowDown"].includes(e.key)) {
+            e.preventDefault();
+        }
+
+        if (e.key.toLowerCase() === 'p') {
+            console.log("Frontend: 'P' key pressed, sending toggle-pause request");
+            fetch("http://localhost:8080/game/toggle-pause", { method: "POST" })
+                .then(response => response.json())
+                .then(data => console.log("Frontend: Toggle pause response:", data))
+                .catch(error => console.error("Frontend: Toggle pause error:", error));
+        } else {
             keysPressed.add(e.key);
-		});
+        }
+    });
 
-		// Handle key up events by removing the key from our state.
-		window.addEventListener("keyup", (e) =>
-		{
-			keysPressed.delete(e.key);
-		});
+    // Handle key up events
+    window.addEventListener("keyup", (e) => {
+        keysPressed.delete(e.key);
+    });
 
-		// Event listener for the "Start Game" button.
-		const startGameBtn = document.getElementById("startGameBtn");
-		if (startGameBtn)
-		{
-			startGameBtn.addEventListener("click", () =>
-			{
-				const token = getAccessToken();
-				fetch("http://localhost:8080/game/resume", { method: "POST", headers: { "Authorization": `Bearer ${token}` }});
-			});
-		}
+    // Start Game button
+    const startGameBtn = document.getElementById("startGameBtn");
+    if (startGameBtn) {
+        startGameBtn.addEventListener("click", () => {
+            console.log("Frontend: Start Game button clicked, sending fetch to /game/resume");
+            fetch("http://localhost:8080/game/resume", { 
+                method: "POST",
+                mode: "cors"
+            })
+                .then(response => {
+                    console.log("Frontend: Fetch response received", response.status);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Frontend: Fetch response data", data);
+                })
+                .catch(error => {
+                    console.error("Frontend: Fetch error", error);
+                });
+            startGameBtn.style.display = "none";
+        });
+    }
 
-		draw();
-		// Start the input loop
-		gameLoop();
+    // Play Again button
+    const playAgainBtn = document.getElementById("playAgainBtn");
+    if (playAgainBtn) {
+        playAgainBtn.addEventListener("click", () => {
+            initializeGame();
+        });
+    }
+
+    initializeGame();
+    draw();
+    gameLoop();
+}
+
+function endGame() {
+    isGameRunning = false;
+    const playAgainBtn = document.getElementById("playAgainBtn") as HTMLButtonElement;
+    if (playAgainBtn) playAgainBtn.style.display = "block";
 }
 
 /**
  * @brief Draws the current game state (paddles, ball, scores) on the canvas.
- * Draws paddles in black
- * Draws ball
- * Update the score display
  */
-function draw()
-{
-	if (!ctx) return;
-	ctx.clearRect(0, 0, 800, 600);
+function draw() {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, 800, 600);
 
-	ctx.fillStyle = "black";
-	ctx.fillRect(30, gameState.paddles.left.y, 20, 100);
-	ctx.fillRect(750, gameState.paddles.right.y, 20, 100);
+    // Dibujar borde del canvas
+    ctx.strokeStyle = "black";
+    ctx.lineWidth = 4;
+    ctx.strokeRect(0, 0, 800, 600);
 
-	ctx.beginPath();
-	ctx.arc(gameState.ball.x, gameState.ball.y, 10, 0, Math.PI * 2);
-	ctx.fill();
+    // Dibujar paletas
+    ctx.fillStyle = "black";
+    ctx.fillRect(30, gameState.paddles.left.y, 20, 100);
+    ctx.fillRect(750, gameState.paddles.right.y, 20, 100);
 
-	const scoreboard = document.getElementById("scoreboard");
-	if (scoreboard)
-	{
-		scoreboard.textContent = `${gameState.scores.left} : ${gameState.scores.right}`;
-	}
+    // Dibujar pelota
+    ctx.beginPath();
+    ctx.arc(gameState.ball.x, gameState.ball.y, 10, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Actualizar marcador
+    const scoreboard = document.getElementById("scoreboard");
+    if (scoreboard) {
+        scoreboard.textContent = `${gameState.scores.left} : ${gameState.scores.right}`;
+    }
 }
