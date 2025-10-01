@@ -40,6 +40,13 @@ services:
       - "8081"
     networks:
       - backend
+    
+  user-management-service:
+    build: ./user-managment
+    expose:
+      - "8082"
+    networks:
+      - backend
 
 networks:
   backend:

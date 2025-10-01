@@ -2,17 +2,17 @@ import { FastifyReply, FastifyRequest } from "fastify";
 import { registerUser, loginUser, logoutUser, createTokensLogin } from "../services/authService";
 import { rotateTokens, generateAccessToken} from "../services/tokenService"
 import * as speakeasy from "speakeasy";
-import { findUserById, updateUser2FA, updateUserPending2FA, getUserPending2FA, activateUser2FA, debugUsers } from "../repositories/userRepository";
+import { findUserById, updateUser2FA, updateUserPending2FA, getUserPending2FA, activateUser2FA, debugUsers, createUser } from "../repositories/userRepository";
 import QRCode from "qrcode";
 
 export async function registerController(req: FastifyRequest, reply: FastifyReply) {
    const { username, password, email } = req.body as { username: string; password: string; email: string };
 
    try {
-    const result = await registerUser(username, password, email);
-        return reply.send(result);
+       const result = await registerUser(username, password, email);
+       return reply.send(result);
    } catch (err: any) {
-        return reply.code(400).send({ error: err.message });
+        return reply.code(400).send(err.message);
    }
 }
 

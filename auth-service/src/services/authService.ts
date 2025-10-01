@@ -1,4 +1,3 @@
-import bcrypt from "bcrypt";
 import { createUser, findUser } from "../repositories/userRepository";
 import { RefreshTokenRepository } from "../repositories/refreshTokenRepository";
 import { generateAccessToken, generateRefreshToken } from "./tokenService";
@@ -6,25 +5,41 @@ import { generateAccessToken, generateRefreshToken } from "./tokenService";
 const refreshTokenRepo = new RefreshTokenRepository();
 
 export async function registerUser(username: string, password: string, email: string) {
-    const user = findUser(username);
-    if (user) {
-        throw new Error("User already exists");
+    console.log("Aqui llega 1");
+    const register = await fetch("http://user-management-service:8082/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, username, password }),
+    });
+    console.log("Aqui llega 2");
+    if (register.ok)
+    {
+        createUser(username, password, email);
+        return { message: "User registered successfully" };
     }
-
-    const hashed = await bcrypt.hash(password, 10);
-    createUser(username, hashed, email);
-    return { message: "User registered successfully" };
+    else
+        throw new Error(await register.text());
 }
 
 export async function loginUser(username: string, password: string) {
-    const user = findUser(username);
-    if (!user)
+    const res = await fetch("http://user-management-service:8082/getUserByName", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+    });
+
+    const user = await res.json();
+
+    if (!user.id)
         throw new Error("Invalid username or password");
 
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid)
+    const passwordControl = await fetch("http://user-management-service:8082/checkPassword", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+    });
+    if (!passwordControl.ok)
         throw new Error("Invalid username or password");
-
     return user;
 }
 
