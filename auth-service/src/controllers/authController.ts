@@ -182,3 +182,74 @@ export async function generateQRController(req: FastifyRequest, reply: FastifyRe
         return reply.code(500).send({ error: "Failed to generate QR"});
     }
 }
+
+export async function login42Controller(req: FastifyRequest, reply: FastifyReply) {
+    const clientId = process.env.FORTY_TWO_CLIENT_ID;
+    const redirectUri = encodeURIComponet(process.env.FORTY_TWO_REDIRECT_URI);
+    const scope = "public";
+
+    const url = `https://api.intra.42.fr/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
+
+    return reply.redirect(url);
+}
+
+export async function callback42Controller(req: FastifyRequest, reply: FastifyReply) {
+    const code = req.query.code as string;
+
+    if (!code)
+        return reply.code(400).send({ error: "Missing authorization code"});
+
+    try {
+        const tokenRes = await fetch("https://api.intra.42.fr/oauth/token", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+                grant_type: "authorization_code",
+                client_id: process.env.FORTY_TWO_CLIENT_ID!,
+                client_secret: process.env.FORTY_TWO_CLIENT_SECRET!,
+                code,
+                redirect_uri: "http://localhost:8080/auth/42/callback",
+            }),
+        });
+
+        if (!tokenRes.ok) {
+            const err = await tokenRes.text();
+            throw new Error(`Failed to fetch token: ${err}`);
+        }
+
+        const tokenData = await tokenRes.json();
+        const accessToken = tokenData.access_token;
+
+        const userRes = await fetch("https://api.intra.42.ft/v2/me", {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            },
+        });
+
+        if (!userRes.ok) {
+            const err = await userRes.text();
+            throw new Error(`Failed to fetch user profile: ${err}`);
+        }
+
+        const intraUser = await userRes.json();
+
+        const user = await findOrCreateUserFrom42(intraUser);
+
+        const { token, refreshToken } = createTokensLogin(user);
+
+        reply.setCookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: "lax",
+            path: "/auth/refresh",
+            maxAge: 7 * 24 * 60 * 60,
+        });
+
+        return reply.redirect("http://localhost:5173/#/home");
+    
+    } catch (err: any) {
+        console.error("42 OAuth error:", err);
+        return reply.code(500).send({ error: "42 login failed" });
+    }
+}

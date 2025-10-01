@@ -11,15 +11,21 @@ export function setupLoginHandlers() {
     
     logoutBtn.onclick = logout;
 
+    
     if (isLoggedIn()) {
-        const user = JSON.parse(localStorage.getItem("user")!);
-        setText(result, "✅ You are already logged in");
-        getElement("#twofa-section").innerHTML = Enable2FAHtml();
-        hideElement(form);
-        showElement(logoutBtn);
-        enable2FAHandlers(user.id, user.username);
-        return ;
+      const user = JSON.parse(localStorage.getItem("user")!);
+      setText(result, "✅ You are already logged in");
+      getElement("#twofa-section").innerHTML = Enable2FAHtml();
+      hideElement(form);
+      showElement(logoutBtn);
+      enable2FAHandlers(user.id, user.username);
+      return ;
     }
+    
+    const fortyTwoBtn = document.querySelector<HTMLButtonElement>("#fortyTwoLoginButton");
+    fortyTwoBtn?.addEventListener("click", () => {
+      window.location.href = "http://localhost:8080/auth/42/login";
+    })
     
     form.onsubmit = async (e) => {
       e.preventDefault();

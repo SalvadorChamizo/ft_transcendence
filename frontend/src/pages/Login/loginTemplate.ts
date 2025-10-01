@@ -15,7 +15,7 @@ export function getLoginHtml() : string {
                     <h2 class="login-title">Have an account?</h2>
                     <hr>
                     <div class="gsi-buttons">
-                        <button type="button" class="gsi-material-button">
+                        <button type="button" class="gsi-material-button" id="fortyTwoLoginButton">
                             <div class="gsi-material-button-state"></div>
                             <div class="gsi-material-button-content-wrapper">
                         <div class="gsi-material-button-icon">
@@ -30,7 +30,7 @@ export function getLoginHtml() : string {
                         <span style="display: none;">Sign in with 42</span>
                     </div>
                     </button>
-                    <button type="button" class="gsi-material-button">
+                    <button type="button" class="gsi-material-button" id="googleLoginButton">
                     <div class="gsi-material-button-state"></div>
                     <div class="gsi-material-button-content-wrapper">
                         <div class="gsi-material-button-icon">
@@ -127,6 +127,6 @@ export function Enable2FAHtml(): string {
         <input type="text" id="verify-2fa-code" placeholder="Enter 6-digit code" required />
         <button type="submit">Verify</button>
       </form>
-      <p id="enable-2fa-result"></p>
+      <p style="color:white" id="enable-2fa-result"></p>
       `;
   }
