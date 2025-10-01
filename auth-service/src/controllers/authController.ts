@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { registerUser, loginUser, logoutUser, createTokensLogin } from "../services/authService";
+import { registerUser, loginUser, logoutUser, createTokensLogin, findOrCreateUserFrom42 } from "../services/authService";
 import { rotateTokens, generateAccessToken} from "../services/tokenService"
 import * as speakeasy from "speakeasy";
 import { findUserById, updateUser2FA, updateUserPending2FA, getUserPending2FA, activateUser2FA, debugUsers, createUser } from "../repositories/userRepository";
@@ -185,10 +185,11 @@ export async function generateQRController(req: FastifyRequest, reply: FastifyRe
 
 export async function login42Controller(req: FastifyRequest, reply: FastifyReply) {
     const clientId = process.env.FORTY_TWO_CLIENT_ID;
-    const redirectUri = encodeURIComponet(process.env.FORTY_TWO_REDIRECT_URI);
+    const redirectUri = process.env.FORTY_TWO_REDIRECT_URI;
+    const encodedRedirectUri = encodeURIComponent(redirectUri);
     const scope = "public";
 
-    const url = `https://api.intra.42.fr/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}`;
+    const url = `https://api.intra.42.fr/oauth/authorize?client_id=${clientId}&redirect_uri=${encodedRedirectUri}&response_type=code&scope=${scope}`;
 
     return reply.redirect(url);
 }
@@ -200,6 +201,8 @@ export async function callback42Controller(req: FastifyRequest, reply: FastifyRe
         return reply.code(400).send({ error: "Missing authorization code"});
 
     try {
+        const redirectUri = process.env.FORTY_TWO_REDIRECT_URI;
+
         const tokenRes = await fetch("https://api.intra.42.fr/oauth/token", {
             method: "POST",
             headers: {
@@ -209,7 +212,7 @@ export async function callback42Controller(req: FastifyRequest, reply: FastifyRe
                 client_id: process.env.FORTY_TWO_CLIENT_ID!,
                 client_secret: process.env.FORTY_TWO_CLIENT_SECRET!,
                 code,
-                redirect_uri: "http://localhost:8080/auth/42/callback",
+                redirect_uri: redirectUri,
             }),
         });
 
@@ -221,7 +224,7 @@ export async function callback42Controller(req: FastifyRequest, reply: FastifyRe
         const tokenData = await tokenRes.json();
         const accessToken = tokenData.access_token;
 
-        const userRes = await fetch("https://api.intra.42.ft/v2/me", {
+        const userRes = await fetch("https://api.intra.42.fr/v2/me", {
             headers: {
                 Authorization: `Bearer ${accessToken}`,
             },
