@@ -1,6 +1,6 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { registerUser, loginUser, logoutUser, createTokensLogin } from "../services/authService";
-import { rotateTokens} from "../services/tokenService"
+import { rotateTokens, generateAccessToken} from "../services/tokenService"
 import * as speakeasy from "speakeasy";
 import { findUserById, updateUser2FA, updateUserPending2FA, getUserPending2FA, activateUser2FA, debugUsers, createUser } from "../repositories/userRepository";
 import QRCode from "qrcode";
@@ -22,9 +22,9 @@ export async function loginController(req: FastifyRequest, reply: FastifyReply) 
     try {
         const user = await loginUser(username, password);
 
-        const authUser = findUserById(user.id);
-        if (authUser.is_2fa_enabled) {
-            return reply.send({ requires2FA: true, userId: user.id })
+        if (user.is_2fa_enabled) {
+            const token = generateAccessToken(user);
+            return reply.send({ requires2FA: true, userId: user.id, username: user.username, tempToken: token });
         }
 
         const { token, refreshToken } = createTokensLogin(user);
@@ -157,12 +157,18 @@ export async function enable2FAController(req: FastifyRequest, reply: FastifyRep
 export async function generateQRController(req: FastifyRequest, reply: FastifyReply) {
     try {
         const { username, userId } = req.body as { username: string, userId: number};
-        const pendingSecret = getUserPending2FA(userId);
-        if (!pendingSecret) {
-            return reply.code(400).send({ error: "No pending 2FA setup"});
+        
+        let secret = getUserPending2FA(userId);
+        if (!secret) {
+            const user = findUserById(userId);
+            if (!user || !user.totp_secret) {
+                return reply.code(400).send({ error: "No pending 2FA setup"});
+            }
+            secret = user.totp_secret;
         }
+
         const otpauthUrl = speakeasy.otpauthURL({
-            secret: pendingSecret,
+            secret: secret,
             label: `ft_transcendence`,
             issuer: "ft_transcendence",
             encoding: "base32",

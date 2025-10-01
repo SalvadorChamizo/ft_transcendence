@@ -1,5 +1,15 @@
 let accessToken: string | null = null;
 
+export let tempToken = "";
+export let tempUserId = 0;
+export let tempUsername = "";
+
+export function setTemp2FA(token: string, username: string, userId: number) {
+    tempToken = token;
+    tempUsername = username;
+    tempUserId = userId;
+}
+
 export function setAccessToken(token: string) {
     accessToken = token;
 }
