@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import { FastifyReply, FastifyRequest } from "fastify";
-import { registerUser, getUserByUsername, getUserById, getUserByEmail } from "../services/usersService";
+import { registerUser, register42User, getUserByUsername, getUserById, getUserByEmail, getIDbyUsername } from "../services/usersService";
 
 export async function registerController(req: FastifyRequest, reply: FastifyReply) {
 	const { email, username, password } = req.body as { email: string; username: string; password: string };
@@ -15,6 +15,26 @@ export async function registerController(req: FastifyRequest, reply: FastifyRepl
 		const hashed = await bcrypt.hash(password, 10);
 		const result = await registerUser(email, username, hashed);
 		return reply.send(result);
+	} 
+	catch (err: any) {
+		console.error("Error occurred during user registration:", err);
+		return reply.code(400).send({ error: err.message });	
+	}
+}
+
+export async function register42Controller(req: FastifyRequest, reply: FastifyReply) {
+	const { email, username } = req.body as { email: string; username: string };
+
+	const userName = await getUserByUsername(username);
+	const userEmail = await getUserByEmail(email);
+	try {
+		if (userName)
+			throw new Error("Username already exists");
+		if (userEmail)
+			throw new Error("Email already exists");
+		const result = await register42User(email, username);
+		const id = await getIDbyUsername(username);
+		return reply.send({ result, id });
 	} 
 	catch (err: any) {
 		console.error("Error occurred during user registration:", err);
