@@ -195,10 +195,32 @@ export async function login42Controller(req: FastifyRequest, reply: FastifyReply
 }
 
 export async function callback42Controller(req: FastifyRequest, reply: FastifyReply) {
-    const code = req.query.code as string;
+    const { code, error, error_description } = req.query as { 
+        code?: string; 
+        error?: string; 
+        error_description?: string; 
+    };
 
-    if (!code)
-        return reply.code(400).send({ error: "Missing authorization code"});
+    const frontendRedirectBase = "http://localhost:5173/#/login";
+
+    if (error) {
+        console.warn("42 OAuth cancelled or failed:", error, error_description);
+
+        const redirectUrl = new URL(frontendRedirectBase);
+        redirectUrl.searchParams.set("error", error);
+        if (error_description) {
+            redirectUrl.searchParams.set("error_description", error_description);
+        }
+
+        return reply.redirect(redirectUrl.toString());
+    }
+
+    if (!code) {
+        const redirectUrl = new URL(frontendRedirectBase);
+        redirectUrl.searchParams.set("error", "missing_code");
+
+        return reply.redirect(redirectUrl.toString());
+    }
 
     try {
         const redirectUri = process.env.FORTY_TWO_REDIRECT_URI;
@@ -249,10 +271,106 @@ export async function callback42Controller(req: FastifyRequest, reply: FastifyRe
             maxAge: 7 * 24 * 60 * 60,
         });
 
-        return reply.redirect("http://localhost:5173/#/home");
+        return reply.redirect("http://localhost:5173/#/");
     
     } catch (err: any) {
         console.error("42 OAuth error:", err);
         return reply.code(500).send({ error: "42 login failed" });
+    }
+}
+
+export async function loginGoogleController(req: FastifyRequest, reply: FastifyReply) {
+    const redirectUri = encodeURIComponent(process.env.GOOGLE_REDIRECT_URI);
+    const clientId = process.env.GOOGLE_CLIENT_ID!;
+    const scope = encodeURIComponent("profile email");
+
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=${scope}&access_type=offline&prompt=consent`;
+
+    return reply.redirect(url);
+}
+
+export async function callbackGoogleController(req: FastifyRequest, reply: FastifyReply) {
+    const { code, error, error_description } = req.query as { 
+        code?: string;
+        error?: string;
+        error_description?: string;
+    };
+
+    const frontendRedirectBase = "http://localhost:5173/#/login"; // Adjust if needed
+
+    if (error) {
+        console.warn("Google OAuth cancelled or failed:", error, error_description);
+
+        const redirectUrl = new URL(frontendRedirectBase);
+        redirectUrl.searchParams.set("error", error);
+        if (error_description) {
+            redirectUrl.searchParams.set("error_description", error_description);
+        }
+
+        return reply.redirect(redirectUrl.toString());
+    }
+
+    if (!code) {
+        const redirectUrl = new URL(frontendRedirectBase);
+        redirectUrl.searchParams.set("error", "missing_code");
+
+        return reply.redirect(redirectUrl.toString());
+    }
+
+    try {
+        const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({
+                code,
+                client_id: process.env.GOOGLE_CLIENT_ID!,
+                client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+                redirect_uri: process.env.GOOGLE_REDIRECT_URI!,
+                grant_type: "authorization_code"
+            })
+        });
+
+        if (!tokenRes.ok) {
+        const errBody = await tokenRes.text();
+        console.error("Token exchange failed:", tokenRes.status, errBody);
+        throw new Error(`Failed to exchange code for token: ${errBody}`);
+        }
+
+        const tokenData = await tokenRes.json();
+        const accessToken = tokenData.access_token;
+
+        const userInfoRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+            headers: {
+                Authorization: `Bearer ${accessToken}`
+            }
+        });
+
+        if (!userInfoRes.ok) {
+        const errBody = await userInfoRes.text();
+        console.error("User info fetch failed:", userInfoRes.status, errBody);
+        throw new Error(`Failed to fetch user profile: ${errBody}`);
+        }
+
+        const googleUser = await userInfoRes.json();
+
+        const user = await findOrCreateUserFromGoogle(googleUser);
+
+        const { token, refreshToken } = createTokensLogin(user);
+
+        reply.setCookie("refreshToken", refreshToken, {
+            httpOnly: true,
+            secure: false,
+            sameSite: "lax",
+            path: "/auth/refresh",
+            maxAge: 7 * 24 * 60 * 60,
+        });
+
+        return reply.redirect("http://localhost:5173/#/");
+
+    } catch (err) {
+        console.error("Google OAuth error:", err);
+        return reply.code(500).send({ error: "Google login failed" });
     }
 }

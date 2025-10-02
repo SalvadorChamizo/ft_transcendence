@@ -1,6 +1,7 @@
 import { getElement, setText, hideElement, showElement } from "./loginDOM";
 import { getAccessToken, setAccessToken, clearAuth, setTemp2FA } from "../../state/authState";
 import { handleTwoFA } from "./twofa";
+import { render } from "../../main";
 
 export async function login(username: string, password: string) {
     const result = getElement<HTMLParagraphElement>("#result");
@@ -52,8 +53,28 @@ export async function logout() {
       localStorage.removeItem("user");
       showElement(form);
       hideElement(logoutBtn);
-      setText(result, "⚠️ Logged out successfully")
+      setText(result, "⚠️ Logged out successfully");
+
+      if (window.location.hash === "#/login")
+        render();
+      else
+        window.location.hash = "#/login";
     } catch {
       setText(result, "⚠️ Failed to logout")
     }
+}
+
+export async function fetchCurrentUser(accessToken: string) {
+  const res = await fetch("http://localhost:8080/users/me", {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!res.ok)
+    throw new Error("Failed to fetch user");
+  
+  const data = res.json();
+  return data;
 }

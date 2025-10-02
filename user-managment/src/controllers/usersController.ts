@@ -37,6 +37,21 @@ export async function userGetterByUsername(req: FastifyRequest, reply: FastifyRe
 	}
 }
 
+export async function userGetterByEmail(req: FastifyRequest, reply: FastifyReply) {
+	const { email } = req.body as { email: string };
+
+	try {
+		const user = await getUserByEmail(email);
+		return reply.send({
+			id: user.id,
+			username: user.username,
+			email: user.email
+		});
+	} catch (err: any) {
+		return reply.code(400).send({ error: err.message });
+	}
+}
+
 export async function userGetterById(req: FastifyRequest, reply: FastifyReply) {
 	const { id } = req.body as { id: number };
 
@@ -66,4 +81,12 @@ export async function passwordControl(req: FastifyRequest, reply: FastifyReply) 
 	} catch (err: any) {
 		return reply.code(400).send({ error: err.message });
 	}
+}
+
+export async function getCurrentUserController(req: FastifyRequest, reply: FastifyReply) {
+	if (!req.user)
+		return reply.code(401).send({ error: "Not authenticated" });
+
+	const user = await getUserById(req.user.id);
+	return { user };
 }

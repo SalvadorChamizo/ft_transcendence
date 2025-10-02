@@ -37,3 +37,29 @@ export function setupLoginHandlers() {
     };
 
 }
+
+export function handleOAuthErrors(): void {
+  const searchParams = new URLSearchParams(window.location.search);
+  const error = searchParams.get("error");
+
+  if (error) {
+    let message = "An unknown error occurred during login.";
+
+    switch (error) {
+      case "access_denied":
+        message = "You cancelled the login or denied access.";
+        break;
+      case "missing_code":
+        message = "Login failed: missing authorization code.";
+        break;
+      case "oauth_failed":
+        message = "Something went wrong during the login process";
+        break;
+    }
+
+    alert(message);
+
+    const newUrl = window.location.origin + window.location.pathname + window.location.hash;
+    window.history.replaceState({}, document.title, newUrl);
+  }
+}
