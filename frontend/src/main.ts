@@ -2,10 +2,12 @@ import { router } from "./router";
 import { registerHandlers, autoRegisterUser } from "./pages/register"
 import { loginHandlers, autoLoginUser } from "./pages/Login/login"
 import { homeText } from "./pages/home"
-import { refreshAccessToken, tempToken, tempUserId, tempUsername } from "./state/authState"
+import { getAccessToken, refreshAccessToken, tempToken, tempUserId, tempUsername } from "./state/authState"
+import { pongHandlers } from "./pages/pong";
 import { handleTwoFA } from "./pages/Login/twofa";
-
-async function render() {
+import { handleOAuthErrors } from "./pages/Login/loginHandlers";
+import { fetchCurrentUser } from "./pages/Login/loginService";
+export async function render() {
 
     await refreshAccessToken();
 
@@ -32,16 +34,25 @@ async function render() {
     if (location.hash === "#/login")
         {
             const html = document.querySelector("html")!;
-            html.style.background = "black";
+            html.style.background = "#111111";
             //autoLoginUser("t", "t"); // auto login for testing purposes
+            const accessToken = getAccessToken();
+            if (accessToken) {
+                const user = fetchCurrentUser(accessToken);
+                localStorage.setItem("user", JSON.stringify(user));
+            }
             loginHandlers();
             registerHandlers();
+            handleOAuthErrors();
     }
     if (location.hash === "#/login/2fa")
     {
         const html = document.querySelector("html")!;
-        html.style.background = "black";
+        html.style.background = "#111111";
         await handleTwoFA(tempToken, tempUsername, tempUserId);
+	}
+	if (location.hash === "#/pong") {
+        pongHandlers();
     }
     if (location.hash === "" || location.hash === "#/" || location.hash === "#/home") {
         import("./pages/home").then(mod => mod.handleStars());

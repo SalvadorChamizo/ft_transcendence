@@ -62,6 +62,12 @@ export function getLoginHtml() : string {
                         <input type="text" id="signup-username" class="form-control" placeholder="Username">
                         <input type="password" id="signup-password" class="form-control" placeholder="Password">
                         <button type="submit" id="signup-button" class="login-submit-button">Signup</button>
+                            <div class="terms-wrapper">
+                            <label>
+                                <input type="checkbox" id="signup-terms" required>
+                                I agree to the <a href="/terms-and-conditions" target="_blank">Terms and Conditions</a>
+                            </label>
+                        </div>
                         <div class="login-link-wrapper">
                             <a class="login-nav-link-account active" data-tab="login-tab-panel" href="#">Already have an account? Log in</a>
                         </div>

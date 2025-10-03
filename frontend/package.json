@@ -2,12 +2,18 @@
   "name": "spa",
   "version": "1.0.0",
   "type": "module",
-    "scripts": {
-        "dev": "vite --host 0.0.0.0",
-        "build": "vite build",
-        "preview": "vite preview"
-    },
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.5"
+  },
   "devDependencies": {
+    "@types/node": "^20.14.10",
+    "typescript": "^5.5.3",
+    "vite": "^5.0.0",
     "tsx": "^4.20.4"
   }
 }

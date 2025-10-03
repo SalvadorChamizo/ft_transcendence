@@ -25,8 +25,13 @@ export function setupLoginHandlers() {
     const fortyTwoBtn = document.querySelector<HTMLButtonElement>("#fortyTwoLoginButton");
     fortyTwoBtn?.addEventListener("click", () => {
       window.location.href = "http://localhost:8080/auth/42/login";
-    })
+    });
     
+    const googleBtn = document.querySelector<HTMLButtonElement>("#googleLoginButton");
+    googleBtn?.addEventListener("click", () => {
+      window.location.href = "http://localhost:8080/auth/google/login";
+    });
+
     form.onsubmit = async (e) => {
       e.preventDefault();
   
@@ -36,4 +41,30 @@ export function setupLoginHandlers() {
       await login(username, password);
     };
 
+}
+
+export function handleOAuthErrors(): void {
+  const searchParams = new URLSearchParams(window.location.search);
+  const error = searchParams.get("error");
+
+  if (error) {
+    let message = "An unknown error occurred during login.";
+
+    switch (error) {
+      case "access_denied":
+        message = "You cancelled the login or denied access.";
+        break;
+      case "missing_code":
+        message = "Login failed: missing authorization code.";
+        break;
+      case "oauth_failed":
+        message = "Something went wrong during the login process";
+        break;
+    }
+
+    alert(message);
+
+    const newUrl = window.location.origin + window.location.pathname + window.location.hash;
+    window.history.replaceState({}, document.title, newUrl);
+  }
 }

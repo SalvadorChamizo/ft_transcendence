@@ -48,6 +48,26 @@ services:
     networks:
       - backend
 
+  livechat-service:
+    build: ./chat-service
+    expose:
+      - "8083"
+    networks:
+      - backend
+
+  pong-service:
+    build:
+      context: ./server-side-pong
+      dockerfile: Dockerfile
+    container_name: trascendence-pong-service
+    env_file:
+      - ./server-side-pong/.env
+    ports:
+      - "3000:3000"
+    networks:
+      - backend
+
+
 networks:
   backend:
     name: backend

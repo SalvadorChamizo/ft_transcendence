@@ -1,24 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Transcendence</title>
-        <link rel="stylesheet" href="style.css">
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
-    </head>
-    <body>
-        <header id="header">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Transcendence</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap"
+        rel="stylesheet">
+</head>
+
+<body>
+    <header id="header">
         <nav class="navbar" id="navbar">
             <div class="nav-container">
-                <ul class="nav-links">
+
+                <!-- Centered links -->
+                <ul class="nav-links nav-center">
                     <li><a class="hoverMe" href="#/">Home</a></li>
                     <li><a class="hoverMe" href="#/about">About</a></li>
-                    <li><a class="hoverMe" href="#/register">Register</a></li>
-                    <li><a class="hoverMe" href="#/login">Login</a></li>
                     <li><a class="hoverMe" href="#/health">Health</a></li>
                     <li><a class="hoverMe" href="#/ping">Ping</a></li>
+                    <li><a class="hoverMe" href="#/chat">Chat</a></li>
+                    <li><a class="hoverMe" href="#/pong">Pong</a></li>
                     <li class="dropdown">
                         <a href="#" class="dropbtn">More</a>
                         <ul class="dropdown-content">
@@ -26,16 +32,23 @@
                         </ul>
                     </li>
                 </ul>
+
+                <!-- Right links -->
+                <ul class="nav-links nav-right">
+                    <li><a class="hoverMe" href="#/login">Sign in / Sign up</a></li>
+                </ul>
+
                 <a href="javascript:void(0);" class="icon" onclick="toggleNav()">☰</a>
             </div>
         </nav>
-            <div id="home"></div>
+        <div id="home"></div>
     </header>
     <div id="app"></div>
-        <footer class="footer">
-            <img src="42-Malaga-Fundacion-Telefonica.png" alt="42 logo" class="footer-logo">
-            <p>Ft_transcendence 2025. All rights reserved.</p>
-        </footer>
-        <script type="module" src="/src/main.ts"></script>
-    </body>
+    <footer class="footer">
+        <img src="42-Malaga-Fundacion-Telefonica.png" alt="42 logo" class="footer-logo">
+        <p>Ft_transcendence 2025. All rights reserved.</p>
+    </footer>
+    <script type="module" src="/src/main.ts"></script>
+</body>
+
 </html>

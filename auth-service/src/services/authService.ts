@@ -85,5 +85,37 @@ export async function findOrCreateUserFrom42(intraUser: any) {
     }
     
     const newUser = await register.json();
+    createUser(newUser.username, "", newUser.email);
+    return newUser;
+}
+
+export async function findOrCreateUserFromGoogle(googleUser: any) {
+    const email = googleUser.email;
+    const username = googleUser.name;
+
+    const res = await fetch("http://user-management-service:8082/getUserByEmail", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+    });
+
+    if (res.ok) {
+        const user = await res.json();
+        return user;
+    }
+
+    const register = await fetch("http://user-management-service:8082/register42", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email }),
+    });
+
+    if (!register.ok) {
+        const errorText = await register.text();
+        throw new Error(`Failed to create user from Google login: ${errorText}`);
+    }
+    
+    const newUser = await register.json();
+    createUser(newUser.username, "", newUser.email);
     return newUser;
 }
