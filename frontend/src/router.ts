@@ -4,6 +4,7 @@ import { Register } from "./pages/register";
 import { Login, TwoFALogin } from "./pages/Login/login";
 import { Health, healthHandlers } from "./pages/health";
 import { Ping } from "./pages/ping";
+import { Settings } from "./pages/settings";
 
 export function router(route: string): string {
     switch (route) {
@@ -20,6 +21,8 @@ export function router(route: string): string {
             return Health();
         case "#/ping":
             return Ping();
+         case "#/settings":
+            return Settings();
         case "#/":
         default:
             return Home();
