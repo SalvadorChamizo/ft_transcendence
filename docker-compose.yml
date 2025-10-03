@@ -56,9 +56,7 @@ services:
       - backend
 
   pong-service:
-    build:
-      context: ./server-side-pong
-      dockerfile: Dockerfile
+    build: ./server-side-pong
     container_name: trascendence-pong-service
     env_file:
       - ./server-side-pong/.env

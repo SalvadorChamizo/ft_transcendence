@@ -21,14 +21,11 @@ export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
         return ;
 
     const authHeader = req.headers["authorization"];
+    if (!authHeader) {
+        return reply.code(401).send({ error: "Unauthorized: No token provided" });
+    }
 
-	if (authHeader && authHeader.startsWith("Bearer ")) {
-		token = authHeader.split(" ")[1];
-	} 
-	else if (req.query && (req.query as any).token) {
-		token = (req.query as any).token;
-	}
-
+    const token = authHeader.split(" ")[1]?.trim();
     if (!token) {
         return reply.code(401).send({ error: "Unauthorized: Malformed token" });
     }

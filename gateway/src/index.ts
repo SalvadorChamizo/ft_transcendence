@@ -33,7 +33,7 @@ await app.register(cors, {
 
 // Global hook (HTTP requests)
 // Nota: esto NO cubre el handshake WS (upgrade)
-app.addHook("preHandler", authMiddleware);
+//app.addHook("preHandler", authMiddleware);
 
 // Protected example
 app.get("/protected", async (req, reply) => {
