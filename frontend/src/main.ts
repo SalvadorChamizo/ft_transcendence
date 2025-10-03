@@ -3,6 +3,7 @@ import { registerHandlers, autoRegisterUser } from "./pages/register"
 import { loginHandlers, autoLoginUser } from "./pages/Login/login"
 import { homeText } from "./pages/home"
 import { getAccessToken, refreshAccessToken, tempToken, tempUserId, tempUsername } from "./state/authState"
+import { pongHandlers } from "./pages/pong";
 import { handleTwoFA } from "./pages/Login/twofa";
 import { handleOAuthErrors } from "./pages/Login/loginHandlers";
 import { fetchCurrentUser } from "./pages/Login/loginService";
@@ -49,6 +50,9 @@ export async function render() {
         const html = document.querySelector("html")!;
         html.style.background = "#111111";
         await handleTwoFA(tempToken, tempUsername, tempUserId);
+	}
+	if (location.hash === "#/pong") {
+        pongHandlers();
     }
     if (location.hash === "" || location.hash === "#/" || location.hash === "#/home") {
         import("./pages/home").then(mod => mod.handleStars());

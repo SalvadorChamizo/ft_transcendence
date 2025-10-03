@@ -1,0 +1,260 @@
+import { WebSocket } from '@fastify/websocket';
+
+// Types for WebSocket messages
+interface WebSocketMessage {
+    type: 'message' | 'user_connected' | 'user_disconnected' | 'typing' | 'stop_typing' | 'identify';
+    userId: number;
+    conversationId?: number;
+    content?: string;
+    timestamp?: string;
+    recipientId?: number;
+    data?: any;
+}
+
+// Type for user connection
+interface UserConnection {
+    userId: number;
+    websocket: WebSocket;
+    lastActivity: Date;
+}
+
+// Global state for WebSocket connections
+const connectedUsers = new Map<number, UserConnection>();
+
+// Map for tracking typing status: "conversationId-userId" -> timestamp
+const typingUsers = new Map<string, number>();
+
+// Connection Management Functions
+export function addUserConnection(userId: number, websocket: WebSocket): void {
+    const connection: UserConnection = {
+        userId,
+        websocket,
+        lastActivity: new Date()
+    };
+    
+    connectedUsers.set(userId, connection);
+    console.log(`User ${userId} connected. Total connections: ${connectedUsers.size}`);
+    
+    // Notify other users that this user connected
+    notifyUserConnected(userId);
+}
+
+export function removeUserConnection(userId: number): void {
+    const connection = connectedUsers.get(userId);
+    if (connection) {
+        connectedUsers.delete(userId);
+        console.log(`User ${userId} disconnected. Total connections: ${connectedUsers.size}`);
+        
+        // Clean up typing status
+        cleanupUserTyping(userId);
+        
+        // Notify other users that this user disconnected
+        notifyUserDisconnected(userId);
+    }
+}
+
+export function getUserConnection(userId: number): UserConnection | undefined {
+    return connectedUsers.get(userId);
+}
+
+export function getConnectedUsers(): number[] {
+    return Array.from(connectedUsers.keys());
+}
+
+// Message Sending Functions
+export function sendToUser(userId: number, message: WebSocketMessage): boolean {
+    try {
+        const connection = connectedUsers.get(userId);
+        if (connection && connection.websocket.readyState === WebSocket.OPEN) {
+            connection.websocket.send(JSON.stringify(message));
+            connection.lastActivity = new Date();
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error(`Error sending message to user ${userId}:`, error);
+        // Remove dead connection
+        removeUserConnection(userId);
+        return false;
+    }
+}
+
+export function sendToConversation(userId1: number, userId2: number, message: WebSocketMessage): void {
+    // Send to both participants in the conversation
+    sendToUser(userId1, message);
+    sendToUser(userId2, message);
+}
+
+export function broadcastToAll(message: WebSocketMessage, excludeUserId?: number): void {
+    connectedUsers.forEach((connection, userId) => {
+        if (excludeUserId && userId === excludeUserId) {
+            return; // Skip excluded user
+        }
+        sendToUser(userId, message);
+    });
+}
+
+// Chat-specific Functions
+export function notifyNewMessage(fromUserId: number, toUserId: number, messageData: any): void {
+    const message: WebSocketMessage = {
+        type: 'message',
+        userId: fromUserId,
+        recipientId: toUserId,
+        content: messageData.content,
+        timestamp: new Date().toISOString(),
+        conversationId: messageData.conversation_id
+    };
+    
+    // Send to recipient only (sender will see it in their UI)
+    sendToUser(toUserId, message);
+}
+
+export function notifyUserTyping(fromUserId: number, toUserId: number, conversationId: number): void {
+    const typingKey = `${conversationId}-${fromUserId}`;
+    typingUsers.set(typingKey, Date.now());
+    
+    const message: WebSocketMessage = {
+        type: 'typing',
+        userId: fromUserId,
+        conversationId,
+        timestamp: new Date().toISOString()
+    };
+    
+    sendToUser(toUserId, message);
+}
+
+export function notifyUserStoppedTyping(fromUserId: number, toUserId: number, conversationId: number): void {
+    const typingKey = `${conversationId}-${fromUserId}`;
+    typingUsers.delete(typingKey);
+    
+    const message: WebSocketMessage = {
+        type: 'stop_typing',
+        userId: fromUserId,
+        conversationId,
+        timestamp: new Date().toISOString()
+    };
+    
+    sendToUser(toUserId, message);
+}
+
+export function notifyUserConnected(userId: number): void {
+    const message: WebSocketMessage = {
+        type: 'user_connected',
+        userId,
+        timestamp: new Date().toISOString()
+    };
+    
+    // Notify all other connected users
+    broadcastToAll(message, userId);
+}
+
+export function notifyUserDisconnected(userId: number): void {
+    const message: WebSocketMessage = {
+        type: 'user_disconnected',
+        userId,
+        timestamp: new Date().toISOString()
+    };
+    
+    // Notify all other connected users
+    broadcastToAll(message, userId);
+}
+
+// Helper Functions
+function cleanupUserTyping(userId: number): void {
+    // Remove all typing status for this user
+    const keysToDelete: string[] = [];
+    typingUsers.forEach((timestamp, key) => {
+        if (key.endsWith(`-${userId}`)) {
+            keysToDelete.push(key);
+        }
+    });
+    
+    keysToDelete.forEach(key => {
+        typingUsers.delete(key);
+    });
+}
+
+// WebSocket Event Handlers
+export function handleWebSocketConnection(websocket: WebSocket): void {
+    console.log('New WebSocket connection established');
+    
+    // Send welcome message
+    const welcomeMessage: WebSocketMessage = {
+        type: 'user_connected',
+        userId: 0, // System message
+        content: 'Please identify yourself by sending {"type": "identify", "userId": YOUR_USER_ID}',
+        timestamp: new Date().toISOString()
+    };
+    
+    try {
+        websocket.send(JSON.stringify(welcomeMessage));
+    } catch (error) {
+        console.error('Error sending welcome message:', error);
+    }
+}
+
+export function handleWebSocketMessage(websocket: WebSocket, messageData: string): void {
+    try {
+        const message: WebSocketMessage = JSON.parse(messageData);
+        
+        switch (message.type) {
+            case 'identify':
+                // User identifying themselves
+                if (message.userId) {
+                    addUserConnection(message.userId, websocket);
+                }
+                break;
+                
+            case 'typing':
+                // User started typing
+                if (message.userId && message.recipientId && message.conversationId) {
+                    notifyUserTyping(message.userId, message.recipientId, message.conversationId);
+                }
+                break;
+                
+            case 'stop_typing':
+                // User stopped typing
+                if (message.userId && message.recipientId && message.conversationId) {
+                    notifyUserStoppedTyping(message.userId, message.recipientId, message.conversationId);
+                }
+                break;
+                
+            default:
+                console.log(`Unknown message type: ${message.type}`);
+        }
+    } catch (error) {
+        console.error('Error handling WebSocket message:', error);
+    }
+}
+
+export function handleWebSocketDisconnection(websocket: WebSocket): void {
+    // Find and remove the disconnected user
+    let disconnectedUserId: number | null = null;
+    
+    connectedUsers.forEach((connection, userId) => {
+        if (connection.websocket === websocket) {
+            disconnectedUserId = userId;
+        }
+    });
+    
+    if (disconnectedUserId) {
+        removeUserConnection(disconnectedUserId);
+    }
+}
+
+// Cleanup function for periodic maintenance
+export function cleanupStaleConnections(): void {
+    const now = Date.now();
+    const staleThreshold = 5 * 60 * 1000; // 5 minutes
+    
+    connectedUsers.forEach((connection, userId) => {
+        if (now - connection.lastActivity.getTime() > staleThreshold) {
+            if (connection.websocket.readyState !== WebSocket.OPEN) {
+                removeUserConnection(userId);
+            }
+        }
+    });
+}
+
+// Auto-cleanup every 5 minutes
+setInterval(cleanupStaleConnections, 5 * 60 * 1000);

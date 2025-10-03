@@ -29,8 +29,8 @@ export function Home(): string {
             </div>
             <div>
             <div class="card">
-                <h2>Card Title 2</h2>
-                <p>This is the second card's content.</p>
+                <h2>Local Pong</h2>
+                <p>1 vs 1</p>
             </div>
             <div class="card">
                 <h2>Card Title 3</h2>

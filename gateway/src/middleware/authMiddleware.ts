@@ -21,11 +21,14 @@ export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
         return ;
 
     const authHeader = req.headers["authorization"];
-    if (!authHeader) {
-        return reply.code(401).send({ error: "Unauthorized: No token provided" });
-    }
 
-    const token = authHeader.split(" ")[1]?.trim();
+	if (authHeader && authHeader.startsWith("Bearer ")) {
+		token = authHeader.split(" ")[1];
+	} 
+	else if (req.query && (req.query as any).token) {
+		token = (req.query as any).token;
+	}
+
     if (!token) {
         return reply.code(401).send({ error: "Unauthorized: Malformed token" });
     }
@@ -37,6 +40,7 @@ export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
             iat?: number;
             exp?: number;
         };
+        console.log(`[Auth Middleware] Token validated successfully for user: ${decoded.username}, URL: ${req.url}`); // LOG ADDED
 
         req.user = decoded;
 

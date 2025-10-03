@@ -1,0 +1,1319 @@
+Suscríbete a DeepL Pro para poder traducir archivos de mayor tamaño.
+Más información disponible en www.DeepL.com/pro.
+
+ft_transcendencia
+Sorpresa.
+
+Resumen:
+Este proyecto consiste en realizar tareas que nunca antes has hecho.
+Recuerda cómo empezaste en informática.
+Mírate ahora: ¡es hora de brillar!
+Versión: 18.0
+
+Contenido
+I
+
+Preámbulo
+
+2
+
+II
+
+Objetivos
+
+3
+
+III
+
+Instrucciones de IA
+
+4
+
+IV
+IV.1
+IV.2
+IV.3
+IV.4
+
+Parte obligatoria
+6
+Resumen . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+6
+Requisitos técnicos mínimos . . . . . . . . . . . . . . . . . . . . . .
+7
+Juego . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+8
+Cuestiones de seguridad..........................................................................................................10
+
+V.1
+V.2
+V.3
+V.4
+V.5
+V.6
+V.7
+V.8
+V.9
+V.10
+
+Módulos
+11
+Descripción general.................................................................................................................12
+Web.........................................................................................................................................14
+Gestión de usuarios ...............................................................................................................15
+Jugabilidad y experiencia del usuario .....................................................................................18
+Algoritmo de IA.......................................................................................................................20
+Ciberseguridad ........................................................................................................................22
+Devops ....................................................................................................................................24
+Gráficos...................................................................................................................................26
+Accesibilidad...........................................................................................................................27
+Pong del lado del servidor ......................................................................................................29
+
+V
+
+VI
+
+Parte extra
+
+31
+
+VII
+
+Presentación y evaluación por pares
+
+32
+
+1
+
+Capítulo I
+Preámbulo
+
+2
+
+Capítulo II
+Objetivos
+Este proyecto es una sorpresa.
+Al llegar al final de tu Common Core, has desarrollado sólidas habilidades de adaptación y
+resolución de problemas. Este proyecto te enfrentará, de forma intencionada, a tecnologías que quizá
+te sean desconocidas. Una vez más, tendrás que adaptarte, descubrir, explorar y experimentar para
+crear el software esperado.
+El proyecto incluye una parte obligatoria y una serie de módulos sobre diversos temas, tal y como
+se detalla a continuación en esta asignatura. Podrás elegir los módulos que desees entre una amplia
+lista, pero cada módulo y elemento obligatorio contiene restricciones técnicas que no puedes eludir.
+Por lo tanto, puedes seleccionar los temas que te gusten, pero no las tecnologías que te gusten. Se trata
+de una elección pedagógica deliberada.
+Este proyecto no pretende ser un portafolio para unas prácticas u otra experiencia profesional. Su
+objetivo es revelar tu capacidad para familiarizarte y completar una tarea compleja utilizando una
+tecnología desconocida. Esta situación se dará inevitablemente durante tu carrera profesional, y
+nuestro objetivo es desarrollar tu confianza en ti mismo ante tales situaciones.
+Especialmente en este proyecto tan grande y largo, te animamos a que leas atentamente todo
+el tema, consideres varias estrategias posibles y pienses en tu diseño antes de empezar a programar nada.
+Algunos módulos pueden depender de otros, y algunos módulos pueden entrar en conflicto con otros.
+Ft_transcendence te planteará muchas dudas y requerirá muchas decisiones difíciles. Actúa con
+prudencia :-)
+Además, este proyecto es sin duda a largo plazo, y un camino equivocado te llevará a una enorme
+pérdida de tiempo. Tus decisiones en materia de gestión de proyectos y gestión de equipos tendrán un
+fuerte impacto en tu calendario y tus resultados. Existen muchos enfoques y herramientas para
+ayudarte en estos temas.
+¡Buena suerte y diviértete jugando al Pong!
+
+3
+
+Capítulo III
+Instrucciones de IA
+● Contexto
+Durante tu proceso de aprendizaje, la IA puede ayudarte con muchas tareas diferentes. Tómate tu
+tiempo para explorar las diversas capacidades de las herramientas de IA y cómo pueden ayudarte en
+tu trabajo. Sin embargo, utilízalas siempre con precaución y evalúa críticamente los resultados. Ya se
+trate de código, documentación, ideas o explicaciones técnicas, nunca puedes estar completamente
+seguro de que tu pregunta esté bien formulada o de que el contenido generado sea preciso. Tus
+compañeros son un recurso valioso para ayudarte a evitar errores y puntos ciegos.
+
+● Mensaje principal
+☛ Utiliza la IA para reducir las tareas repetitivas o tediosas.
+☛ Desarrolle habilidades de sugerencia, tanto de codificación como de no codificación, que le
+beneficiarán en su futura carrera profesional.
+☛ Aprenda cómo funcionan los sistemas de IA para anticipar y evitar mejor los riesgos comunes,
+los sesgos y las cuestiones éticas.
+☛ Continúe desarrollando sus habilidades técnicas y de liderazgo trabajando con sus compañeros.
+☛ Utilice únicamente contenido generado por IA que comprenda completamente y del que pueda
+responsabilizarse.
+
+● Normas para el alumno:
+• Debes dedicar tiempo a explorar las herramientas de IA y comprender cómo funcionan, para
+poder utilizarlas de forma ética y reducir los posibles sesgos.
+
+• Debes reflexionar sobre tu problema antes de escribir la consulta, ya que esto te ayudará a
+redactar consultas más claras, detalladas y relevantes utilizando un vocabulario preciso.
+
+• Debes desarrollar el hábito de comprobar, revisar, cuestionar y probar sistemáticamente todo lo
+que genere la IA.
+
+• Siempre debes buscar la revisión por pares, no confíes únicamente en tu propia validación.
+4
+
+ft_transcendence
+
+Sorpresa.
+
+● Resultados de la fase:
+• Desarrolle habilidades de sugerencia tanto para fines generales como específicos de cada ámbito.
+• Aumentar la productividad mediante el uso eficaz de herramientas de IA.
+• Sigue reforzando el pensamiento computacional, la resolución de problemas, la adaptabilidad y
+la colaboración.
+
+● Comentarios y ejemplos:
+• Te encontrarás regularmente con situaciones (exámenes, evaluaciones y otras) en las que
+deberás demostrar tu comprensión real. Prepárate y sigue desarrollando tus habilidades técnicas
+e interpersonales.
+
+• Explicar tu razonamiento y debatir con tus compañeros a menudo revela lagunas en tu
+comprensión. Haz del aprendizaje entre compañeros una prioridad.
+
+• Las herramientas de IA suelen carecer de tu contexto específico y tienden a proporcionar
+respuestas genéricas. Tus compañeros, que comparten tu entorno, pueden ofrecerte información
+más relevante y precisa.
+
+• Mientras que la IA tiende a generar la respuesta más probable, tus compañeros pueden aportar
+perspectivas alternativas y matices valiosos. Confía en ellos como punto de control de calidad.
+
+✓ Buena práctica:
+Le pregunto a la IA: «¿Cómo pruebo una función de clasificación?». Me da algunas ideas. Las
+pruebo y reviso los resultados con un compañero. Juntos perfeccionamos el enfoque.
+✗ Mala práctica:
+Le pido a la IA que escriba una función completa y la copio y pego en mi proyecto. Durante la
+evaluación entre compañeros, no puedo explicar qué hace ni por qué. Pierdo credibilidad y
+suspendo mi proyecto.
+
+✓ Buena práctica:
+Utilizo la IA para ayudar a diseñar un analizador sintáctico. Luego repaso la lógica con un
+compañero. Detectamos dos errores y lo reescribimos juntos, mejor, más limpio y totalmente
+comprensible.
+✗ Mala práctica:
+Dejo que Copilot genere mi código para una parte clave de mi proyecto. Se compila, pero no
+puedo explicar cómo maneja las tuberías. Durante la evaluación, no logro justificarlo y suspendo
+mi proyecto.
+
+5
+
+Capítulo IV Parte
+obligatoria
+¡Este proyecto consiste en crear un sitio web para el gran concurso Pong!
+
+IV.1
+
+Descripción
+
+Tu software ofrecerá una interfaz de usuario agradable y capacidades multijugador en tiempo real que
+permitirán jugar al Pong con todos tus amigos.
+
+• En primer lugar, tu proyecto debe cumplir con las directrices obligatorias como requisito
+mínimo (véase la siguiente sección), que solo representarán una pequeña parte de la nota final.
+
+• La segunda parte de esta asignatura ofrecerá módulos adicionales que pueden sustituir o
+complementar la parte obligatoria.
+En esta asignatura, te encontrarás con palabras resaltadas en verde. Representan opciones
+tecnológicas que evolucionarán con el tiempo. Presta mucha atención a la versión de la asignatura.
+• Se prohíbe el uso de bibliotecas o herramientas que proporcionen
+una solución inmediata y completa para una función o un módulo
+completo.
+
+• Se debe seguir cualquier instrucción directa relativa al uso (se
+puede, se debe, no se puede) de una biblioteca o herramienta de
+terceros.
+
+• Se permite el uso de una pequeña biblioteca o herramienta que
+
+resuelva una tarea sencilla y única que represente un subcomponente
+de una función o módulo más amplio.
+
+• Durante la evaluación, el equipo justificará cualquier uso de
+
+bibliotecas o herramientas que no esté explícitamente aprobado por
+las directrices del proyecto y que no contradiga las restricciones
+del mismo.
+
+• Durante la evaluación, el evaluador se encargará de determinar si
+el uso de una biblioteca o herramienta específica es legítimo (y
+está permitido) o si, en esencia, resuelve toda una función o
+módulo (y, por lo tanto, está prohibido).
+
+6
+
+ft_transcendence
+
+IV.2
+
+Sorpresa.
+
+Requisitos técnicos mínimos
+
+Tu proyecto debe cumplir las siguientes normas:
+
+Algunas de estas restricciones pueden anularse mediante la elección de
+módulos específicos.
+
+• Usted es libre de desarrollar el sitio, con o sin un backend.
+◦ Si decide incluir un backend, este debe estar escrito en PHP puro sin marcos de trabajo.
+Sin embargo, este requisito puede anularse mediante el módulo Framework.
+
+◦ Si su backend o framework utiliza una base de datos, debe seguir las restricciones del
+módulo Base de datos.
+
+• El frontend debe desarrollarse utilizando Typescript como código base. Sin embargo, este
+requisito puede modificarse a través del módulo FrontEnd.
+
+• Su sitio web debe ser una aplicación de una sola página. El usuario debe poder utilizar los
+botones Atrás y Adelante del navegador.
+
+• Su sitio web debe ser compatible con la última versión estable y actualizada de
+Mozilla Firefox . Por supuesto, ¡puede ser compatible con otros navegadores web!
+
+• El usuario no debe encontrar errores ni advertencias no gestionados al navegar por el sitio web.
+• Debe utilizar Docker para ejecutar su sitio web. Todo debe iniciarse con una sola línea de
+comando para ejecutar un contenedor autónomo.
+
+Existen varias tecnologías de contenedores: Docker, containerd, podman, etc.
+En los ordenadores de su campus, puede acceder al software del contenedor en
+modo sin root por motivos de seguridad. Esto podría dar lugar a las
+siguientes restricciones adicionales:
+
+• Su tiempo de ejecución debe estar ubicado en /goinfre o /sgoinfre.
+• No puede utilizar «volúmenes de montaje vinculado» entre el host y
+el contenedor si se utilizan UID no root en el contenedor.
+
+Dependiendo de los requisitos actuales del tema (resaltados en verde arriba)
+y de la configuración local en clústeres, es posible que debas adoptar
+diferentes estrategias, tales como: solución de contenedor en máquina
+virtual, reconstruir tu contenedor después de los cambios, crear tu propia
+imagen con root como UID único.
+
+7
+
+ft_transcendence
+
+IV.3
+
+Sorpresa.
+
+Juego
+
+El objetivo principal de este sitio web es jugar al Pong contra otros jugadores.
+
+• Los usuarios deben poder participar en un juego de Pong en vivo contra otro jugador
+directamente en el sitio web. Ambos jugadores utilizarán el mismo teclado. El módulo de
+jugadores remotos puede mejorar esta funcionalidad con jugadores remotos.
+
+• Un jugador debe poder jugar contra otro, y también debe haber disponible un sistema de
+torneos. Este torneo estará formado por varios jugadores que podrán turnarse para jugar entre
+ellos. Tienes flexibilidad a la hora de implementar el torneo, pero debe mostrar claramente
+quién juega contra quién y el orden de juego.
+
+• Se requiere un sistema de registro: al comienzo de un torneo, cada jugador debe
+introducir su alias. Los alias se restablecerán cuando comience un nuevo torneo. Sin
+embargo, este requisito se puede modificar utilizando el módulo de gestión de usuarios
+estándar. Nota: Esto no implica la creación de una cuenta de usuario.
+En la versión predeterminada (obligatoria), los usuarios simplemente introducen un alias manualmente.
+
+• Debe haber un sistema de emparejamiento: el sistema del torneo debe organizar el
+emparejamiento de los participantes y anunciar el siguiente partido.
+
+• Todos los jugadores deben cumplir las mismas reglas, incluida la velocidad idéntica de la pala.
+Este requisito también se aplica cuando se utiliza la IA; la IA debe mostrar la misma velocidad
+que un jugador normal.
+
+• El juego debe cumplir con las restricciones predeterminadas de la interfaz (como se describe
+anteriormente), o bien se puede optar por utilizar el módulo FrontEnd o sustituirlo por el
+módulo Graphics. Aunque la estética visual puede variar, el juego debe capturar la esencia del
+Pong original (1972).
+
+8
+
+ft_transcendence
+
+Sorpresa.
+
+• Se prohíbe el uso de bibliotecas o herramientas que
+
+proporcionen una solución inmediata y completa para una
+función o módulo completo.
+
+• Se debe seguir cualquier instrucción directa relativa al uso (se
+puede, se debe, no se puede) de una biblioteca o herramienta de
+terceros.
+
+• Se permite el uso de una pequeña biblioteca o herramienta que
+resuelva una tarea sencilla y única, que represente un
+subcomponente de una función o módulo más amplio.
+
+• Durante la evaluación, el equipo justificará cualquier uso de una
+
+biblioteca o herramienta que no esté explícitamente aprobado por las
+directrices del proyecto y que no contradiga las restricciones del
+mismo.
+
+• Durante la evaluación, el evaluador determinará si el uso de una
+
+biblioteca o herramienta específica es legítimo (y está permitido) o
+si, en esencia, resuelve toda una función o módulo (y, por lo tanto,
+está prohibido).
+
+• El sistema del torneo debe funcionar con o sin registro
+de usuarios.
+
+◦ Sin el módulo de gestión de usuarios estándar: los
+usuarios introducen manualmente un alias.
+
+◦ Con el módulo: los alias se vinculan a las cuentas
+
+registradas, lo que permite mantener estadísticas y listas
+de amigos.
+
+El módulo amplía la lógica del torneo, no la sustituye.
+
+9
+
+ft_transcendence
+
+IV.4
+
+Sorpresa.
+
+Cuestiones de seguridad
+
+Para crear un sitio web funcional, hay varias cuestiones de seguridad que debes abordar:
+
+• Cualquier contraseña almacenada en su base de datos, si procede, debe estar cifrada.
+• Su sitio web debe estar protegido contra inyecciones SQL/ataques XSS.
+• Si tiene un backend o cualquier otra función, es obligatorio habilitar una conexión HTTPS para
+todos los aspectos (utilice wss en lugar de ws, por ejemplo).
+
+• Debe implementar mecanismos de validación para los formularios y cualquier entrada del
+usuario, ya sea en la página base si no se utiliza un backend, o en el lado del servidor si se
+emplea un backend.
+
+• Independientemente de si decide implementar el módulo de seguridad JWT con 2FA, es
+esencial dar prioridad a la seguridad de su sitio web. Por ejemplo, si decide crear una API,
+asegúrese de que sus rutas estén protegidas. Incluso si decide no utilizar tokens JWT, la
+seguridad del sitio sigue siendo fundamental.
+
+Asegúrese de utilizar un algoritmo de hash de contraseñas seguro.
+
+Por razones obvias de seguridad, cualquier credencial, clave API, variable
+de entorno, etc., debe guardarse localmente en un archivo .env y ser
+ignorada
+por git. Las credenciales almacenadas públicamente provocarán el fracaso de su
+proyecto.
+
+10
+
+Capítulo V
+Módulos
+Ahora que ha completado el 25 % del proyecto, ¡enhorabuena!
+Con un sitio w e b básico funcional, el siguiente paso es elegir los módulos para seguir mejorándolo.
+Para completar el 100 % del proyecto, se requiere un mínimo de 7 módulos principales. Es
+fundamental revisar cuidadosamente cada módulo, ya que puede ser necesario modificar tu sitio web
+básico. Por lo tanto, te recomendamos encarecidamente que leas detenidamente todo este tema.
+• Se prohíbe el uso de bibliotecas o herramientas que
+
+proporcionen una solución inmediata y completa para una
+función o módulo completo.
+
+• Se deben seguir todas las instrucciones directas relativas al uso (se
+puede, se debe, no se puede) de una biblioteca o herramienta de
+terceros.
+
+• Se permite el uso de una pequeña biblioteca o herramienta que
+resuelva una tarea sencilla y única, que represente un
+subcomponente de una función o módulo más amplio.
+
+• Durante la evaluación, el equipo justificará cualquier uso de una
+
+biblioteca o herramienta que no haya sido aprobado explícitamente por
+el sujeto y que no contradiga las restricciones del mismo.
+
+• Durante la evaluación, el evaluador determinará si el uso de una
+
+biblioteca o herramienta específica es legítimo (y está permitido) o
+si, en esencia, resuelve toda una función o módulo (y, por lo tanto,
+está prohibido).
+
+Dos módulos menores cuentan como un módulo mayor.
+
+11
+
+ft_transcendence
+
+V.1
+
+Sorpresa.
+
+Descripción
+
+• Web
+◦ Módulo principal: Utilizar un marco para crear el backend.
+◦ Módulo secundario: Utilizar un marco de trabajo o un conjunto de herramientas para crear el
+frontend.
+
+◦ Módulo secundario: Utilizar una base de datos para el backend.
+◦ Módulo principal: Almacenar la puntuación de un torneo en la cadena de bloques.
+• Gestión de usuarios
+◦ Módulo principal: gestión estándar de usuarios, autenticación, usuarios en todos los
+torneos.
+
+◦ Módulo principal: Implementación de una autenticación remota.
+Jugabilidad y experiencia del usuario
+
+◦ Módulo principal: Jugadores remotos.
+◦ Módulo principal: Multijugador (más de 2 jugadores en la misma partida).
+◦ Módulo principal: añadir otra partida con historial de usuario y emparejamiento.
+◦ Módulo secundario: Opciones de personalización del juego.
+◦ Módulo principal: Chat en vivo.
+• AI-Algo
+◦ Módulo principal: Introducir un oponente de IA.
+◦ Módulo secundario: Paneles de estadísticas de usuarios y juegos.
+• Ciberseguridad
+◦ Módulo principal: Implementar WAF/ModSecurity con una configuración reforzada y
+HashiCorp Vault para la gestión de secretos.
+
+◦ Módulo secundario: Opciones de cumplimiento del RGPD con anonimización de
+usuarios, gestión de datos locales y eliminación de cuentas.
+
+◦ Módulo principal: Implementar la autenticación de dos factores (2FA) y JWT.
+• Devops
+◦ Módulo principal: Configuración de la infraestructura para la gestión de registros.
+◦ Módulo secundario: Sistema de supervisión.
+◦ Módulo principal: Diseño del backend como microservicios.
+
+12
+
+ft_transcendence
+
+Sorpresa.
+
+• Gráficos
+◦ Módulo principal: Uso de técnicas 3D avanzadas.
+• Accesibilidad
+◦ Módulo secundario: Compatibilidad con todos los dispositivos.
+◦ Módulo secundario: Ampliación de la compatibilidad con navegadores.
+◦ Módulo secundario: Compatibilidad con varios idiomas.
+◦ Módulo secundario: añadir funciones de accesibilidad para usuarios con discapacidad visual.
+◦ Módulo menor: integración de renderización del lado del servidor (SSR).
+• Pong del lado del servidor
+◦ Módulo principal: sustituir el Pong básico por Pong del lado del servidor e implementar
+una API.
+
+◦ Módulo principal: Habilitar el juego Pong a través de la CLI para usuarios web con
+integración API.
+
+13
+
+ft_transcendence
+
+V.2
+
+Sorpresa.
+
+Web
+
+Estos módulos permiten la integración de funciones web avanzadas en tu juego Pong.
+
+• Módulo principal: Utiliza un marco de trabajo para crear el backend.
+En este módulo principal, se requiere el uso de un marco web específico para el desarrollo del
+backend: Fastify con Node.js .
+Puede crear el backend sin utilizar las restricciones de este módulo
+utilizando el lenguaje backend predeterminado (como se especifica
+anteriormente en la parte obligatoria). Sin embargo, este módulo solo será
+válido si cumple sus requisitos.
+
+• Módulo menor: utilice un marco o kit de herramientas para crear el front-end.
+El desarrollo del front-end debe utilizar Tailwind CSS además de Type-script, y nada más.
+Puede crear un front-end sin utilizar las restricciones de este módulo
+utilizando las directivas predeterminadas del front-end (como se especifica
+anteriormente en la parte obligatoria). Sin embargo, este módulo solo será
+válido si se cumplen sus requisitos.
+
+• Módulo menor: utilice una base de datos para el back-end, y mucho más.
+La base de datos designada para todas las instancias de DB en su proyecto es SQLite. Esta
+elección garantiza la coherencia y compatibilidad de los datos en todos los componentes del
+proyecto y puede ser un requisito previo para otros módulos, como el módulo Framework
+backend.
+
+• Módulo principal: almacenar la puntuación de un torneo en la cadena de bloques.
+Este módulo principal se centra en implementar una función dentro del sitio web de Pong para
+almacenar de forma segura las puntuaciones de los torneos en una cadena de bloques. Es
+esencial aclarar que, con fines de desarrollo y prueba, utilizaremos un entorno de cadena de
+bloques de prueba. La cadena de bloques elegida para esta implementación es Avalanche , y
+Solidity será el lenguaje de programación utilizado para el desarrollo de contratos inteligentes.
+
+◦ Integración de la cadena de bloques: El objetivo principal de este módulo es integrar a la
+perfección la tecnología de cadena de bloques, concretamente Avalanche , en el sitio
+web de Pong. Esta integración garantiza el almacenamiento seguro e inmutable de las
+puntuaciones de los torneos, lo que proporciona a los jugadores un registro transparente y
+a prueba de manipulaciones de sus logros en el juego.
+
+◦ Solidity
+Solidity
+
+Contratos inteligentes: Para interactuar con la cadena de bloques,
+desarrollaremos contratos inteligentes. Estos contratos se encargarán de
+
+registrar,
+gestionar y recuperar las puntuaciones de los torneos.
+
+◦ Cadena de bloques de prueba: Como se ha mencionado anteriormente, se utilizará una
+cadena de bloques de prueba con fines de desarrollo y prueba. Esto garantiza que todo lo
+relacionado con la cadena de bloques
+14
+
+ft_transcendence
+
+Sorpresa.
+
+se validen exhaustivamente sin los riesgos asociados a una cadena de bloques en
+funcionamiento.
+
+◦ Interoperabilidad: este módulo puede tener dependencias de otros módulos, en particular
+del módulo Backend Framework. La integración de la funcionalidad blockchain puede
+requerir ajustes en el backend para adaptarse a las interacciones con la cadena de bloques.
+Con la implementación de este módulo, nuestro objetivo es mejorar el sitio web de Pong
+mediante la introducción de un sistema de almacenamiento de puntuaciones basado en
+blockchain. Los usuarios se beneficiarán de la mayor seguridad y transparencia, lo que
+garantizará la integridad de sus puntuaciones en los juegos. El módulo hace hincapié en el uso
+de un entorno de prueba de blockchain para minimizar los riesgos asociados al desarrollo de
+blockchain.
+
+V.3
+
+Gestión de usuarios
+
+Este módulo profundiza en el ámbito de la gestión de usuarios, abordando aspectos clave de las
+interacciones de los usuarios y el control de acceso dentro de la plataforma Pong. Abarca dos
+componentes principales, cada uno de ellos centrado en elementos esenciales de la gestión y
+autenticación de usuarios: la participación de los usuarios en múltiples torneos y la implementación
+de la autenticación remota.
+
+• Módulo principal: gestión estándar de usuarios, autenticación y usuarios en torneos.
+◦ Los usuarios pueden suscribirse de forma segura al sitio web.
+◦ Los usuarios registrados pueden iniciar sesión de forma segura.
+◦ Los usuarios pueden seleccionar un nombre de usuario único para participar en los torneos.
+◦ Los usuarios pueden actualizar su información.
+◦ Los usuarios pueden subir un avatar, con una opción predeterminada si no se proporciona
+ninguno.
+
+◦ Los usuarios pueden añadir a otros como amigos y ver su estado en línea.
+◦ Los perfiles de usuario muestran estadísticas, como victorias y derrotas.
+◦ Cada usuario tiene un historial de partidas que incluye partidas 1 contra 1, fechas y
+detalles relevantes, accesible para los usuarios que hayan iniciado sesión.
+
+La gestión de nombres de usuario/correos electrónicos duplicados queda a su
+discreción; asegúrese de proporcionar una solución lógica.
+
+• Módulo principal: Implementar la autenticación remota.
+En este módulo principal, el objetivo es implementar un sistema de autenticación externa seguro
+utilizando OAuth 2.0 .
+
+15
+
+ft_transcendence
+
+Sorpresa.
+
+• Puedes elegir cualquier proveedor compatible con OAuth (por ejemplo, Google,
+GitHub, etc.).
+
+16
+
+ft_transcendence
+
+Sorpresa.
+
+Las características y objetivos principales incluyen:
+
+◦ Integrar el sistema de autenticación, permitiendo a los usuarios iniciar sesión de forma segura.
+◦ Obtener las credenciales y permisos necesarios de la autoridad para permitir un inicio de
+sesión seguro.
+
+◦ Implementar flujos de inicio de sesión y autorización fáciles de usar que se ajusten a las
+mejores prácticas y normas de seguridad.
+
+◦ Garantizar el intercambio seguro de tokens de autenticación e información de usuario
+entre la aplicación web y el proveedor de autenticación.
+Este importante módulo tiene como objetivo proporcionar una autenticación de usuario remota,
+ofreciendo a los usuarios una forma segura y cómoda de acceder a la aplicación web.
+
+17
+
+ft_transcendence
+
+V.4
+
+Sorpresa.
+
+Jugabilidad y experiencia del usuario
+
+Estos módulos están diseñados para mejorar la experiencia de juego general del proyecto.
+
+• Módulo principal: Jugadores remotos
+Debe ser posible que dos jugadores jueguen de forma remota. Cada jugador se encuentra en un
+ordenador independiente, accede al mismo sitio web y juega al mismo juego de Pong.
+
+Ten en cuenta los problemas de red, como desconexiones inesperadas o
+retrasos. Debes ofrecer la mejor experiencia de usuario posible.
+
+• Módulo principal: Múltiples jugadores
+Debería ser posible jugar con más de dos jugadores. Cada jugador necesita control en directo
+(por lo que se recomienda encarecidamente el módulo «jugadores remotos»). Depende de ti
+decidir cómo se puede jugar con 3, 4, 5, 6 o más jugadores. Además del juego normal para 2
+jugadores, puedes definir un número específico de jugadores, superior a 2, para este módulo
+multijugador. Por ejemplo: 4 jugadores podrían jugar en un tablero cuadrado, y cada jugador
+controlaría un lado único del cuadrado.
+
+• Módulo principal: añadir otro juego con historial de usuario y emparejamiento.
+El objetivo de este módulo principal es introducir un nuevo juego, distinto de Pong, e
+incorporar características como el seguimiento del historial del usuario y el emparejamiento.
+Las características y objetivos clave incluyen:
+
+◦ Desarrollar un juego nuevo y atractivo para diversificar la oferta de la plataforma y
+entretener a los usuarios.
+
+◦ Implementar el seguimiento del historial del usuario para registrar y mostrar las
+estadísticas de juego de cada usuario.
+
+◦ Crear un sistema de emparejamiento que permita a los usuarios encontrar oponentes y
+participar en partidas justas y equilibradas.
+
+◦ Asegúrate de que el historial de juego y los datos de emparejamiento de los usuarios se
+almacenen de forma segura y se mantengan actualizados.
+
+◦ Optimice el rendimiento y la capacidad de respuesta del nuevo juego para proporcionar
+una experiencia de usuario agradable. Actualice y mantenga el juego periódicamente para
+corregir errores, añadir nuevas funciones y mejorar la jugabilidad.
+Este importante módulo tiene como objetivo ampliar su plataforma mediante la introducción de
+un nuevo juego, mejorar la participación de los usuarios con el historial de juego y facilitar el
+emparejamiento para una experiencia de juego agradable.
+
+• Módulo secundario: opciones de personalización del juego.
+En este módulo secundario, el objetivo es proporcionar opciones de personalización para todos
+los juegos disponibles en la plataforma. Las características y objetivos principales incluyen:
+18
+
+ft_transcendence
+
+Sorpresa.
+
+◦ Ofrecer funciones de personalización, como potenciadores, ataques o diferentes mapas,
+que mejoren la experiencia de juego.
+
+◦ Permitir a los usuarios elegir una versión predeterminada del juego con características básicas
+si prefieren una experiencia más sencilla.
+
+◦ Asegúrate de que las opciones de personalización estén disponibles y sean aplicables a
+todos los juegos ofrecidos en la plataforma.
+
+◦ Implementar menús de configuración o interfaces fáciles de usar para ajustar los
+parámetros del juego.
+
+◦ Mantener la coherencia en las funciones de personalización en todos los juegos para
+proporcionar una experiencia de usuario unificada.
+Este módulo tiene como objetivo ofrecer a los usuarios la flexibilidad de personalizar su
+experiencia de juego en todos los juegos disponibles, proporcionando una variedad de opciones
+de personalización y, al mismo tiempo, ofreciendo una versión predeterminada para aquellos
+que prefieren una experiencia de juego sencilla.
+
+• Módulo principal: Chat en vivo.
+En este módulo, es necesario crear una función de chat para los usuarios:
+
+◦ El usuario debe poder enviar mensajes directos a otros usuarios.
+◦ El usuario debe poder bloquear a otros usuarios, impidiéndoles ver más mensajes de la
+cuenta bloqueada.
+
+◦ El usuario debe poder invitar a otros usuarios a jugar a un juego de Pong a través de la
+interfaz de chat.
+
+◦ El sistema del torneo debería poder notificar a los usuarios sobre el próximo partido.
+◦ El usuario debe poder acceder a los perfiles de otros jugadores a través de la interfaz de
+chat.
+
+19
+
+ft_transcendence
+
+V.5
+
+Sorpresa.
+
+AI-Algo
+
+Estos módulos sirven para introducir elementos basados en datos en el proyecto. El módulo principal
+introduce un oponente de IA para mejorar la jugabilidad, mientras que el módulo secundario se centra
+en los paneles de estadísticas de los usuarios y del juego, ofreciendo a los usuarios una visión
+minimalista pero reveladora de sus experiencias de juego.
+
+• Módulo principal: introducir un oponente de IA.
+En este módulo principal, el objetivo es incorporar un jugador de IA al juego. Cabe destacar
+que no se permite el uso del algoritmo A* para esta tarea. Las características y objetivos clave
+incluyen:
+
+◦ Desarrollar un oponente de IA que proporcione una experiencia de juego desafiante y
+atractiva para los usuarios.
+
+◦ La IA debe replicar el comportamiento humano, lo que significa que en tu
+implementación de IA debes simular la entrada del teclado. La restricción aquí es que
+la IA solo puede actualizar su visión del juego una vez por segundo, lo que requiere
+que anticipe rebotes y otras acciones.
+
+La IA debe utilizar potenciadores si ha optado por implementar el
+módulo de opciones de personalización del juego.
+
+◦ Implementa la lógica de la IA y los procesos de toma de decisiones que permitan al
+jugador de IA realizar movimientos inteligentes y estratégicos.
+
+◦ Explora algoritmos y técnicas alternativos para crear un jugador de IA eficaz sin
+depender de A*.
+
+◦ Asegúrate de que la IA se adapta a diferentes escenarios de juego e interacciones del
+usuario.
+
+Deberá explicar detalladamente cómo funciona su IA durante la evaluación.
+Está estrictamente prohibido crear una IA que no haga nada; debe tener la
+capacidad de ganar ocasionalmente.
+
+Este módulo principal tiene como objetivo mejorar el juego mediante la introducción de un
+oponente de IA que añada emoción y competitividad sin depender del algoritmo A*.
+
+• Módulo secundario: Paneles de estadísticas de usuarios y juegos.
+En este módulo secundario, el objetivo es introducir paneles que muestren estadísticas de
+usuarios individuales y sesiones de juego. Las características y objetivos clave incluyen:
+
+◦ Crear paneles fáciles de usar que proporcionen a los usuarios información sobre sus
+estadísticas de juego.
+20
+
+ft_transcendence
+
+Sorpresa.
+
+◦ Desarrollar un panel de control independiente para las sesiones de juego, que muestre
+estadísticas detalladas, resultados y datos históricos de cada partida.
+
+◦ Asegúrese de que los paneles de control ofrezcan una interfaz de usuario intuitiva e
+informativa para el seguimiento y análisis de datos.
+
+◦ Implemente técnicas de visualización de datos, como tablas y gráficos, para presentar las
+estadísticas de forma clara y visualmente atractiva.
+
+◦ Permita a los usuarios acceder y explorar cómodamente su propio historial de juego y sus
+métricas de rendimiento.
+
+◦ No dude en añadir cualquier métrica que considere útil.
+Este módulo menor tiene como objetivo capacitar a los usuarios con la capacidad de supervisar
+sus estadísticas de juego y los detalles de sus sesiones de juego a través de paneles de control
+fáciles de usar, proporcionando una visión completa de su experiencia de juego.
+
+21
+
+ft_transcendence
+
+V.6
+
+Sorpresa.
+
+Ciberseguridad
+
+Estos módulos de ciberseguridad están diseñados para mejorar la postura de seguridad del proyecto.
+El módulo principal se centra en una protección robusta a través de configuraciones de Web
+Application Firewall (WAF) y ModSecurity, así como HashiCorp Vault para la gestión segura de
+secretos. Los módulos secundarios complementan esta iniciativa añadiendo funciones para el
+cumplimiento del RGPD, la anonimización de los datos de los usuarios, la eliminación de cuentas, la
+autenticación de dos factores (2FA) y los tokens web JSON (JWT), lo que garantiza de forma
+conjunta el compromiso del proyecto con la protección de datos, la privacidad y la seguridad de la
+autenticación.
+
+• Módulo principal: Implementar WAF/ModSecurity con configuración reforzada y HashiCorp
+Vault para la gestión de secretos.
+El objetivo de este módulo principal es mejorar la infraestructura de seguridad del proyecto
+mediante la implementación de varios componentes clave. Las características y objetivos
+principales incluyen:
+
+◦ Configurar e implementar un firewall de aplicaciones web (WAF) y ModSecurity con
+una configuración estricta y segura para proteger contra los ataques basados en la web.
+
+◦ Integre HashiCorp Vault para gestionar y almacenar de forma segura información
+confidencial, como claves API, credenciales y variables de entorno, garantizando que
+estos secretos estén debidamente cifrados y aislados.
+Este importante módulo tiene como objetivo reforzar la infraestructura de seguridad del
+proyecto mediante la implementación de medidas de seguridad robustas, incluyendo
+WAF/ModSecurity para la protección de aplicaciones web y HashiCorp Vault para la gestión
+de secretos, con el fin de garantizar un entorno seguro y protegido.
+
+• Módulo secundario: opciones de cumplimiento del RGPD con anonimización de usuarios,
+gestión de datos locales y eliminación de cuentas.
+El objetivo de este módulo secundario es introducir opciones de cumplimiento del RGPD que
+permitan a los usuarios ejercer sus derechos de privacidad de datos. Las características y
+objetivos clave incluyen:
+
+◦ Implementar funciones que cumplan con el RGPD y que permitan a los usuarios solicitar
+la anonimización de sus datos personales, garantizando la protección de su identidad e
+información confidencial.
+
+◦ Proporcionar herramientas para que los usuarios gestionen sus datos locales, incluida la
+posibilidad de ver, editar o eliminar su información personal almacenada en el sistema.
+
+◦ Ofrecer un proceso simplificado para que los usuarios soliciten la eliminación
+permanente de sus cuentas, incluidos todos los datos asociados, garantizando el
+cumplimiento de la normativa de protección de datos.
+
+◦ Mantener una comunicación clara y transparente con los usuarios en relación con sus
+derechos de privacidad de datos, con opciones fácilmente accesibles para ejercer dichos
+derechos.
+Este módulo menor tiene como objetivo mejorar la privacidad del usuario y la protección de
+datos ofreciendo opciones de cumplimiento del RGPD que permiten a los usuarios controlar su
+información personal y ejercer sus derechos de privacidad de datos dentro del sistema.
+Si no está familiarizado con el Reglamento General de Protección de Datos (RGPD),
+22
+
+ft_transcendence
+
+Sorpresa.
+
+es esencial comprender sus principios e implicaciones, especialmente en lo que respecta a la
+gestión de los datos de los usuarios y la privacidad. El RGPD es un reglamento que tiene por
+objeto proteger los datos personales y la privacidad de las personas dentro de la Unión Europea
+(UE) y el Espacio Económico Europeo (EEE). Establece normas y directrices estrictas para las
+organizaciones sobre cómo deben manejar y procesar los datos personales.
+Para comprender mejor el RGPD y sus requisitos, se recomienda encarecidamente visitar el
+sitio web oficial de la Comisión Europea sobre protección de datos1. Este sitio web ofrece
+información completa sobre el RGPD, incluidos sus principios, objetivos y derechos de los
+usuarios. También ofrece recursos adicionales para profundizar en el tema y garantizar el
+cumplimiento del reglamento.
+Si no está familiarizado con el RGPD, le recomendamos que visite el enlace proporcionado y
+se familiarice con la normativa antes de continuar con este proyecto.
+
+• Módulo principal: Implementar la autenticación de dos factores (2FA) y JWT.
+El objetivo de este módulo principal es mejorar la seguridad y la autenticación de los
+usuarios mediante la introducción de la autenticación de dos factores (2FA) y el uso de tokens
+web JSON (JWT). Las características y objetivos principales incluyen:
+
+◦ Implementar la autenticación de dos factores (2FA) como una capa adicional de
+seguridad para las cuentas de usuario, lo que requiere que los usuarios proporcionen un
+método de verificación secundario, como un código de un solo uso, además de su
+contraseña.
+
+◦ Utilizar tokens web JSON (JWT) como método seguro para la autenticación y la
+autorización, garantizando que las sesiones de los usuarios y el acceso a los recursos se
+gestionen de forma segura.
+
+◦ Proporcionar un proceso de configuración fácil de usar para habilitar la 2FA, con
+opciones de códigos SMS, aplicaciones de autenticación o verificación por correo
+electrónico.
+
+◦ Garantizar que los tokens JWT se emitan y validen de forma segura para evitar el acceso
+no autorizado a las cuentas de usuario y a los datos confidenciales.
+Este importante módulo tiene como objetivo reforzar la seguridad de las cuentas de usuario
+ofreciendo la autenticación de dos factores (2FA) y mejorando la autenticación y la
+autorización mediante el uso de tokens web JSON (JWT).
+
+1
+
+https://commission.europa.eu/law/law-topic/data-protection/data-protection-eu_en
+
+23
+
+ft_transcendence
+
+V.7
+
+Sorpresa.
+
+Devops
+
+Estos módulos se centran en mejorar la infraestructura y la arquitectura del proyecto. Los módulos
+principales abordan la configuración de la infraestructura para una gestión eficiente de los registros
+utilizando ELK (Elasticsearch, Logstash, Kibana), el diseño del backend como microservicios para
+mayor flexibilidad y escalabilidad, y la implementación de Prometheus/Grafana para una supervisión
+completa del sistema.
+
+• Módulo principal: Configuración de la infraestructura con ELK (Elasticsearch, Logstash,
+Kibana) para la gestión de registros.
+El objetivo de este módulo principal es establecer una infraestructura robusta para la gestión y
+el análisis de registros utilizando la pila ELK (Elasticsearch, Logstash, Kibana). Las
+características y objetivos clave incluyen:
+
+◦ Implementar Elasticsearch para almacenar e indexar de manera eficiente los datos de
+registro, garantizando que sean fácilmente buscables y accesibles.
+
+◦ Configurar Logstash para recopilar, procesar y transformar datos de registro de diversas
+fuentes, enviándolos a Elasticsearch.
+
+◦ Configure Kibana para visualizar datos de registro, crear paneles de control y generar
+información a partir de eventos de registro.
+
+◦ Defina políticas de retención y archivo de datos para gestionar eficazmente el
+almacenamiento de datos de registro.
+
+◦ Implemente medidas de seguridad para proteger los datos de registro y el acceso a los
+componentes de la pila ELK.
+Este módulo principal tiene como objetivo establecer un potente sistema de gestión y análisis
+de registros utilizando la pila ELK, lo que permite una resolución de problemas, una
+supervisión y una información eficaces sobre el funcionamiento y el rendimiento del sistema.
+
+• Módulo secundario: Sistema de supervisión.
+El objetivo de este módulo secundario es configurar un sistema de supervisión integral utilizando
+Prometheus y Grafana . Las características y objetivos clave incluyen:
+
+◦ Implementar Prometheus como kit de herramientas de supervisión y alerta para recopilar
+métricas y supervisar el estado y el rendimiento de diversos componentes del sistema.
+
+◦ Configurar exportadores de datos e integraciones para capturar métricas de diferentes
+servicios, bases de datos y componentes de la infraestructura.
+
+◦ Crear paneles y visualizaciones personalizados utilizando Grafana para proporcionar
+información en tiempo real sobre las métricas y el rendimiento del sistema.
+
+◦ Configure reglas de alerta en Prometheus para detectar y responder de forma proactiva a
+problemas críticos y anomalías.
+
+◦ Garantice estrategias adecuadas de retención y almacenamiento de datos para los datos históricos
+de métricas.
+
+◦ Implemente mecanismos seguros de autenticación y control de acceso para Grafana con
+el fin de proteger los datos de supervisión confidenciales.
+24
+
+ft_transcendence
+
+Sorpresa.
+
+Este módulo menor tiene como objetivo establecer una infraestructura de supervisión robusta utilizando
+Prometheus y Grafana , lo que permite una visibilidad en tiempo real de las métricas del
+sistema y la detección proactiva de problemas para mejorar el rendimiento y la fiabilidad del
+sistema.
+
+• Módulo principal: Diseño del backend como microservicios.
+El objetivo de este módulo principal es diseñar el backend del sistema utilizando un enfoque de
+microservicios. Las características y objetivos clave incluyen:
+
+◦ Dividir el backend en microservicios más pequeños y poco acoplados, cada uno de los cuales
+se encarga de funciones o características específicas.
+
+◦ Definir límites e interfaces claros entre los microservicios para permitir el desarrollo, la
+implementación y el escalado independientes.
+
+◦ Implementar mecanismos de comunicación entre microservicios, como API REST-ful o
+colas de mensajes, para facilitar el intercambio de datos y la coordinación.
+
+◦ Asegúrese de que cada microservicio sea responsable de una única tarea o capacidad
+empresarial bien definida, lo que favorece la mantenibilidad y la escalabilidad.
+Este importante módulo tiene como objetivo mejorar la arquitectura del sistema mediante la
+adopción de un enfoque de diseño de microservicios, lo que permite una mayor flexibilidad,
+escalabilidad y facilidad de mantenimiento de los componentes del backend.
+
+25
+
+ft_transcendence
+
+V.8
+
+Sorpresa.
+
+Gráficos
+
+• Módulo principal: Implementación de técnicas 3D avanzadas
+Este módulo principal, «Gráficos», se centra en mejorar los aspectos visuales del juego Pong.
+Introduce el uso de técnicas 3D avanzadas para crear una experiencia de juego más inmersiva.
+En concreto, el juego Pong se desarrollará utilizando Babylon.js para lograr los efectos visuales
+deseados.
+
+◦ Gráficos 3D avanzados: El objetivo principal de este módulo es implementar técnicas
+avanzadas de gráficos 3D para mejorar la calidad visual del juego Pong. Mediante el uso
+de Babylon.js , el objetivo es crear efectos visuales impresionantes que sumerjan a los
+jugadores en el entorno del juego.
+
+◦ Jugabilidad inmersiva: La incorporación de técnicas 3D avanzadas mejora la experiencia
+de juego en general, ya que ofrece a los usuarios un juego Pong visualmente atractivo y
+cautivador.
+
+◦ Integración tecnológica: La tecnología elegida para este módulo es Babylon.js . Estas
+herramientas se utilizarán para crear los gráficos 3D, garantizando la compatibilidad y un
+rendimiento óptimo.
+Este importante módulo tiene como objetivo revolucionar los elementos visuales del juego
+Pong mediante la introducción de técnicas 3D avanzadas. Mediante el uso de Babylon.js ,
+pretendemos ofrecer a los jugadores una experiencia de juego inmersiva y visualmente
+impresionante.
+
+26
+
+ft_transcendence
+
+V.9
+
+Sorpresa.
+
+Accesibilidad
+
+Estos módulos están diseñados para mejorar la accesibilidad de nuestra aplicación web, centrándose
+en garantizar la compatibilidad en todos los dispositivos, ampliar la compatibilidad con los
+navegadores, ofrecer capacidades multilingües, proporcionar funciones de accesibilidad para usuarios
+con discapacidad visual e integrar el renderizado del lado del servidor (SSR) para mejorar el
+rendimiento y la experiencia del usuario.
+
+• Módulo menor: Compatibilidad con todos los dispositivos.
+En este módulo, el objetivo principal es garantizar que su sitio web funcione a la perfección en
+todo tipo de dispositivos. Las características y objetivos clave incluyen:
+
+◦ Garantizar que el sitio web sea responsivo, se adapte a diferentes tamaños y orientaciones
+de pantalla, y ofrezca una experiencia de usuario coherente en ordenadores de sobremesa,
+portátiles, tabletas y teléfonos inteligentes.
+
+◦ Asegúrese de que los usuarios puedan navegar e interactuar fácilmente con el sitio web
+utilizando diferentes métodos de entrada, como pantallas táctiles, teclados y ratones,
+dependiendo del dispositivo que estén utilizando.
+Este módulo tiene como objetivo proporcionar una experiencia coherente y fácil de usar en
+todos los dispositivos, maximizando la accesibilidad y la satisfacción del usuario.
+
+• Módulo menor: Ampliación de la compatibilidad del navegador.
+En este módulo secundario, el objetivo es mejorar la compatibilidad de la aplicación web
+añadiendo compatibilidad con un navegador web adicional. Las características y objetivos
+principales incluyen:
+
+◦ Ampliar la compatibilidad del navegador para incluir un navegador web adicional,
+garantizando que los usuarios puedan acceder y utilizar la aplicación sin problemas.
+
+◦ Realizar pruebas y optimizaciones exhaustivas para garantizar que la aplicación web
+funcione correctamente y se muestre correctamente en el nuevo navegador compatible.
+
+◦ Resolver cualquier problema de compatibilidad o discrepancia de representación que
+pueda surgir en el navegador web añadido.
+
+◦ Garantizar una experiencia de usuario coherente en todos los navegadores compatibles,
+manteniendo la usabilidad y la funcionalidad.
+Este módulo menor tiene como objetivo ampliar la accesibilidad de la aplicación web mediante
+la compatibilidad con un navegador web adicional, lo que proporciona a los usuarios más
+opciones para su experiencia de navegación.
+
+• Módulo secundario: Compatibilidad con varios idiomas.
+En este módulo secundario, el objetivo es garantizar que su sitio web admita varios idiomas
+para atender a una base de usuarios diversa. Las características y objetivos clave incluyen:
+
+◦ Implementar la compatibilidad con un mínimo de tres idiomas en el sitio web para dar
+cabida a una amplia audiencia.
+
+27
+
+ft_transcendence
+
+Sorpresa.
+
+◦ Proporcionar un selector de idioma que permita a los usuarios cambiar fácilmente el
+idioma del sitio web según sus preferencias.
+
+◦ Traduce el contenido esencial del sitio web, como los menús de navegación, los
+encabezados y la información clave, a los idiomas admitidos.
+
+◦ Asegúrese de que los usuarios puedan navegar e interactuar con el sitio web sin problemas,
+independientemente del idioma seleccionado.
+
+◦ Considere la posibilidad de utilizar paquetes de idiomas o bibliotecas de localización para
+simplificar el proceso de traducción y mantener la coherencia entre los diferentes
+idiomas.
+
+◦ Permita a los usuarios establecer su idioma preferido como predeterminado para visitas
+posteriores.
+Este pequeño módulo tiene como objetivo mejorar la accesibilidad y la inclusividad de su sitio
+web al ofrecer contenido en varios idiomas, lo que lo hace más fácil de usar para un público
+internacional diverso.
+
+• Módulo secundario: Añadir accesibilidad para usuarios con discapacidad visual.
+En este módulo secundario, el objetivo es hacer que su sitio web sea más accesible para los
+usuarios con discapacidad visual. Las características principales incluyen:
+
+◦ Compatibilidad con lectores de pantalla y tecnologías de asistencia.
+◦ Texto alternativo claro y descriptivo para las imágenes.
+◦ Esquema de colores de alto contraste para facilitar la lectura.
+◦ Navegación por teclado y gestión del foco.
+◦ Opciones para ajustar el tamaño del texto.
+◦ Actualizaciones periódicas para cumplir con los estándares de accesibilidad.
+Este módulo tiene como objetivo mejorar la usabilidad del sitio web para las personas con
+discapacidad visual y garantizar el cumplimiento de los estándares de accesibilidad.
+
+• Módulo secundario: integración de renderización del lado del servidor (SSR).
+En este módulo secundario, nos centramos en integrar la representación del lado del servidor
+(SSR) para mejorar el rendimiento y la experiencia del usuario de su sitio web. Los objetivos
+principales incluyen:
+
+◦ Implementar SSR para mejorar la velocidad de carga del sitio web y su rendimiento
+general.
+
+◦ Asegurar que el contenido se renderice previamente en el servidor y se entregue a los
+navegadores de los usuarios para acelerar la carga inicial de las páginas.
+
+◦ Optimizar el SEO proporcionando a los motores de búsqueda contenido HTML prerenderizado.
+◦ Mantener una experiencia de usuario coherente al tiempo que se aprovechan las ventajas del
+SSR.
+Este módulo tiene como objetivo mejorar el rendimiento del sitio web y el SEO mediante la
+integración de la representación del lado del servidor para acelerar la carga de las páginas y
+mejorar la experiencia del usuario.
+
+28
+
+ft_transcendence
+
+V.10
+
+Sorpresa.
+
+Pong del lado del servidor
+
+• Módulo principal: sustituir el Pong básico por el Pong del lado del servidor e implementar una
+API.
+En este módulo principal, el objetivo es sustituir el juego básico Pong por un juego Pong del
+lado del servidor, acompañado de la implementación de una API. Las características y
+objetivos clave incluyen:
+
+◦ Desarrollar la lógica del lado del servidor para el juego Pong con el fin de gestionar la
+jugabilidad, el movimiento de la pelota, la puntuación y las interacciones de los
+jugadores.
+
+◦ Crear una API que exponga los recursos y puntos finales necesarios para interactuar con
+el juego Pong, permitiendo el uso parcial del juego a través de la interfaz de línea de
+comandos (CLI) y la interfaz web.
+
+◦ Diseñar e implementar los puntos finales de la API para admitir la inicialización del
+juego, los controles de los jugadores y las actualizaciones del estado del juego.
+
+◦ Asegúrate de que el juego Pong del lado del servidor sea receptivo y ofrezca una experiencia
+de juego atractiva y agradable.
+
+◦ Integre el juego Pong del lado del servidor con la aplicación web, permitiendo a los
+usuarios jugar directamente en el sitio web.
+Este importante módulo tiene como objetivo mejorar el juego Pong migrándolo al lado del
+servidor, lo que permite la interacción a través de una interfaz web y una CLI, al tiempo que
+ofrece una API para facilitar el acceso a los recursos y funciones del juego.
+
+• Módulo principal: Habilitar el juego Pong a través de la CLI para usuarios web con
+integración API.
+En este módulo principal, el objetivo es desarrollar una interfaz de línea de comandos (CLI)
+que permita a los usuarios jugar al Pong contra jugadores que utilicen la versión web del juego.
+La CLI debe conectarse a la aplicación web de forma fluida, permitiendo a los usuarios de la
+CLI unirse e interactuar con los jugadores web. Las características y objetivos clave incluyen:
+
+◦ Crear una aplicación CLI robusta que replique la experiencia de juego de Pong disponible
+en el sitio web, proporcionando a los usuarios de CLI la posibilidad de iniciar y participar
+en partidas de Pong.
+
+◦ Utilizar la API para establecer la comunicación entre la CLI y la aplicación web,
+permitiendo a los usuarios de la CLI conectarse al sitio e interactuar con los jugadores
+web.
+
+◦ Desarrollar un mecanismo de autenticación de usuarios dentro de la CLI, que permita a
+los usuarios de la CLI iniciar sesión en la aplicación web de forma segura.
+
+◦ Implementar la sincronización en tiempo real entre la CLI y los usuarios web,
+garantizando que las interacciones del juego sean fluidas y coherentes.
+
+◦ Permita a los usuarios de la CLI unirse y crear partidas de Pong con jugadores web,
+facilitando el juego entre plataformas.
+
+29
+
+ft_transcendence
+
+Sorpresa.
+
+◦ Proporcionar documentación y orientación completas sobre cómo utilizar eficazmente la
+CLI para partidas de Pong contra usuarios web.
+Este módulo principal tiene como objetivo mejorar la experiencia de juego de Pong mediante la
+creación de una CLI que conecta a los usuarios de CLI con los jugadores web a través de la
+integración de API, ofreciendo un entorno de juego unificado e interactivo.
+
+Si desea completar este módulo, le recomendamos encarecidamente que realice
+el anterior.
+
+30
+
+Capítulo VI Parte
+extra
+Para este proyecto, la sección extra está diseñada para ser sencilla. Se requiere que incluyas módulos
+adicionales.
+
+• Se otorgarán cinco puntos por cada módulo menor.
+• Se otorgarán diez puntos por cada módulo principal.
+
+La parte adicional solo se evaluará si la parte obligatoria es PERFECTA.
+«Perfecta» significa que la parte obligatoria se ha completado en su
+totalidad y funciona sin ningún problema. Si no cumple TODOS los requisitos
+obligatorios, la parte adicional no se evaluará en absoluto.
+
+31
+
+Capítulo VII
+Entrega y evaluación por pares
+Envía tu tarea en tu repositorio Git como de costumbre. Solo se evaluará el trabajo que se encuentre
+dentro de tu repositorio durante la defensa. Te recomendamos que compruebes dos veces los nombres
+de tus archivos para asegurarte de que son correctos.
+
+• Está prohibido el uso de bibliotecas o herramientas que
+
+proporcionen una solución inmediata y completa para una función
+o un módulo completo.
+
+• Se debe seguir cualquier instrucción directa relativa al uso (se
+puede, se debe, no se puede) de una biblioteca o herramienta de
+terceros.
+
+• Se permite el uso de una pequeña biblioteca o herramienta que
+
+resuelva una tarea sencilla y única que represente un subcomponente
+de una función o módulo más amplio.
+
+• Durante la evaluación, el equipo justificará cualquier uso de una
+
+biblioteca o herramienta que no esté explícitamente aprobado por el
+sujeto y que no contradiga las restricciones del mismo.
+
+• Durante la evaluación, el evaluador determinará si el uso de una
+
+biblioteca o herramienta específica es legítimo (y está permitido) o
+si, en esencia, resuelve toda una función o módulo (y, por lo tanto,
+está prohibido).
+
+Durante la evaluación, en ocasiones se puede solicitar una breve modificación del proyecto. Esto
+podría implicar un cambio menor en el comportamiento, unas pocas líneas de código para escribir o
+reescribir, o una función fácil de añadir.
+Aunque este paso puede no ser aplicable a todos los proyectos, debe estar preparado para ello si
+se menciona en las directrices de evaluación.
+Este paso tiene por objeto verificar su comprensión real de una parte específica del proyecto. La
+modificación puede realizarse en cualquier entorno de desarrollo que elija (por ejemplo, su
+configuración habitual) y debe ser factible en pocos minutos, a menos que se defina un plazo
+específico como parte de la evaluación.
+Por ejemplo, se te puede pedir que realices una pequeña actualización de una función o script, que
+modifiques una pantalla o que ajustes una estructura de datos para almacenar nueva información, etc.
+32
+
+ft_transcendence
+
+Sorpresa.
+
+Los detalles (alcance, objetivo, etc.) se especificarán en las directrices de evaluación y pueden variar
+de una evaluación a otra para un mismo proyecto.
+
+10001
+16997B3EAAA8F965C2C99AD2D1E7C1AD78B53E5AF3CCB21228CB747F6
+F9717A4824FFC9EF55AE6E3DC3045320031A4899E0B7A5368BDC2A4B9246
+F40E923432A3437CB5703BA745EB9
+53616C7465645F5F549209D53E8A1D597DFEF0A034A52CF06BF4132EA61FE
+0C907AB090B88EF6E0DF3250E47AB70367C522E351BCD6FE2683B44409CFC
+0A0A81D31546431B43D4CE504A554660E0806598302B8F776A1B72407A813
+C22D077BADE4F866A7FCF426864823BC25833264770351BC0EF3CD8C47930
+FDC58CBA86B49C5445ECD9C840D1C737D17B8D4A5CA935994847DED79443B
+3B79475AB2C9506F2C94E9FECC933D1689714AE02FE3C55F278E502E1B806
+D7B917906C25612B25700502525825CDC5D23F3856BD9B95F2EC6CA89CBC6
+ED26011D60D7CB6EAD304924717BCC06DC297BE7E9B29E7185B23614AB59C
+66E2B254C24D5DD6FE54133D4C676F88ED318516F7795B15404A4C014CC12
+E5BEAF0A3CBE66F9E1A778AD1F06DA87230D1127DB08E11086F16B1B09905
+C31B41262725E8CDD5B18CFB03C6A5CDBF72674C4E76F6FB1851AB7466C5A 4
+
+33
+
+

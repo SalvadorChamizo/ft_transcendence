@@ -4,6 +4,8 @@ import { Register } from "./pages/register";
 import { Login, TwoFALogin } from "./pages/Login/login";
 import { Health, healthHandlers } from "./pages/health";
 import { Ping } from "./pages/ping";
+import { Chat, chatHandlers } from "./pages/chat";
+import { pongPage } from "./pages/pong";
 
 export function router(route: string): string {
     switch (route) {
@@ -20,6 +22,11 @@ export function router(route: string): string {
             return Health();
         case "#/ping":
             return Ping();
+        case "#/chat":
+            setTimeout(chatHandlers, 0);
+            return Chat();
+		case "#/pong":
+			return pongPage();
         case "#/":
         default:
             return Home();
