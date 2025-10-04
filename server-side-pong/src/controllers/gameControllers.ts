@@ -6,103 +6,107 @@ import { FastifyInstance } from "fastify";
 import { getGameState, resetGame, isGameEnded, startBallMovement } from "../services/gameServices";
 import { Server } from "socket.io";
 
+interface Room {
+	id: string;
+	players: string[];
+}
 
-/**
- * runtime flag to pause the game 
- */
-let isPaused = true;
+// Pause flags for room
+const pauseState = new Map<string, boolean>();
 
-export const getIsPaused = () => isPaused;
-export const setIsPaused = (value: boolean) => {
-  isPaused = value;
+export const getIsPaused = (roomId?: string) => pauseState.get(roomId ?? "local") ?? true;
+const setIsPaused = (value: boolean, roomId?: string) =>
+{
+	pauseState.set(roomId ?? "local", value);
 };
 
-export async function gameController(fastify: FastifyInstance, io: Server)
+export async function gameController(fastify: FastifyInstance, io: Server, rooms: Map<string, Room>)
 {
-  /**
-   * POST /game/init
-   * Reset and initialize the game
-   */
-	fastify.post("/game/init", async () =>
+	fastify.post("/game/:roomId/init", async (req, reply) =>
 	{
-		const state = resetGame();
-		setIsPaused(true);
-		io.emit("gameState", state);
-		return { message: "Game initialized", state };
+		const { roomId } = req.params as { roomId: string };
+    	const state = resetGame(roomId);
+    	setIsPaused(true, roomId);
+    	io.to(roomId).emit("gameState", state);
+    	return { message: "Game initialized", state };
 	});
 
-	/**
-	 * GET /game/state
-	 * Fetch the current full game state (paddles + ball + scores)
-	 */
-	fastify.get("/game/state", async () =>
+	fastify.get("/game/:roomId/state", async (req, reply) =>
 	{
-        return { paused: getIsPaused(), state: getGameState() };
+		const { roomId } = req.params as { roomId: string };
+		return { paused: getIsPaused(roomId), state: getGameState(roomId) };
+  	});
+
+	fastify.post("/game/:roomId/pause", async (req, reply) =>
+	{
+		const { roomId } = req.params as { roomId: string };
+		if (isGameEnded(roomId)) return { message: "Game has ended" };
+		setIsPaused(true, roomId);
+		io.to(roomId).emit("gamePaused", { paused: true });
+		return { message: "Game paused" };
 	});
 
-	/**
-	 * POST /game/pause
-	 * Pause the game loop (ball stops moving, players frozen)
-	 */
-	fastify.post("/game/pause", async () =>
+	fastify.post("/game/:roomId/resume", async (req, reply) =>
 	{
-        if (isGameEnded) return { message: "Game has ended" };
-        setIsPaused(true);
-        io.emit("gamePaused", { paused: true });
-        return { message: "Game paused" };
+		const { roomId } = req.params as { roomId: string };
+		const room = rooms.get(roomId);
+
+    	// Validation
+		if (roomId !== 'local' && (!room || room.players.length < 2))
+		{
+			return reply.code(400).send({ message: "Cannot resume, waiting for opponent." });
+    	}
+
+		if (isGameEnded(roomId)) return { message: "Game has ended" };
+
+		// delay to start the game
+		io.to(roomId).emit("gameStarting");
+
+		setTimeout(() =>
+		{
+    		// player check for disconnections
+			const currentRoom = rooms.get(roomId);
+			if (roomId !== 'local' && (!currentRoom || currentRoom.players.length < 2))
+			{
+				console.log(`[RESUME-DELAY] Start aborted for room ${roomId}, an opponent disconnected.`);
+				return;
+      		}
+    		if (!isGameEnded(roomId) && getIsPaused(roomId))
+			{
+        		startBallMovement(roomId);
+        		setIsPaused(false, roomId);
+				io.to(roomId).emit("gamePaused", { paused: false });
+			}
+		}, 1000); // 1 second delay
+
+		return { message: "Game will start in 1 second" };
 	});
 
-	/**
-	 * POST /game/resume
-	 * Resume the game loop
-	 */
-	fastify.post("/game/resume", async () =>
+	fastify.post("/game/:roomId/toggle-pause", async (req, reply) =>
 	{
-        console.log("Server: /game/resume called, current isPaused =", getIsPaused());
-        if (isGameEnded) return { message: "Game has ended" };
-        if (getIsPaused())
-        {
-            console.log("Server: Starting ball movement");
-            startBallMovement();
-        }
-        setIsPaused(false);
-        console.log("Server: Setting isPaused to false, emitting gamePaused: false");
-        io.emit("gamePaused", { paused: false });
-        return { message: "Game resumed" };
+    	const { roomId } = req.params as { roomId: string };
+    	const room = rooms.get(roomId);
+
+    	// Validation
+    	if (getIsPaused(roomId) && roomId !== 'local' && (!room || room.players.length < 2))
+		{
+    		return reply.code(400).send({ message: "Cannot toggle pause, waiting for opponent." });
+    	}
+
+		if (isGameEnded(roomId)) return { message: "Game has ended" };
+		if (getIsPaused(roomId)) startBallMovement(roomId);
+		setIsPaused(!getIsPaused(roomId), roomId);
+		io.to(roomId).emit("gamePaused", { paused: getIsPaused(roomId) });
+		return { message: `Game ${getIsPaused(roomId) ? "paused" : "resumed"}` };
 	});
 
-	/**
-	 * POST /game/toggle-pause
-	 * Toggle the pause state of the game
-	 */
-	fastify.post("/game/toggle-pause", async () =>
-    {
-        if (isGameEnded) return { message: "Game has ended" };
-        if (getIsPaused()) // If it was paused, we are resuming
-        {
-            startBallMovement();
-        }
-        setIsPaused(!getIsPaused());
-        io.emit("gamePaused", { paused: getIsPaused() });
-        return { message: `Game ${getIsPaused() ? "paused" : "resumed"}` };
-    });
-
-
-	/**
-	 * POST /game/reset-score
-	 * Reset only the scores, leave paddles and ball as-is
-	 */
-	fastify.post("/game/reset-score", async () =>
+	fastify.post("/game/:roomId/reset-score", async (req, reply) =>
 	{
-		const state = getGameState();
-		state.scores.left = 0;
-		state.scores.right = 0;
-		io.emit("gameState", state);
-		return { message: "Scores reset", state };
+		const { roomId } = req.params as { roomId: string };
+    	const state = getGameState(roomId);
+    	state.scores.left = 0;
+    	state.scores.right = 0;
+    	io.to(roomId).emit("gameState", state);
+    	return { message: "Scores reset", state };
 	});
-
-	/**
-	 * Helper for other services to check pause state
-	 */
-	fastify.decorate("isGamePaused", () => getIsPaused());
 }
