@@ -41,7 +41,7 @@ services:
     networks:
       - backend
 
-  livechat-service:
+  chat-service:
     build: ./chat-service
     expose:
       - "8083"
