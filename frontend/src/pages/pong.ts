@@ -10,6 +10,8 @@ let animationFrameId: number;
 let isGameRunning = false;
 let playerRole: "left" | "right" | "spectator" | "local" = "spectator";
 
+const apiHost = `http://${window.location.hostname}:8080`;
+
 // Game constants
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
@@ -86,7 +88,7 @@ const handleKeyDown = (e: KeyboardEvent) =>
 {
 	if (["ArrowUp", "ArrowDown", "w", "s"].includes(e.key)) e.preventDefault();
 	if (e.key.toLowerCase() === "p") {
-		fetch(`http://localhost:8080/game/${roomId}/toggle-pause`, { method: "POST" });
+        fetch(`${apiHost}/game/${roomId}/toggle-pause`, { method: "POST" });
 	}
 	else
 	{
@@ -151,7 +153,7 @@ export function pongHandlers()
 
 	document.getElementById("startGameBtn")!.addEventListener("click", () =>
 	{
-		fetch(`http://localhost:8080/game/${roomId}/resume`, { method: "POST" });
+        fetch(`${apiHost}/game/${roomId}/resume`, { method: "POST" });
 		(document.getElementById("startGameBtn")!).style.display = "none";
 		isGameRunning = true;
 	});
@@ -160,7 +162,7 @@ export function pongHandlers()
 	{
 		document.getElementById("winnerMessage")!.style.display = "none";
 		document.getElementById("playAgainBtn")!.style.display = "none";
-		fetch(`http://localhost:8080/game/${roomId}/init`, { method: "POST" }).then(() =>
+        fetch(`${apiHost}/game/${roomId}/init`, { method: "POST" }).then(() =>
 		{
 			(document.getElementById("startGameBtn")!).style.display = "block";
 		});
@@ -188,7 +190,7 @@ function startGame()
 
 	const initGame = (currentRoomId: string) =>
 	{
-		fetch(`http://localhost:8080/game/${currentRoomId}/init`, { method: "POST" });
+        fetch(`${apiHost}/game/${currentRoomId}/init`, { method: "POST" });
 		isGameRunning = false;
 	};
 
