@@ -4,7 +4,8 @@ import proxy from "@fastify/http-proxy";
 export default async function pongRoutes(fastify: FastifyInstance) {
   fastify.log.info("Registering pongRoutes");
 
-  //Proxy para rutas REST - Solo HTTP, no WebSockets
+  // Proxy only REST API routes to the pong service
+  // Socket.IO connections go directly from frontend to pong service
   fastify.register(proxy, {
     upstream: "http://pong-service:3000",
     prefix: "/game",

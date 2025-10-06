@@ -175,7 +175,8 @@ function prepareGameUI()
  */
 function startGame()
 {
-	socket = io("ws://localhost:3000");
+    const wsHost = `ws://${window.location.hostname}:3000`;
+    socket = io(wsHost);
 
 	const initGame = (currentRoomId: string) =>
 	{
