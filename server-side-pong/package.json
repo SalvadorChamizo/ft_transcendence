@@ -11,12 +11,14 @@
     "@fastify/cors": "^9.0.1",
     "dotenv": "^16.4.5",
     "fastify": "^4.28.1",
+    "node-fetch": "^2.7.0",
     "socket.io": "^4.7.5",
-	"tsx": "^4.16.2",
+    "tsx": "^4.16.2",
     "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.10",
+    "@types/node-fetch": "^2.6.13",
     "@types/uuid": "^10.0.0",
     "tsx": "^4.16.2",
     "typescript": "^5.5.3"
