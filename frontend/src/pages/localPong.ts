@@ -3,6 +3,7 @@
  * @brief Frontend logic for Local Pong game (1v1 and 1vAI)
  */
 import { io, Socket } from "socket.io-client";
+import { getAccessToken } from "../state/authState";
 
 let socket: Socket;
 let ctx: CanvasRenderingContext2D | null = null;
@@ -125,7 +126,13 @@ export function localPongHandlers() {
     });
 
     document.getElementById("startGameBtn")!.addEventListener("click", () => {
-        fetch(`${apiHost}/game/${roomId}/resume`, { method: "POST" });
+        const token = getAccessToken();
+        fetch(`${apiHost}/game/${roomId}/resume`, { 
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
         (document.getElementById("startGameBtn")!).classList.add("hidden");
         isGameRunning = true;
     });
@@ -133,7 +140,13 @@ export function localPongHandlers() {
     document.getElementById("playAgainBtn")!.addEventListener("click", () => {
         document.getElementById("winnerMessage")!.style.display = "none";
         document.getElementById("playAgainBtn")!.classList.add("hidden");
-        fetch(`${apiHost}/game/${roomId}/init`, { method: "POST" }).then(() => {
+        const token = getAccessToken();
+        fetch(`${apiHost}/game/${roomId}/init`, { 
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        }).then(() => {
             (document.getElementById("startGameBtn")!).classList.remove("hidden");
         });
         isGameRunning = false;
@@ -150,7 +163,13 @@ function startGame() {
     const wsHost = `ws://${window.location.hostname}:7000`;
     socket = io(wsHost);
 
-    fetch(`${apiHost}/game/${roomId}/init`, { method: "POST" });
+    const token = getAccessToken();
+    fetch(`${apiHost}/game/${roomId}/init`, { 
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${token}`
+        }
+    });
     isGameRunning = false;
     (document.getElementById("startGameBtn")!).classList.remove("hidden");;
 
