@@ -7,12 +7,12 @@ export async function websocketRoutes(fastify: FastifyInstance) {
         fastify.get('/ws', { websocket: true }, (connection, req) => {
             console.log('WebSocket connection established');
 
-            // 1. EXTRACT userId from headers (passed by Gateway)
-            let userId: number;
-            try {
-                userId = extractUserId(req.headers);
-            } catch (error: any) {
-                console.error('Authentication failed in WebSocket:', error.message);
+            // 1. EXTRACT userId from query string (WebSocket can't use headers reliably)
+            const query = req.query as { userId?: string };
+            const userId = query.userId ? parseInt(query.userId) : null;
+            
+            if (!userId) {
+                console.error('Authentication failed in WebSocket: No userId provided');
                 connection.close(1008, 'Unauthorized'); // Policy Violation
                 return;
             }

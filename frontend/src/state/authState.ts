@@ -26,6 +26,18 @@ export function clearAuth() {
     accessToken = null;
 }
 
+export function getUserIdFromToken(): number | null {
+    if (!accessToken) return null;
+    
+    try {
+        const payload = JSON.parse(atob(accessToken.split('.')[1]));
+        return payload.id || null;
+    } catch (error) {
+        console.error('Error decoding token:', error);
+        return null;
+    }
+}
+
 export async function refreshAccessToken(): Promise<boolean> {
 
     try {

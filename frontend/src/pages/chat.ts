@@ -1,5 +1,6 @@
 import { getConversations, sendMessage, getMessages, blockUser, unblockUser, sendGameInvitation, getGameInvitations, acceptGameInvitation, rejectGameInvitation } from "../services/api";
 import { websocketClient, ChatMessage } from "../services/websocketClient";
+import { getUserIdFromToken } from "../state/authState";
 
 // Status for active conversation
 let activeConversationId: number | null = null;
@@ -441,9 +442,8 @@ export function chatHandlers() {
 
     // Get current user ID (temporary implementation)
     function getCurrentUserId(): number {
-        // TODO: Get from authState or user input
-        // For now, use a default value
-        return 1;
+        const userId = getUserIdFromToken();
+        return userId || 1; // Fallback to 1 if no token
     }
 
     // Load game invitations

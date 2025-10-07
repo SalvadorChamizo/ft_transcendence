@@ -16,6 +16,20 @@ export default async function chatRoutes(app: FastifyInstance) {
         }
     });
 
+    // Proxy para invitaciones de juego
+    app.register(fastifyHttpProxy, {
+        upstream: "http://chat-service:8083",
+        prefix: "/game-invitations",
+        rewritePrefix: "/game-invitations",
+        replyOptions: {
+            rewriteRequestHeaders: (originalReq, headers) => ({
+                ...headers,
+                'x-user-id': originalReq.user?.id?.toString() || '',
+                'x-username': originalReq.user?.username || '',
+            })
+        }
+    });
+
     // Proxy para WebSocket
     app.register(fastifyHttpProxy, {
         upstream: "http://chat-service:8083",
