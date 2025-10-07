@@ -18,7 +18,7 @@ const CANVAS_HEIGHT = 600;
 const PADDLE_WIDTH = 20;
 const PADDLE_HEIGHT = 100;
 const PADDLE_OFFSET_X = 30;
-const BALL_RADIUS = 10;
+const BALL_RADIUS = 50;
 const WINNING_SCORE = 10;
 
 const keysPressed = new Set<string>();
@@ -56,7 +56,7 @@ export function localPongPage(): string {
 
       <div class="scoreboard-container">
         <button id="startGameBtn" class="pong-button hidden">Start Game</button>
-        <div id="scoreboard" class="scoreboard">0 : 0</div>
+        <div id="scoreboard" class="scoreboard hidden">0 : 0</div>
         <button id="playAgainBtn" class="pong-button hidden">Play Again</button>
       </div>
 
@@ -74,7 +74,7 @@ export function localPongPage(): string {
         </div>
       </div>
 
-      <div id="extraInfo" class="extra-info">
+      <div id="extraInfo" class="extra-info hidden">
         <p>Press 'P' to Pause/Resume</p>
       </div>
     </div>
@@ -144,6 +144,8 @@ function prepareGameUI() {
     (document.getElementById("modeSelection")!).style.display = "none";
     (document.getElementById("pongCanvas")!).style.display = "block";
     (document.getElementById("gameInfo")!).style.display = "flex";
+    (document.getElementById("scoreboard")!).classList.remove("hidden");
+    (document.getElementById("extraInfo")!).classList.remove("hidden");
 }
 
 function startGame() {
