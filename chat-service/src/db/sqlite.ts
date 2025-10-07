@@ -40,6 +40,19 @@ db.prepare(`
     )
 `).run();
 
+// Table for game invitations
+db.prepare(`
+    CREATE TABLE IF NOT EXISTS game_invitations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        from_user_id INTEGER NOT NULL,
+        to_user_id INTEGER NOT NULL,
+        status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'accepted', 'rejected', 'expired')),
+        game_type TEXT DEFAULT 'pong',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        expires_at DATETIME NOT NULL
+    )
+`).run();
+
 // Migration: Add delivered_at and read_at columns if they don't exist
 try {
     db.prepare(`ALTER TABLE messages ADD COLUMN delivered_at DATETIME DEFAULT NULL`).run();
