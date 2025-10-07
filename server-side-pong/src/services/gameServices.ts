@@ -3,6 +3,16 @@
  * @brief Core game logic for Pong (supports Local + Online rooms)
  */
 
+const WINNING_SCORE = 10;
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 600;
+const PADDLE_HEIGHT = 100;
+const PADDLE_SPEED = 10;
+const PADDLE_OFFSET_X = 30;
+const PADDLE_WIDTH = 20;
+const BALL_SPEED_X = 5;
+const BALL_SPEED_Y = 5;
+
 export interface Paddle { y: number; }
 export interface Ball { x: number; y: number; dx: number; dy: number; }
 export interface Scores { left: number; right: number; }
@@ -13,8 +23,6 @@ export interface GameState {
 	scores: Scores;
 	gameEnded: boolean;
 }
-
-const WINNING_SCORE = 10;
 
 /**
  * State for local game mode
@@ -59,10 +67,14 @@ export function getGameState(roomId?: string): GameState
 	return localState;
 }
 
+
+/**
+ * Paddle speed is 10px for the y axis
+ */
 export function moveUp(side: "left" | "right", roomId?: string): GameState
 {
 	const state = getGameState(roomId);
-	state.paddles[side].y = Math.max(0, state.paddles[side].y - 10);
+	state.paddles[side].y = Math.max(0, state.paddles[side].y - PADDLE_SPEED);
 	if (roomId && roomId !== "local") roomStates.set(roomId, state);
 	else localState = state;
 	return state;
@@ -71,7 +83,7 @@ export function moveUp(side: "left" | "right", roomId?: string): GameState
 export function moveDown(side: "left" | "right", roomId?: string): GameState
 {
 	const state = getGameState(roomId);
-	state.paddles[side].y = Math.min(500, state.paddles[side].y + 10);
+	state.paddles[side].y = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, state.paddles[side].y + PADDLE_SPEED);
 	if (roomId && roomId !== "local") roomStates.set(roomId, state);
 	else localState = state;
 	return state;
@@ -89,13 +101,13 @@ export function updateGame(roomId?: string): GameState
 	if (ball.y <= 0 || ball.y >= 600) ball.dy *= -1;
 
 	// left paddle
-	if (ball.x <= 50 && ball.y >= state.paddles.left.y && ball.y <= state.paddles.left.y + 100)
+	if (ball.x <= PADDLE_OFFSET_X + PADDLE_WIDTH && ball.y >= state.paddles.left.y && ball.y <= state.paddles.left.y + PADDLE_HEIGHT)
 	{
 		ball.dx *= -1;
 	}
   	
 	// right paddle
-	if (ball.x >= 750 && ball.y >= state.paddles.right.y && ball.y <= state.paddles.right.y + 100)
+	if (ball.x >= CANVAS_WIDTH - PADDLE_OFFSET_X - PADDLE_WIDTH && ball.y >= state.paddles.right.y && ball.y <= state.paddles.right.y + PADDLE_HEIGHT)
 	{
 		ball.dx *= -1;
 	}
@@ -108,7 +120,7 @@ export function updateGame(roomId?: string): GameState
   	}
 
 	// Point for the left player
-  	if (ball.x > 800)
+  	if (ball.x > CANVAS_WIDTH)
 	{
 		state.scores.left++;
 		resetBall(state, "right", roomId);
@@ -145,16 +157,21 @@ function resetBall(state: GameState, serveTo: "left" | "right", roomId?: string)
   }
 }
 
+
+/**
+ * Starts the ball movement if it's stationary
+ * The ball speed is 5px for both x and y
+ */
 export function startBallMovement(roomId?: string)
 {
 	const state = getGameState(roomId);
 	if (state.ball.dx === 0 && state.ball.dy === 0)
 	{
 		const serveDirection = (state.ball as any).serveDirection || (Math.random() > 0.5 ? "left" : "right");
-	
-		state.ball.dx = serveDirection === "left" ? -5 : 5;
-		state.ball.dy = Math.random() > 0.5 ? 5 : -5;
-	
+
+		state.ball.dx = serveDirection === "left" ? -BALL_SPEED_X : BALL_SPEED_X;
+		state.ball.dy = Math.random() > 0.5 ? BALL_SPEED_Y : -BALL_SPEED_Y;
+
 		delete (state.ball as any).serveDirection; // cleaning
   	}
 	if (roomId && roomId !== "local") roomStates.set(roomId, state);

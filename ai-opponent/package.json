@@ -1,0 +1,23 @@
+{
+"name": "pong-ai-microservice",
+"version": "1.0.0",
+"description": "Microservicio IA predictiva para Pong: recibe GameState y devuelve la posición de la paleta IA.",
+"main": "dist/index.js",
+"scripts": {
+"build": "tsc",
+"start": "node dist/index.js",
+"dev": "ts-node src/index.ts"
+},
+"author": "",
+"license": "MIT",
+"dependencies": {
+"cors": "^2.8.5",
+"express": "^4.18.2"
+},
+"devDependencies": {
+"@types/express": "^4.17.17",
+"@types/node": "^20.5.1",
+"ts-node": "^10.9.1",
+"typescript": "^5.5.6"
+}
+}
