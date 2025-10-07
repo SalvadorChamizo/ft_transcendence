@@ -48,7 +48,7 @@ let gameState: GameState = {
 export function remotePongPage(): string {
     return `
     <div class="pong-container">
-      <h1>Pong - Local Game</h1>
+      <h1>Pong - Remote Game</h1>
       <div id="modeSelection">
         <button id="randomBtn" class="pong-button">Random Matchmaking</button>
         <button id="roomBtn" class="pong-button">Create/Join Room</button>
@@ -127,16 +127,16 @@ export function remotePongHandlers() {
     document.getElementById("startGameBtn")!.addEventListener("click", () => {
         if (!roomId) return;
         fetch(`${apiHost}/game/${roomId}/resume`, { method: "POST" });
-        (document.getElementById("startGameBtn")!).style.display = "none";
+        (document.getElementById("startGameBtn")!).classList.add("hidden");
         isGameRunning = true;
     });
 
     document.getElementById("playAgainBtn")!.addEventListener("click", () => {
         if (!roomId) return;
         document.getElementById("winnerMessage")!.style.display = "none";
-        document.getElementById("playAgainBtn")!.style.display = "none";
+        document.getElementById("playAgainBtn")!.classList.add("hidden");
         fetch(`${apiHost}/game/${roomId}/init`, { method: "POST" }).then(() => {
-            (document.getElementById("startGameBtn")!).style.display = "block";
+            (document.getElementById("startGameBtn")!).classList.remove("hidden");
         });
         isGameRunning = false;
     });
@@ -161,17 +161,13 @@ function startGame() {
     
         const roleInfo = document.getElementById("roleInfo")!;
         roleInfo.textContent = `You are: ${playerRole} in room ${roomId}. Waiting for opponent...`;
-
-        const controlsInfo = document.getElementById("controlsInfo")!;
-        if (playerRole !== "spectator") controlsInfo.textContent = "Controls: W/S or ↑/↓";
-        else controlsInfo.textContent = "Spectator (no controls)";
     });
 
     socket.on("gameReady", (data: { roomId: string }) => {
         document.getElementById("roleInfo")!.textContent = `You are ${playerRole} in room ${data.roomId}. Opponent found!`;
         fetch(`${apiHost}/game/${data.roomId}/init`, { method: "POST" });
         isGameRunning = false;
-        (document.getElementById("startGameBtn")!).style.display = "block";
+        (document.getElementById("startGameBtn")!).classList.remove("hidden");
     });
 
     socket.on("gameState", (state: GameState) => {
@@ -212,14 +208,16 @@ function checkWinner() {
 
 function endGame() {
     isGameRunning = false;
-    document.getElementById("playAgainBtn")!.style.display = "block";
-    (document.getElementById("startGameBtn")!).style.display = "none";
+    document.getElementById("playAgainBtn")!.classList.remove("hidden");
+    (document.getElementById("startGameBtn")!).classList.add("hidden");
 }
 
 function draw() {
     if (!ctx) return;
+
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
     ctx.strokeStyle = "#FFF";
     ctx.setLineDash([10, 5]);
     ctx.beginPath();
@@ -227,13 +225,28 @@ function draw() {
     ctx.lineTo(CANVAS_WIDTH / 2, CANVAS_HEIGHT);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = "#FFF";
+
+    ctx.shadowColor = "#42F3FA";
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = "#42F3FA";
     ctx.fillRect(PADDLE_OFFSET_X, gameState.paddles.left.y, PADDLE_WIDTH, PADDLE_HEIGHT);
+
+    ctx.shadowColor = "#FE92FD";
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = "#FE92FD";
     ctx.fillRect(CANVAS_WIDTH - PADDLE_OFFSET_X - PADDLE_WIDTH, gameState.paddles.right.y, PADDLE_WIDTH, PADDLE_HEIGHT);
+    
+    ctx.shadowBlur = 0;
+    
     if (!gameState.gameEnded) {
+        ctx.shadowColor = "#ffffff";
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = "#ffffff";
         ctx.beginPath();
         ctx.arc(gameState.ball.x, gameState.ball.y, BALL_RADIUS, 0, Math.PI * 2);
         ctx.fill();
     }
+
+    ctx.shadowBlur = 0;
     document.getElementById("scoreboard")!.textContent = `${gameState.scores.left} : ${gameState.scores.right}`;
 }

@@ -45,22 +45,37 @@ let gameState: GameState = {
  * HTML for the router
  */
 export function localPongPage(): string {
-  return `
+    return `
     <div class="pong-container">
-      <h1>Local Pong</h1>
+      <h1>Pong - Local Game</h1>
       <div id="modeSelection">
         <button id="1v1Btn" class="pong-button">1 vs 1</button>
         <button id="1vAIBtn" class="pong-button">1 vs AI</button>
       </div>
       <div id="roleInfo"></div>
-      <div id="scoreboard" class="scoreboard">0 : 0</div>
-      <canvas id="pongCanvas" width="${CANVAS_WIDTH}" height="${CANVAS_HEIGHT}" style="display:none;"></canvas>
+
+      <div class="scoreboard-container">
+        <button id="startGameBtn" class="pong-button hidden">Start Game</button>
+        <div id="scoreboard" class="scoreboard">0 : 0</div>
+        <button id="playAgainBtn" class="pong-button hidden">Play Again</button>
+      </div>
+
+      <p id="winnerMessage" class="winner-message" style="display: none;"></p>
+
       <div id="gameInfo" class="game-info" style="display:none;">
-        <p id="controlsInfo"></p>
+        <div class="controls left-controls">
+          <p>Left Player: W / S</p>
+        </div>
+
+        <canvas id="pongCanvas" width="800" height="600"></canvas>
+
+        <div class="controls right-controls">
+          <p>Right Player: ↑ / ↓</p>
+        </div>
+      </div>
+
+      <div id="extraInfo" class="extra-info">
         <p>Press 'P' to Pause/Resume</p>
-        <p id="winnerMessage" class="winner-message" style="display: none;"></p>
-        <button id="startGameBtn" class="pong-button" style="display: none;">Start Game</button>
-        <button id="playAgainBtn" class="pong-button" style="display: none;">Play Again</button>
       </div>
     </div>
   `;
@@ -102,7 +117,6 @@ export function localPongHandlers() {
     document.getElementById("1v1Btn")!.addEventListener("click", () => {
         prepareGameUI();
         document.getElementById("roleInfo")!.textContent = "Local mode: Two players, one keyboard";
-        document.getElementById("controlsInfo")!.textContent = "W/S for Left, ArrowUp/Down for Right";
         startGame();
     });
 
@@ -112,15 +126,15 @@ export function localPongHandlers() {
 
     document.getElementById("startGameBtn")!.addEventListener("click", () => {
         fetch(`${apiHost}/game/${roomId}/resume`, { method: "POST" });
-        (document.getElementById("startGameBtn")!).style.display = "none";
+        (document.getElementById("startGameBtn")!).classList.add("hidden");
         isGameRunning = true;
     });
 
     document.getElementById("playAgainBtn")!.addEventListener("click", () => {
         document.getElementById("winnerMessage")!.style.display = "none";
-        document.getElementById("playAgainBtn")!.style.display = "none";
+        document.getElementById("playAgainBtn")!.classList.add("hidden");
         fetch(`${apiHost}/game/${roomId}/init`, { method: "POST" }).then(() => {
-            (document.getElementById("startGameBtn")!).style.display = "block";
+            (document.getElementById("startGameBtn")!).classList.remove("hidden");
         });
         isGameRunning = false;
     });
@@ -133,12 +147,12 @@ function prepareGameUI() {
 }
 
 function startGame() {
-    const wsHost = `ws://${window.location.hostname}:3000`;
+    const wsHost = `ws://${window.location.hostname}:7000`;
     socket = io(wsHost);
 
     fetch(`${apiHost}/game/${roomId}/init`, { method: "POST" });
     isGameRunning = false;
-    (document.getElementById("startGameBtn")!).style.display = "block";
+    (document.getElementById("startGameBtn")!).classList.remove("hidden");;
 
     socket.on("gameState", (state: GameState) => {
         gameState = state;
@@ -173,14 +187,16 @@ function checkWinner() {
 
 function endGame() {
     isGameRunning = false;
-    document.getElementById("playAgainBtn")!.style.display = "block";
-    (document.getElementById("startGameBtn")!).style.display = "none";
+    document.getElementById("playAgainBtn")!.classList.remove("hidden");;
+    (document.getElementById("startGameBtn")!).classList.add("hidden");;
 }
 
 function draw() {
     if (!ctx) return;
+
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
     ctx.strokeStyle = "#FFF";
     ctx.setLineDash([10, 5]);
     ctx.beginPath();
@@ -188,13 +204,28 @@ function draw() {
     ctx.lineTo(CANVAS_WIDTH / 2, CANVAS_HEIGHT);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = "#FFF";
+
+    ctx.shadowColor = "#42F3FA";
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = "#42F3FA";
     ctx.fillRect(PADDLE_OFFSET_X, gameState.paddles.left.y, PADDLE_WIDTH, PADDLE_HEIGHT);
+
+    ctx.shadowColor = "#FE92FD";
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = "#FE92FD";
     ctx.fillRect(CANVAS_WIDTH - PADDLE_OFFSET_X - PADDLE_WIDTH, gameState.paddles.right.y, PADDLE_WIDTH, PADDLE_HEIGHT);
+    
+    ctx.shadowBlur = 0;
+    
     if (!gameState.gameEnded) {
+        ctx.shadowColor = "#ffffff";
+        ctx.shadowBlur = 10;
+        ctx.fillStyle = "#ffffff";
         ctx.beginPath();
         ctx.arc(gameState.ball.x, gameState.ball.y, BALL_RADIUS, 0, Math.PI * 2);
         ctx.fill();
     }
+
+    ctx.shadowBlur = 0;
     document.getElementById("scoreboard")!.textContent = `${gameState.scores.left} : ${gameState.scores.right}`;
 }
