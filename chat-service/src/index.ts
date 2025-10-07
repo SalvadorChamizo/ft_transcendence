@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import cors from "@fastify/cors";
 import websocket from "@fastify/websocket";
 import { chatRoutes } from "./routes/chatRoutes";
+import { gameInvitationRoutes } from "./routes/gameInvitationRoutes";
 import { websocketRoutes } from "./routes/websocketRoutes";
 import "./db/sqlite"; // Initialize database
 
@@ -39,6 +40,9 @@ async function startServer() {
 
     // Register chat routes
     await app.register(chatRoutes);
+
+    // Register game invitation routes
+    await app.register(gameInvitationRoutes);
 
     // Register WebSocket routes
     await app.register(websocketRoutes);
