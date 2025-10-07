@@ -1,9 +1,10 @@
-import { getConversations, sendMessage, getMessages } from "../services/api";
+import { getConversations, sendMessage, getMessages, blockUser, unblockUser } from "../services/api";
 import { websocketClient, ChatMessage } from "../services/websocketClient";
 
 // Status for active conversation
 let activeConversationId: number | null = null;
 let activeConversationName: string = '';
+let blockedUsers: Set<number> = new Set(); // Track blocked users
 
 export function Chat(): string {
     return `
@@ -35,6 +36,11 @@ export function Chat(): string {
                             <h3 id="contact-name">Select a conversation</h3>
                             <span id="contact-status">Online</span>
                         </div>
+                    </div>
+                    <div class="chat-actions">
+                        <button id="block-user-btn" class="block-btn" style="display: none;" title="Block user">
+                            🚫
+                        </button>
                     </div>
                 </div>
 
@@ -84,8 +90,9 @@ export function chatHandlers() {
     const messageResult = document.getElementById('message-result') as HTMLDivElement;
     const conversationsList = document.getElementById('conversations-list') as HTMLDivElement;
     const messagesContainer = document.getElementById('messages-container') as HTMLDivElement;
+    const blockButton = document.getElementById('block-user-btn') as HTMLButtonElement;
 
-    if (!messageForm || !loadButton || !messageResult || !conversationsList || !messagesContainer) {
+    if (!messageForm || !loadButton || !messageResult || !conversationsList || !messagesContainer || !blockButton) {
         console.error('Chat elements not found in DOM');
         return;
     }
@@ -211,6 +218,47 @@ export function chatHandlers() {
         }
     });
 
+    // Handle block/unblock user button
+    blockButton.addEventListener('click', async () => {
+        if (!activeConversationId) {
+            alert('No conversation selected');
+            return;
+        }
+
+        const isBlocked = blockedUsers.has(activeConversationId);
+        const action = isBlocked ? 'unblock' : 'block';
+        const confirmMessage = isBlocked 
+            ? `Unblock ${activeConversationName}?` 
+            : `Block ${activeConversationName}? You won't receive messages from this user.`;
+
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        try {
+            if (isBlocked) {
+                await unblockUser(activeConversationId);
+                blockedUsers.delete(activeConversationId);
+                blockButton.textContent = '🚫';
+                blockButton.title = 'Block user';
+                messageResult.innerHTML = '<span class="success">✅ User unblocked successfully!</span>';
+            } else {
+                await blockUser(activeConversationId);
+                blockedUsers.add(activeConversationId);
+                blockButton.textContent = '✅';
+                blockButton.title = 'Unblock user';
+                messageResult.innerHTML = '<span class="success">✅ User blocked successfully!</span>';
+            }
+            messageResult.className = 'message-result success';
+            
+            console.log(`User ${activeConversationId} ${action}ed successfully`);
+        } catch (error) {
+            console.error(`Error ${action}ing user:`, error);
+            messageResult.innerHTML = `<span class="error">❌ Failed to ${action} user</span>`;
+            messageResult.className = 'message-result error';
+        }
+    });
+
     // Initialize WebSocket connection and message handling
     async function initializeWebSocket() {
         try {
@@ -249,6 +297,15 @@ export function chatHandlers() {
         // Update the chat header
         const contactName = document.getElementById('contact-name');
         if (contactName) contactName.textContent = otherUserName;
+
+        // Show and update block button
+        const blockBtn = document.getElementById('block-user-btn') as HTMLButtonElement;
+        if (blockBtn) {
+            blockBtn.style.display = 'block';
+            const isBlocked = blockedUsers.has(otherUserId);
+            blockBtn.textContent = isBlocked ? '✅' : '🚫';
+            blockBtn.title = isBlocked ? 'Unblock user' : 'Block user';
+        }
 
         // Charge indicator display
         const messagesContainer = document.getElementById('messages-container');

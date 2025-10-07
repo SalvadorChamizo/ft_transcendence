@@ -36,7 +36,7 @@ export class WebSocketClient {
             this.messageHandlers = [];
 
             this.userId = userId;
-            const wsUrl = `ws://localhost:8085/ws?userId=${userId}`;
+            const wsUrl = `ws://localhost:8080/ws?userId=${userId}`;
             
             console.log(`Connecting to WebSocket: ${wsUrl}`);
             this.ws = new WebSocket(wsUrl);

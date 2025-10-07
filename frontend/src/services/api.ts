@@ -72,3 +72,43 @@ export async function getMessages(otherUserId: number) {
         throw err;
     }
 }
+
+export async function blockUser(blockedUserId: number) {
+    try {
+        const token = getAccessToken();
+        const res = await fetch(`http://localhost:8080/conversations/${blockedUserId}/block`, {
+            method: 'POST',
+            headers: { 
+                "Authorization": `Bearer ${token}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ blockedUserId })
+        });
+        if (!res.ok) {
+            throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+        return await res.json();
+    } catch (err) {
+        console.error("Failed to block user:", err);
+        throw err;
+    }
+}
+
+export async function unblockUser(blockedUserId: number) {
+    try {
+        const token = getAccessToken();
+        const res = await fetch(`http://localhost:8080/conversations/${blockedUserId}/block`, {
+            method: 'DELETE',
+            headers: { 
+                "Authorization": `Bearer ${token}`
+            }
+        });
+        if (!res.ok) {
+            throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+        return await res.json();
+    } catch (err) {
+        console.error("Failed to unblock user:", err);
+        throw err;
+    }
+}

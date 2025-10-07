@@ -11,9 +11,9 @@ export async function chatRoutes(fastify: FastifyInstance) {
     // GET /conversations/:userId/messages - Retrieve messages from a conversation
     fastify.get('/conversations/:userId/messages', chatController.getMessagesController);
     
-    // POST /users/:userId/block - Block user
-    fastify.post('/users/:userId/block', chatController.blockUserController);
+    // POST /conversations/:userId/block - Block user
+    fastify.post('/conversations/:userId/block', chatController.blockUserController);
     
-    // DELETE /users/:userId/block - Unlock user
-    fastify.delete('/users/:userId/block', chatController.unblockUserController);
+    // DELETE /conversations/:userId/block - Unlock user
+    fastify.delete('/conversations/:userId/block', chatController.unblockUserController);
 }
