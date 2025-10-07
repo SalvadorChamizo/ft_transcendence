@@ -61,7 +61,7 @@ services:
     env_file:
       - ./server-side-pong/.env
     ports:
-      - "3000:3000"
+      - "7000:7000"
     networks:
       - backend
     
