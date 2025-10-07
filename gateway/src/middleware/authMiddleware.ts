@@ -37,9 +37,12 @@ export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
             iat?: number;
             exp?: number;
         };
-        console.log(`[Auth Middleware] Token validated successfully for user: ${decoded.username}, URL: ${req.url}`); // LOG ADDED
+        console.log(`[Auth Middleware] Token validated successfully for user: ${decoded.username}`); // LOG ADDED
 
         req.user = decoded;
+
+        req.headers["x-user-id"] = decoded.id;
+        req.headers["x-username"] = decoded.username;
 
     }   catch (err) {
             return reply.code(401).send({ error: "Unauthorized: Invalid or expired token" });

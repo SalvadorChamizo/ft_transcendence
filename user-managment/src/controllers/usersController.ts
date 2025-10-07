@@ -104,9 +104,15 @@ export async function passwordControl(req: FastifyRequest, reply: FastifyReply) 
 }
 
 export async function getCurrentUserController(req: FastifyRequest, reply: FastifyReply) {
-	if (!req.user)
-		return reply.code(401).send({ error: "Not authenticated" });
+	const userId = req.headers["x-user-id"];
+	const username = req.headers["x-username"];
 
-	const user = await getUserById(req.user.id);
+  if (!userId || !username) {
+	console.log("❌ Missing user headers, not authenticated");
+	return reply.code(401).send({ error: "Not authenticated" });
+  }
+
+	const user = await getUserById(Number(userId));
+	console.log(`username ${user.username}`);
 	return { user };
 }

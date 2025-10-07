@@ -39,7 +39,7 @@ export async function render() {
             //autoLoginUser("t", "t"); // auto login for testing purposes
             const accessToken = getAccessToken();
             if (accessToken) {
-                const user = fetchCurrentUser(accessToken);
+                const user = await fetchCurrentUser(accessToken);
                 localStorage.setItem("user", JSON.stringify(user));
             }
             loginHandlers();

@@ -14,6 +14,7 @@ export function setupLoginHandlers() {
     
     if (isLoggedIn()) {
       const user = JSON.parse(localStorage.getItem("user")!);
+      showElement(result);
       setText(result, "✅ You are already logged in");
       getElement("#twofa-section").innerHTML = Enable2FAHtml();
       hideElement(form);
