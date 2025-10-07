@@ -58,12 +58,12 @@ export async function getMessagesController(req: FastifyRequest, reply: FastifyR
 }
 
 export async function blockUserController(req: FastifyRequest, reply: FastifyReply) {
-    const { blockedUserId } = req.body as { blockedUserId: number };
+    const { userId: blockedUserId } = req.params as { userId: string };
 
     try {
         const userId = extractUserId(req.headers);
         
-        const result = chatService.blockUser(userId, blockedUserId);
+        const result = chatService.blockUser(userId, parseInt(blockedUserId));
         return reply.send(result);
     } catch (err: any) {
         if (err.message === 'User not authenticated') {

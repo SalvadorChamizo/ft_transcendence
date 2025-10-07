@@ -81,8 +81,7 @@ export async function blockUser(blockedUserId: number) {
             headers: { 
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ blockedUserId })
+            }
         });
         if (!res.ok) {
             throw new Error(`HTTP error! Status: ${res.status}`);
