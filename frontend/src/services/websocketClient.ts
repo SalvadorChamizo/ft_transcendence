@@ -1,6 +1,6 @@
 // WebSocket client for real-time chat functionality
 export interface ChatMessage {
-    type: 'message' | 'user_connected' | 'user_disconnected' | 'typing' | 'stop_typing';
+    type: 'message' | 'user_connected' | 'user_disconnected' | 'typing' | 'stop_typing' | 'game_invitation';
     userId: number;
     conversationId?: number;
     content?: string;

@@ -289,11 +289,16 @@ export function chatHandlers() {
                 console.log('Received WebSocket message:', message);
                 
                 if (message.type === 'message') {
-                    // Add received message to UI
-                    addMessageToUI({
-                        ...message,
-                        isSent: false
-                    });
+                    // Check if it's a game invitation event
+                    if (message.data?.event_type) {
+                        handleGameInvitationEvent(message.data);
+                    } else {
+                        // Add received message to UI
+                        addMessageToUI({
+                            ...message,
+                            isSent: false
+                        });
+                    }
                 }
             });
             
@@ -303,6 +308,37 @@ export function chatHandlers() {
         } catch (error) {
             console.error('Failed to connect to WebSocket:', error);
             updateConnectionStatus(false);
+        }
+    }
+
+    // Handle game invitation WebSocket events
+    function handleGameInvitationEvent(eventData: any) {
+        const eventType = eventData.event_type;
+        
+        switch (eventType) {
+            case 'game_invitation_received':
+                console.log('🎮 New game invitation received:', eventData);
+                messageResult.innerHTML = `<span class="success">🎮 User ${eventData.from_user_id} invited you to play ${eventData.game_type}!</span>`;
+                messageResult.className = 'message-result success';
+                // Reload invitations to show the new one
+                loadGameInvitations();
+                break;
+                
+            case 'game_invitation_accepted':
+                console.log('✅ Game invitation accepted:', eventData);
+                messageResult.innerHTML = `<span class="success">✅ User ${eventData.to_user_id} accepted your invitation!</span>`;
+                messageResult.className = 'message-result success';
+                // TODO: Redirect to game page
+                break;
+                
+            case 'game_invitation_rejected':
+                console.log('❌ Game invitation rejected:', eventData);
+                messageResult.innerHTML = `<span class="error">❌ User ${eventData.to_user_id} rejected your invitation</span>`;
+                messageResult.className = 'message-result error';
+                break;
+                
+            default:
+                console.log('Unknown game invitation event:', eventType);
         }
     }
 
