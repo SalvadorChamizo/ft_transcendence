@@ -1069,6 +1069,27 @@ header {
   transform: scale(1.05);
 }
 
+.view-profile-btn {
+  background: rgba(66, 243, 250, 0.2);
+  border: 1px solid #42F3FA;
+  color: #42F3FA;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.view-profile-btn:hover {
+  background: rgba(66, 243, 250, 0.4);
+  box-shadow: 0 0 15px rgba(66, 243, 250, 0.8);
+  transform: scale(1.1);
+}
+
 /* Game Invitations Section */
 .invitations-header {
   padding: 15px;
