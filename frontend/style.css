@@ -1090,6 +1090,162 @@ header {
   transform: scale(1.1);
 }
 
+/* Profile Modal */
+.profile-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.profile-modal-content {
+  background: rgba(10, 25, 47, 0.95);
+  border: 2px solid #42F3FA;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: 0 0 30px rgba(66, 243, 250, 0.5);
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.profile-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid rgba(66, 243, 250, 0.3);
+}
+
+.profile-modal-header h2 {
+  color: #42F3FA;
+  margin: 0;
+  font-size: 24px;
+  text-shadow: 0 0 10px rgba(66, 243, 250, 0.5);
+}
+
+.close-modal-btn {
+  background: none;
+  border: none;
+  color: #42F3FA;
+  font-size: 28px;
+  cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.close-modal-btn:hover {
+  background: rgba(66, 243, 250, 0.2);
+  transform: rotate(90deg);
+}
+
+.profile-modal-body {
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.profile-avatar-large {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #42F3FA, #1e90ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: bold;
+  color: white;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 20px rgba(66, 243, 250, 0.6);
+}
+
+.profile-username {
+  color: #42F3FA;
+  font-size: 28px;
+  margin: 0;
+  text-shadow: 0 0 10px rgba(66, 243, 250, 0.5);
+}
+
+.profile-info {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.profile-info-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background: rgba(66, 243, 250, 0.1);
+  border: 1px solid rgba(66, 243, 250, 0.3);
+  border-radius: 8px;
+}
+
+.profile-label {
+  color: #42F3FA;
+  font-weight: bold;
+}
+
+.profile-value {
+  color: white;
+}
+
+.profile-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.profile-action-btn {
+  padding: 12px 24px;
+  border: 2px solid #42F3FA;
+  border-radius: 8px;
+  background: rgba(66, 243, 250, 0.2);
+  color: #42F3FA;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.profile-action-btn:hover {
+  background: rgba(66, 243, 250, 0.4);
+  box-shadow: 0 0 15px rgba(66, 243, 250, 0.8);
+  transform: translateY(-2px);
+}
+
+.profile-action-btn.invite-btn {
+  background: linear-gradient(135deg, rgba(66, 243, 250, 0.3), rgba(30, 144, 255, 0.3));
+}
+
 /* Game Invitations Section */
 .invitations-header {
   padding: 15px;

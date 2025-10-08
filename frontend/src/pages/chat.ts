@@ -97,6 +97,35 @@ export function Chat(): string {
                 </div>
             </div>
         </div>
+
+        <!-- Profile Modal -->
+        <div id="profile-modal" class="profile-modal" style="display: none;">
+            <div class="profile-modal-content">
+                <div class="profile-modal-header">
+                    <h2>User Profile</h2>
+                    <button id="close-profile-modal" class="close-modal-btn">✕</button>
+                </div>
+                <div class="profile-modal-body">
+                    <div class="profile-avatar-large" id="profile-avatar">?</div>
+                    <h3 id="profile-username" class="profile-username">Username</h3>
+                    <div class="profile-info">
+                        <div class="profile-info-item">
+                            <span class="profile-label">User ID:</span>
+                            <span id="profile-id" class="profile-value">-</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="profile-label">Victories:</span>
+                            <span id="profile-victories" class="profile-value">-</span>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <button id="invite-from-profile-btn" class="profile-action-btn invite-btn">
+                            🎮 Invite to Game
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
 }
 
@@ -292,8 +321,8 @@ export function chatHandlers() {
             const profile = await getUserProfile(activeConversationId);
             console.log('User profile:', profile);
             
-            // TODO PASO 4: Show profile modal with this data
-            alert(`Profile:\nUsername: ${profile.username}\nUser ID: ${profile.id}`);
+            // Show profile modal
+            showProfileModal(profile);
         } catch (error) {
             console.error('Error loading profile:', error);
             alert('Failed to load user profile');
@@ -574,6 +603,74 @@ export function chatHandlers() {
             messageResult.innerHTML = `<span class="error">❌ Error rejecting invitation</span>`;
             messageResult.className = 'message-result error';
         }
+    }
+
+    // Profile Modal Functions
+    function showProfileModal(profile: any) {
+        const modal = document.getElementById('profile-modal');
+        const username = document.getElementById('profile-username');
+        const userId = document.getElementById('profile-id');
+        const avatar = document.getElementById('profile-avatar');
+        const victories = document.getElementById('profile-victories');
+        
+        if (!modal || !username || !userId || !avatar || !victories) {
+            console.error('Profile modal elements not found');
+            return;
+        }
+
+        // Populate modal with profile data
+        username.textContent = profile.username || 'Unknown';
+        userId.textContent = profile.id?.toString() || '-';
+        avatar.textContent = profile.username?.charAt(0).toUpperCase() || '?';
+        victories.textContent = profile.victories?.toString() || '0';
+        
+        // Show modal
+        modal.style.display = 'flex';
+    }
+
+    function closeProfileModal() {
+        const modal = document.getElementById('profile-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    // Profile modal event listeners
+    const closeModalBtn = document.getElementById('close-profile-modal');
+    const profileModal = document.getElementById('profile-modal');
+    const inviteFromProfileBtn = document.getElementById('invite-from-profile-btn');
+
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeProfileModal);
+    }
+
+    // Close modal when clicking outside
+    if (profileModal) {
+        profileModal.addEventListener('click', (e) => {
+            if (e.target === profileModal) {
+                closeProfileModal();
+            }
+        });
+    }
+
+    // Invite to game from profile modal
+    if (inviteFromProfileBtn) {
+        inviteFromProfileBtn.addEventListener('click', async () => {
+            if (!activeConversationId) {
+                alert('No conversation selected');
+                return;
+            }
+
+            try {
+                await sendGameInvitation(activeConversationId, 'pong');
+                messageResult.innerHTML = '<span class="success">🎮 Game invitation sent!</span>';
+                messageResult.className = 'message-result success';
+                closeProfileModal();
+            } catch (error: any) {
+                messageResult.innerHTML = `<span class="error">❌ ${error.message}</span>`;
+                messageResult.className = 'message-result error';
+            }
+        });
     }
 
     // Handle invite to game button
