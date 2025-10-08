@@ -509,12 +509,13 @@ export function chatHandlers() {
             // Reload invitations
             await loadGameInvitations();
             
-            // Redirect to game page after 2 seconds
+            // Redirect to game selection page after 2 seconds
             setTimeout(() => {
-                // TODO: Change to remote pong when multiplayer is implemented
-                // For now, redirect to local pong as placeholder
-                window.location.hash = '#/local-pong';
-                console.log('Redirected to game with opponent:', result.opponentId);
+                // TODO: Change to remote pong with opponent when multiplayer is implemented
+                // window.location.hash = `#/pong/remote?opponent=${result.opponentId}`;
+                // For now, redirect to game selection page
+                window.location.hash = '#/game';
+                console.log('Redirected to game selection. Opponent ID:', result.opponentId);
             }, 2000);
         } catch (error: any) {
             messageResult.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
