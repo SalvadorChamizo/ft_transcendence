@@ -6,11 +6,18 @@ import { getAccessToken, refreshAccessToken, tempToken, tempUserId, tempUsername
 import { localPongPage, localPongHandlers } from "./pages/localPong";
 import { remotePongPage, remotePongHandlers } from "./pages/remotePong";
 import { handleTwoFA } from "./pages/Login/twofa";
-import { handleOAuthErrors } from "./pages/Login/loginHandlers";
+import { handleOAuthErrors, userLoggedIn } from "./pages/Login/loginHandlers";
 import { fetchCurrentUser } from "./pages/Login/loginService";
 export async function render() {
 
     await refreshAccessToken();
+
+    const accessToken = getAccessToken();
+    if (accessToken) {
+        const user = await fetchCurrentUser(accessToken);
+        localStorage.setItem("user", JSON.stringify(user));
+    }
+    userLoggedIn();
 
     const app = document.getElementById("app")!;
     const html = document.querySelector("html")!;
@@ -37,14 +44,14 @@ export async function render() {
             const html = document.querySelector("html")!;
             html.style.background = "#111111";
             //autoLoginUser("t", "t"); // auto login for testing purposes
+            loginHandlers();
+            registerHandlers();
+            handleOAuthErrors();
             const accessToken = getAccessToken();
             if (accessToken) {
                 const user = await fetchCurrentUser(accessToken);
                 localStorage.setItem("user", JSON.stringify(user));
             }
-            loginHandlers();
-            registerHandlers();
-            handleOAuthErrors();
     }
     if (location.hash === "#/login/2fa")
     {

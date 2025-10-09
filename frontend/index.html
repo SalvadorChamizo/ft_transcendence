@@ -35,7 +35,12 @@
 
                 <!-- Right links -->
                 <ul class="nav-links nav-right">
-                    <li><a id="login-name" class="hoverMe" href="#/login">Sign in / Sign up</a></li>
+                    <li class="dropdown">
+                        <a id="login-name" class="hoverMe" href="#/login">Sign in / Sign up</a>
+                        <ul id="login-dropdown" class="dropdown-content hidden">
+                            <li><a id="logout-btn" class="hoverMe">Logout</a></li>
+                        </ul>
+                    </li>
                 </ul>
 
                 <a href="javascript:void(0);" class="icon" onclick="toggleNav()">☰</a>

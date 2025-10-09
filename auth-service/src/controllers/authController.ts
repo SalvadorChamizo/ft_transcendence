@@ -355,9 +355,10 @@ export async function callbackGoogleController(req: FastifyRequest, reply: Fasti
         }
 
         const googleUser = await userInfoRes.json();
-
+        console.log(`Google user: ${googleUser}`);
         const user = await findOrCreateUserFromGoogle(googleUser);
 
+        console.log(`User: ${user}`)
         const { token, refreshToken } = createTokensLogin(user);
 
         reply.setCookie("refreshToken", refreshToken, {

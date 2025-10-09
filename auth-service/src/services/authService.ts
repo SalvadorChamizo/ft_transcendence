@@ -85,14 +85,14 @@ export async function findOrCreateUserFrom42(intraUser: any) {
     }
     
     const newUser = await register.json();
-    createUser(newUser.username, "", newUser.email);
-    return newUser;
+    createUser(newUser.user.username, "", newUser.user.email);
+    return newUser.user;
 }
 
 export async function findOrCreateUserFromGoogle(googleUser: any) {
     const email = googleUser.email;
     const username = googleUser.name;
-
+    console.log(`Username google: ${username}`);
     const res = await fetch("http://user-management-service:8082/getUserByEmail", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -116,6 +116,6 @@ export async function findOrCreateUserFromGoogle(googleUser: any) {
     }
     
     const newUser = await register.json();
-    createUser(newUser.username, "", newUser.email);
-    return newUser;
+    createUser(newUser.user.username, "", newUser.user.email);
+    return newUser.user;
 }

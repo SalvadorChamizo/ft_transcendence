@@ -434,6 +434,7 @@ export function setupLoginTabs(): void {
   tabLinks.forEach(link => {
     link.addEventListener("click", function (this: HTMLElement, e) {
       e.preventDefault();
+      e.stopPropagation();
 
       const target = this.getAttribute("data-tab");
       if (!target) return;
@@ -457,6 +458,7 @@ export function setupLoginTabs(): void {
   tabLinkAccount.forEach(link => {
     link.addEventListener("click", function (e) {
       e.preventDefault();
+      e.stopPropagation();
 
       // Reset all
       tabLinks.forEach(link => link.classList.remove("active"));

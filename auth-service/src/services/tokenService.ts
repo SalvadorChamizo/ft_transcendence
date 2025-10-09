@@ -11,6 +11,7 @@ export function generateAccessToken(user: { id: number; username: string; }) {
 }
 
 export function generateRefreshToken(user: { id: number; username: string }) {
+    console.log(`username: ${user.username}`)
     return jwt.sign(
         { id: user.id, username: user.username, jti: uuid() },
     process.env.REFRESH_SECRET as string,

@@ -482,7 +482,39 @@ header {
     background-color: #5a5f66;
 }
 
-.login-nav-link{
+.login-nav-link {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: none;
+  background: none;
+  color: white;
+  text-decoration: none;
+  cursor: pointer;
+  font: inherit;
+  width: 100%;
+  display: block;
+  padding: 10px 0;
+  transition: background 0.3s;
+  border-bottom: 1px solid rgba(178, 178, 202, 0.3);
+  background: #181741;
+  border-radius: 0;
+}
+
+.login-nav-link.active {
+  border-bottom: 1px solid grey;
+  background: #e7e7e7;
+  font-weight: bold;
+  color: #181741;
+  box-shadow: inset 0 0 8px #181741;
+}
+
+/* Optional: remove default focus ring (for style consistency) */
+.login-nav-link:focus {
+  outline: none;
+}
+
+/*.login-nav-link{
     border-bottom: 1px solid rgba(178, 178, 202, 0.3);
     border-top-right-radius: 5px;
     display: block;
@@ -501,7 +533,7 @@ header {
     font-weight: bold;
     color: #181741;
     box-shadow: inset 0 0 8px #181741;;
-}
+}*/
 
 .btr{
   border-top-right-radius: 5px;

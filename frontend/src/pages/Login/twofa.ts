@@ -2,6 +2,8 @@ import { TwoFAFormHtml } from "./loginTemplate";
 import { setAccessToken } from "../../state/authState";
 import { setText } from "./loginDOM";
 
+const apiHost = `${window.location.hostname}`;
+
 export async function handleTwoFA(tempToken: string, username: string, userId: number) {
     //const app = document.getElementById("app")!;
     //app.innerHTML = TwoFAFormHtml();
@@ -20,7 +22,7 @@ export async function handleTwoFA(tempToken: string, username: string, userId: n
     
         
         try {
-            const res = await fetch("http://localhost:8080/auth/generate-qr", {
+            const res = await fetch(`http://${apiHost}:8080/auth/generate-qr`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -44,7 +46,7 @@ export async function handleTwoFA(tempToken: string, username: string, userId: n
             const code = (document.querySelector<HTMLInputElement>("#twofa-code")!).value;
         
             try {
-                const verifyRes = await fetch("http://localhost:8080/auth/verify-2fa", {
+                const verifyRes = await fetch(`http://${apiHost}:8080/auth/verify-2fa`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ userId, code }),

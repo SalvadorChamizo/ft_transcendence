@@ -33,8 +33,8 @@ export async function register42Controller(req: FastifyRequest, reply: FastifyRe
 		if (userEmail)
 			throw new Error("Email already exists");
 		const result = await register42User(email, username);
-		const id = await getIDbyUsername(username);
-		return reply.send({ result, id });
+		const user = await getUserByUsername(username);
+		return reply.send({ result, user });
 	} 
 	catch (err: any) {
 		console.error("Error occurred during user registration:", err);
