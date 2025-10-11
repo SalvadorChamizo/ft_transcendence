@@ -84,12 +84,23 @@ export function localPongPage(): string {
 }
 
 function cleanup() {
-    if (socket) socket.disconnect();
-    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    console.log("[LocalPong] Cleaning up previous game...");
+    if (socket) {
+        socket.off('connect');
+        socket.off('gameState');
+        socket.off('roomFull');
+        socket.off('gamePaused');
+        socket.off('disconnect');
+        socket.disconnect();
+    }
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+    }
     window.removeEventListener("keydown", handleKeyDown);
     window.removeEventListener("keyup", handleKeyUp);
     isGameRunning = false;
     keysPressed.clear();
+    ctx = null;
 }
 
 // Helper: POST with Authorization header and one retry after token refresh
@@ -142,81 +153,95 @@ function gameLoop(isAiMode: boolean) {
 }
 
 export function localPongHandlers() {
+    // Initial cleanup in case of hot-reloading or re-navigation
     cleanup();
-    ctx = (document.getElementById("pongCanvas") as HTMLCanvasElement).getContext("2d")!;
-    
+
     document.getElementById("1v1Btn")!.addEventListener("click", () => {
-        prepareGameUI();
-        (document.querySelector(".right-controls p") as HTMLElement).textContent = "Right Player: ↑ / ↓";
-        document.getElementById("roleInfo")!.textContent = "Local mode: Two players, one keyboard";
+        prepareGameUI(false);
         startGame(false);
     });
 
     document.getElementById("1vAIBtn")!.addEventListener("click", () => {
-        prepareGameUI();
-        (document.querySelector(".right-controls p") as HTMLElement).textContent = "Right Player: AI";
-        document.getElementById("roleInfo")!.textContent = "Local mode: Player vs. AI";
+        prepareGameUI(true);
         startGame(true);
     });
 
-    document.getElementById("startGameBtn")!.addEventListener("click", () => {
-        postGame(`/game/${roomId}/resume`);
-        (document.getElementById("startGameBtn")!).classList.add("hidden");
-        isGameRunning = true;
-    });
-
     document.getElementById("playAgainBtn")!.addEventListener("click", () => {
+        cleanup(); // Clean up the finished game
+        
+        // Reset UI to initial state
         (document.getElementById("modeSelection")!).style.display = "flex";
-        (document.getElementById("pongCanvas")!).style.display = "none";
         (document.getElementById("gameInfo")!).style.display = "none";
         (document.getElementById("winnerMessage")!).style.display = "none";
         (document.getElementById("playAgainBtn")!).classList.add("hidden");
+        (document.getElementById("scoreboard")!).classList.add("hidden");
+        (document.getElementById("extraInfo")!).classList.add("hidden");
+        (document.getElementById("roleInfo")!).textContent = "";
+
+        // Re-attach the main handlers for the mode selection buttons
+        localPongHandlers();
     });
 }
 
-function prepareGameUI() {
+function prepareGameUI(isAiMode: boolean) {
     (document.getElementById("modeSelection")!).style.display = "none";
-    (document.getElementById("pongCanvas")!).style.display = "block";
     (document.getElementById("gameInfo")!).style.display = "flex";
     (document.getElementById("scoreboard")!).classList.remove("hidden");
     (document.getElementById("extraInfo")!).classList.remove("hidden");
+
+    if (isAiMode) {
+        (document.querySelector(".right-controls p") as HTMLElement).textContent = "Right Player: AI";
+        document.getElementById("roleInfo")!.textContent = "Local mode: Player vs. AI";
+    } else {
+        (document.querySelector(".right-controls p") as HTMLElement).textContent = "Right Player: ↑ / ↓";
+        document.getElementById("roleInfo")!.textContent = "Local mode: Two players, one keyboard";
+    }
 }
 
 async function startGame(isAiMode: boolean) {
+    // Ensure everything is clean before starting
+    cleanup();
+    
+    ctx = (document.getElementById("pongCanvas") as HTMLCanvasElement).getContext("2d")!;
     const wsHost = `ws://${window.location.hostname}:7000`;
+    socket = io(wsHost, { transports: ['websocket'] });
 
-    socket = io(wsHost);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
 
-    // Join the "local" room after the socket connects to avoid race conditions
-    socket.on('connect', () => {
+    socket.on('connect', async () => {
+        console.log("[LocalPong] Socket connected, joining room 'local'");
         socket.emit("joinRoom", { roomId: "local" });
-    });
 
-    isGameRunning = false;
-    cancelAnimationFrame(animationFrameId);
-    gameLoop(isAiMode);
-
-    try {
-        if (!isAiMode) {
+        try {
+            // Always stop AI first to ensure a clean state
             await postGame(`/game/${roomId}/stop-ai`);
-        }
 
-        const initResponse = await postGame(`/game/${roomId}/init`);
-        if (!initResponse.ok) {
-            throw new Error(`init failed (${initResponse.status})`);
-        }
-
-        if (isAiMode) {
-            const startAiResponse = await postGame(`/game/${roomId}/start-ai`);
-            if (!startAiResponse.ok) {
-                throw new Error(`start-ai failed (${startAiResponse.status})`);
+            const initResponse = await postGame(`/game/${roomId}/init`);
+            if (!initResponse.ok) {
+                throw new Error(`init failed (${initResponse.status})`);
             }
-        } else {
-            (document.getElementById("startGameBtn")!).classList.remove("hidden");
+
+            if (isAiMode) {
+                const startAiResponse = await postGame(`/game/${roomId}/start-ai`);
+                if (!startAiResponse.ok) {
+                    throw new Error(`start-ai failed (${startAiResponse.status})`);
+                }
+            }
+            
+            // The game starts paused by default after init, so we resume it.
+            const resumeResponse = await postGame(`/game/${roomId}/resume`);
+            if (!resumeResponse.ok) {
+                throw new Error(`resume failed (${resumeResponse.status})`);
+            }
+            isGameRunning = true;
+            console.log("[LocalPong] Game started and resumed.");
+
+        } catch (error) {
+            console.error("[LocalPong] Failed to start game:", error);
+            // Optional: show an error message to the user
         }
-    } catch (error) {
-        console.error("[LocalPong] Failed to start game", error);
-    }
+    });
 
     socket.on("gameState", (state: GameState) => {
         gameState = state;
@@ -229,19 +254,22 @@ async function startGame(isAiMode: boolean) {
     socket.on('roomFull', (payload: { roomId: string }) => {
         alert('Local room is full. Please try again later or use Remote mode.');
         console.warn('Attempted to join full local room', payload);
+        cleanup();
     });
 
     socket.on("gamePaused", (payload: boolean | { paused: boolean }) => {
         const paused = typeof payload === "boolean" ? payload : payload?.paused;
         isGameRunning = !paused;
+        console.log(`[LocalPong] Game pause state changed. isGameRunning: ${isGameRunning}`);
     });
 
     socket.on("disconnect", () => {
+        console.log("[LocalPong] Socket disconnected.");
         isGameRunning = false;
     });
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    // Start the animation loop
+    gameLoop(isAiMode);
 }
 
 function checkWinner() {
