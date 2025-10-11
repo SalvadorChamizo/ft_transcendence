@@ -947,6 +947,40 @@ header {
   100% { opacity: 1; }
 }
 
+/* New Chat Section in Sidebar */
+.new-chat-section {
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(66, 243, 250, 0.3);
+}
+
+.sidebar-new-chat-btn {
+  width: 100%;
+  background: rgba(66, 243, 250, 0.2);
+  border: 2px solid #42F3FA;
+  color: #42F3FA;
+  padding: 10px 16px;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sidebar-new-chat-btn:hover {
+  background: rgba(66, 243, 250, 0.3);
+  box-shadow: 0 0 15px rgba(66, 243, 250, 0.6);
+  transform: scale(1.02);
+}
+
+.sidebar-new-chat-btn span {
+  font-size: 16px;
+  font-weight: bold;
+}
+
 .conversations-list {
   flex: 1;
   overflow-y: auto;
@@ -1579,28 +1613,6 @@ header {
   padding: 40px 20px;
   color: #42F3FA;
   text-shadow: 0 0 5px rgba(66, 243, 250, 0.5);
-}
-
-.start-chat-button {
-  background: rgba(66, 243, 250, 0.2);
-  border: 2px solid #42F3FA;
-  color: #42F3FA;
-  padding: 12px 24px;
-  border-radius: 25px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 16px;
-}
-
-.start-chat-button:hover {
-  background: rgba(66, 243, 250, 0.3);
-  box-shadow: 0 0 20px rgba(66, 243, 250, 0.6);
-  transform: scale(1.05);
 }
 
 .modal {

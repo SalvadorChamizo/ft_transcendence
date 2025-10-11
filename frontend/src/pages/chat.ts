@@ -118,6 +118,13 @@ export function Chat(): string {
                     </div>
                 </div>
                 
+                <!-- New Chat Button - Always visible -->
+                <div class="new-chat-section">
+                    <button id="sidebar-new-chat" class="sidebar-new-chat-btn">
+                        <span>+</span> New Chat
+                    </button>
+                </div>
+                
                 <!-- Game Invitations Section -->
                 <div id="game-invitations-section" style="display: none;">
                     <div class="invitations-header">
@@ -170,16 +177,8 @@ export function Chat(): string {
                 </div>
 
                 <!-- Message input area -->
-                                <!-- Message input area -->
                 <div class="message-input-area">
-                    <div id="no-conversation-selected" class="no-conversation-message">
-                        <p>Select a conversation to start chatting</p>
-                        <button id="start-new-chat" class="start-chat-button">
-                            <span>+</span> New Chat
-                        </button>
-                    </div>
-                    
-                    <form id="message-form" class="message-form" style="display: none;">
+                    <form id="message-form" class="message-form">
                         <div class="input-with-button">
                             <input 
                                 type="text" 
@@ -454,21 +453,29 @@ export function chatHandlers() {
     // Load conversations automatically on page load
     loadConversationsAuto();
 
-    // Handle new chat button
-    const startNewChatBtn = document.getElementById('start-new-chat') as HTMLButtonElement;
+    // Handle new chat functionality
+    const sidebarNewChatBtn = document.getElementById('sidebar-new-chat') as HTMLButtonElement;
     const newChatModal = document.getElementById('new-chat-modal') as HTMLDivElement;
     const closeNewChatModalBtn = document.getElementById('close-new-chat-modal') as HTMLButtonElement;
     const userSearchInput = document.getElementById('user-search') as HTMLInputElement;
     const userSearchResults = document.getElementById('user-search-results') as HTMLDivElement;
 
-    if (startNewChatBtn && newChatModal && closeNewChatModalBtn && userSearchInput && userSearchResults) {
-        // Open new chat modal
-        startNewChatBtn.addEventListener('click', async () => {
+    // Function to open new chat modal
+    async function openNewChatModal() {
+        if (newChatModal && userSearchInput) {
             newChatModal.style.display = 'block';
             userSearchInput.focus();
             // Load all users by default
             await loadAllUsers();
-        });
+        }
+    }
+
+    // Add event listener for sidebar new chat button
+    if (sidebarNewChatBtn) {
+        sidebarNewChatBtn.addEventListener('click', openNewChatModal);
+    }
+
+    if (newChatModal && closeNewChatModalBtn && userSearchInput && userSearchResults) {
 
         // Close modal
         closeNewChatModalBtn.addEventListener('click', () => {
@@ -1079,14 +1086,11 @@ export function chatHandlers() {
 
     // Function to show/hide message input based on conversation selection
     function updateMessageInputVisibility() {
-        const noConversationDiv = document.getElementById('no-conversation-selected') as HTMLDivElement;
         const messageForm = document.getElementById('message-form') as HTMLFormElement;
         
         if (activeConversationId) {
-            if (noConversationDiv) noConversationDiv.style.display = 'none';
             if (messageForm) messageForm.style.display = 'flex';
         } else {
-            if (noConversationDiv) noConversationDiv.style.display = 'block';
             if (messageForm) messageForm.style.display = 'none';
         }
     }
