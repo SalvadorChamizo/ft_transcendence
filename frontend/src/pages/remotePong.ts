@@ -3,6 +3,7 @@
  * @brief Frontend logic for Online Pong game (Random and Rooms)
  */
 import { io, Socket } from "socket.io-client";
+import { getAccessToken, refreshAccessToken } from "../state/authState";
 
 let socket: Socket;
 let ctx: CanvasRenderingContext2D | null = null;
@@ -13,14 +14,15 @@ let roomId: string | null = null;
 
 const apiHost = `http://${window.location.hostname}:8080`;
 
-// Game constants
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 600;
-const PADDLE_WIDTH = 20;
-const PADDLE_HEIGHT = 100;
-const PADDLE_OFFSET_X = 30;
-const BALL_RADIUS = 10;
-const WINNING_SCORE = 10;
+import {
+	WINNING_SCORE,
+	CANVAS_WIDTH,
+	CANVAS_HEIGHT,
+	BALL_RADIUS,
+	PADDLE_HEIGHT,
+	PADDLE_WIDTH,
+	PADDLE_OFFSET_X,
+} from "../utils/pong-constants";
 
 const keysPressed = new Set<string>();
 
@@ -90,10 +92,28 @@ function cleanup() {
     isGameRunning = false;
 }
 
+// Helper: POST with Authorization header and retry after refresh on 401
+async function postGame(path: string): Promise<Response> {
+    const makeReq = async () => {
+        const token = getAccessToken();
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        return fetch(`${apiHost}${path}`, { method: "POST", headers });
+    };
+    let res = await makeReq();
+    if (res.status === 401) {
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+            res = await makeReq();
+        }
+    }
+    return res;
+}
+
 const handleKeyDown = (e: KeyboardEvent) => {
     if (["ArrowUp", "ArrowDown", "w", "s"].includes(e.key)) e.preventDefault();
     if (e.key.toLowerCase() === "p" && roomId) {
-        fetch(`${apiHost}/game/${roomId}/toggle-pause`, { method: "POST" });
+        postGame(`/game/${roomId}/toggle-pause`);
     } else {
         keysPressed.add(e.key);
     }
@@ -126,16 +146,16 @@ export function remotePongHandlers() {
 
     document.getElementById("startGameBtn")!.addEventListener("click", () => {
         if (!roomId) return;
-        fetch(`${apiHost}/game/${roomId}/resume`, { method: "POST" });
+        postGame(`/game/${roomId}/resume`);
         (document.getElementById("startGameBtn")!).classList.add("hidden");
-        isGameRunning = true;
+        // Do NOT set isGameRunning here. Wait for server 'gamePaused' event with paused=false.
     });
 
     document.getElementById("playAgainBtn")!.addEventListener("click", () => {
         if (!roomId) return;
         document.getElementById("winnerMessage")!.style.display = "none";
         document.getElementById("playAgainBtn")!.classList.add("hidden");
-        fetch(`${apiHost}/game/${roomId}/init`, { method: "POST" }).then(() => {
+        postGame(`/game/${roomId}/init`).then(() => {
             (document.getElementById("startGameBtn")!).classList.remove("hidden");
         });
         isGameRunning = false;
@@ -153,21 +173,41 @@ function startGame() {
     socket = io(wsHost);
 
     document.getElementById("roleInfo")!.textContent = "Waiting for an opponent...";
-    socket.emit("joinRoom");
+    // Wait for the socket to be connected before emitting joinRoom
+    socket.on('connect', () => {
+        socket.emit("joinRoom");
+    });
 
     socket.on("roomJoined", (data: { roomId: string, role: "left" | "right" }) => {
         roomId = data.roomId;
-        playerRole = data.role;
-    
+        // If the server returns no valid role, treat as spectator
+        playerRole = (data && (data as any).role) ? (data as any).role : "spectator";
+
         const roleInfo = document.getElementById("roleInfo")!;
-        roleInfo.textContent = `You are: ${playerRole} in room ${roomId}. Waiting for opponent...`;
+        if (playerRole === 'spectator') {
+            roleInfo.textContent = `You are a spectator in room ${roomId}. Waiting for players...`;
+            // hide start button for spectators
+            (document.getElementById("startGameBtn")!).classList.add("hidden");
+        } else {
+            roleInfo.textContent = `You are: ${playerRole} in room ${roomId}. Waiting for opponent...`;
+        }
+    });
+
+    socket.on('roomFull', (payload: { roomId: string }) => {
+        alert('Room is full. Try again later.');
+        console.warn('Attempted to join full room', payload);
     });
 
     socket.on("gameReady", (data: { roomId: string }) => {
-        document.getElementById("roleInfo")!.textContent = `You are ${playerRole} in room ${data.roomId}. Opponent found!`;
-        fetch(`${apiHost}/game/${data.roomId}/init`, { method: "POST" });
+        document.getElementById("roleInfo")!.textContent = `Room ${data.roomId} is ready. Opponent found!`;
+        postGame(`/game/${data.roomId}/init`);
         isGameRunning = false;
-        (document.getElementById("startGameBtn")!).classList.remove("hidden");
+        // Only show start button to actual players
+        if (playerRole === 'left' || playerRole === 'right') {
+            (document.getElementById("startGameBtn")!).classList.remove("hidden");
+        } else {
+            (document.getElementById("startGameBtn")!).classList.add("hidden");
+        }
     });
 
     socket.on("gameState", (state: GameState) => {

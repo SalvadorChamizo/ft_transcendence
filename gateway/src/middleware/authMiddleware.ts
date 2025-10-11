@@ -16,11 +16,14 @@ const publicUrls = [
 ];
 
 export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
-    // Obtener la ruta sin parámetros de consulta
-    const urlPath = req.url.split('?')[0];
     
-    // Permitir rutas públicas y WebSocket
-    if (publicUrls.includes(urlPath) || urlPath.startsWith('/ws')) {
+	const urlPath = req.url.split('?')[0];
+    
+    if (req.method === 'OPTIONS') {
+        return;
+    }
+
+    if (publicUrls.includes(urlPath) || urlPath.startsWith('/ws') || urlPath.startsWith('/game/local')) {
         return;
     }
 

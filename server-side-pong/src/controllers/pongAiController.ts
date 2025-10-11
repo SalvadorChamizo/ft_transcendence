@@ -24,6 +24,8 @@ function stopAi(roomId: string)
         aiMovementTimers.get(roomId)?.forEach(clearTimeout);
         aiMovementTimers.delete(roomId);
     }
+    // Remove simulated key state for this AI
+    if (aiKeyState.has(roomId)) aiKeyState.delete(roomId);
     console.log(`[AI] Stopped for room ${roomId}`);
 }
 
@@ -60,26 +62,42 @@ export async function pongAiController(fastify: FastifyInstance, io: Server)
 
 
             try {
+                // game state velocities are in px per tick (game runs at ~60fps).
+                // The AI microservice expects velocities in px per second, so convert them.
                 const aiServiceUrl = process.env.AI_SERVICE_URL || "http://ai-service:7010";
+                console.log(`[AI] Requesting plan from ${aiServiceUrl} for room ${roomId}`);
+
+                // Create a shallow clone of the state and convert velocities to px/sec
+                const stateForAI = JSON.parse(JSON.stringify(state));
+                if (stateForAI.ball && typeof stateForAI.ball.dx === 'number')
+                {
+                    // conver from px/frame to px/second assuming 60 frames per second
+                    stateForAI.ball.dx = stateForAI.ball.dx * 60;
+                    stateForAI.ball.dy = stateForAI.ball.dy * 60;
+                }
+
                 const response = await fetch(`${aiServiceUrl}/ai/update`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ state, side: "right", dt: 1.0 }), // dt es 1 segundo
+                    body: JSON.stringify({ state: stateForAI, side: "right", dt: 1.0 }), // dt is 1 second
                 });
 
                 if (!response.ok) throw new Error(`AI service error: ${response.statusText}`);
 
                 const { events } = await response.json() as { events: { type: string, key: string, atMs: number }[] };
+                console.log(`[AI] Received plan for room ${roomId}:`, events);
 
                 // Clean old plans before executing the new one
                 aiMovementTimers.get(roomId)?.forEach(clearTimeout);
                 aiMovementTimers.set(roomId, []);
 
                 // Execute the plan
+                console.log(`[AI] Executing plan for room ${roomId}...`);
                 for (const event of events)
                 {
                     const timer = setTimeout(() =>
                     {
+                        console.log(`[AI EXEC] Room ${roomId}: ${event.type} ${event.key}`);
                         const keys = aiKeyState.get(roomId);
                         if (!keys) return;
 
@@ -96,7 +114,7 @@ export async function pongAiController(fastify: FastifyInstance, io: Server)
                 console.error("[AI] Failed to get plan from AI service:", error);
                 stopAi(roomId);
             }
-        }, 1000); // <-- RESTRICCIÓN: 1 CALL PER SECOND
+        }, 1000); // <-- RESTRICTIOM: 1 CALL PER SECOND
 
         aiIntervals.set(roomId, intervalId);
         io.to(roomId).emit("gameReady", { roomId });

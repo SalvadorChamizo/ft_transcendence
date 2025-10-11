@@ -3,8 +3,9 @@
  * @brief Frontend logic for Pong game vs. an AI opponent.
  */
 import { io, Socket } from "socket.io-client";
+import { getAccessToken, refreshAccessToken } from "../state/authState";
 
-// --- COPIADO DE PONG.TS (con pequeñas modificaciones) ---
+// COPIADO DE PONG.TS (con pequeñas modificaciones)
 
 let socket: Socket;
 let ctx: CanvasRenderingContext2D | null = null;
@@ -13,14 +14,17 @@ let isGameRunning = false;
 let playerRole: "left" | "right" = "left"; // El jugador siempre es 'left'
 let roomId = "";
 
-// Game constants
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 600;
-const PADDLE_WIDTH = 20;
-const PADDLE_HEIGHT = 100;
-const PADDLE_OFFSET_X = 30;
-const BALL_RADIUS = 10;
-const WINNING_SCORE = 10;
+const apiHost = `http://${window.location.hostname}:8080`;
+
+import {
+	WINNING_SCORE,
+	CANVAS_WIDTH,
+	CANVAS_HEIGHT,
+	BALL_RADIUS,
+	PADDLE_HEIGHT,
+	PADDLE_WIDTH,
+	PADDLE_OFFSET_X,
+} from "../utils/pong-constants";
 
 const keysPressed = new Set<string>();
 
@@ -71,10 +75,29 @@ function cleanup() {
     isGameRunning = false;
 }
 
+// Helper: POST with Authorization header and one retry after token refresh
+async function postGame(path: string): Promise<Response> {
+    const makeReq = async () => {
+        const token = getAccessToken();
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        return fetch(`${apiHost}${path}`, { method: "POST", headers });
+    };
+    let res = await makeReq();
+    if (res.status === 401) {
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+            res = await makeReq();
+        }
+    }
+    return res;
+}
+
 const handleKeyDown = (e: KeyboardEvent) => {
     if (["ArrowUp", "ArrowDown", "w", "s"].includes(e.key)) e.preventDefault();
     if (e.key.toLowerCase() === "p") {
-        fetch(`http://localhost:8080/game/${roomId}/toggle-pause`, { method: "POST" });
+        postGame(`/game/${roomId}/toggle-pause`);
+        return;
     } else {
         keysPressed.add(e.key);
     }
@@ -105,15 +128,15 @@ export function pongAiHandlers() {
     });
 
     document.getElementById("startGameBtn")!.addEventListener("click", () => {
-        fetch(`http://localhost:8080/game/${roomId}/resume`, { method: "POST" });
+        postGame(`/game/${roomId}/resume`);
         (document.getElementById("startGameBtn")!).style.display = "none";
-        isGameRunning = true;
+        // Wait for server event to set isGameRunning
     });
 
     document.getElementById("playAgainBtn")!.addEventListener("click", () => {
         document.getElementById("winnerMessage")!.style.display = "none";
         document.getElementById("playAgainBtn")!.style.display = "none";
-        fetch(`http://localhost:8080/game/${roomId}/init`, { method: "POST" }).then(() => {
+        postGame(`/game/${roomId}/init`).then(() => {
             (document.getElementById("startGameBtn")!).style.display = "block";
         });
         isGameRunning = false;
@@ -128,22 +151,24 @@ function prepareGameUI() {
 }
 
 function startGameVsAI() {
-    socket = io("ws://localhost:3000");
+    const wsHost = `ws://${window.location.hostname}:7000`;
+    socket = io(wsHost);
     roomId = "ai-room-" + Math.random().toString(36).substring(2, 8);
 
     socket.on('connect', () => {
-        socket.emit("joinRoom", { roomId }); // Se une a una sala única
-        
-        // Llama al nuevo endpoint para activar la IA en el backend
-        fetch(`http://localhost:8080/game/${roomId}/start-ai`, { method: "POST" });
+        // Join the dedicated AI room on the Pong server
+        socket.emit("joinRoom", { roomId });
+
+        // Start AI on the backend game controller
+        postGame(`/game/${roomId}/start-ai`);
     });
 
     const initGame = (currentRoomId: string) => {
-        fetch(`http://localhost:8080/game/${currentRoomId}/init`, { method: "POST" });
+        postGame(`/game/${currentRoomId}/init`);
         isGameRunning = false;
     };
 
-    // Cuando el backend confirma que la IA está lista, muestra el botón de Start
+    // doenst works
     socket.on("gameReady", () => {
         initGame(roomId);
         (document.getElementById("startGameBtn")!).style.display = "block";

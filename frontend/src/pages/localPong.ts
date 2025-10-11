@@ -3,7 +3,7 @@
  * @brief Frontend logic for Local Pong game (1v1 and 1vAI)
  */
 import { io, Socket } from "socket.io-client";
-import { getAccessToken } from "../state/authState";
+import { getAccessToken, refreshAccessToken } from "../state/authState";
 
 let socket: Socket;
 let ctx: CanvasRenderingContext2D | null = null;
@@ -13,14 +13,15 @@ const roomId = "local"; // Always local for this mode
 
 const apiHost = `http://${window.location.hostname}:7000`;
 
-// Game constants
-const CANVAS_WIDTH = 800;
-const CANVAS_HEIGHT = 600;
-const PADDLE_WIDTH = 20;
-const PADDLE_HEIGHT = 100;
-const PADDLE_OFFSET_X = 30;
-const BALL_RADIUS = 10; // Corregido para que la bola sea visible
-const WINNING_SCORE = 10;
+import {
+	WINNING_SCORE,
+	CANVAS_WIDTH,
+	CANVAS_HEIGHT,
+	BALL_RADIUS,
+	PADDLE_HEIGHT,
+	PADDLE_WIDTH,
+	PADDLE_OFFSET_X,
+} from "../utils/pong-constants";
 
 const keysPressed = new Set<string>();
 
@@ -91,6 +92,24 @@ function cleanup() {
     keysPressed.clear();
 }
 
+// Helper: POST with Authorization header and one retry after token refresh
+async function postGame(path: string): Promise<Response> {
+    const makeReq = async () => {
+        const token = getAccessToken();
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        return fetch(`${apiHost}${path}`, { method: "POST", headers });
+    };
+    let res = await makeReq();
+    if (res.status === 401) {
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+            res = await makeReq();
+        }
+    }
+    return res;
+}
+
 const handleKeyDown = (e: KeyboardEvent) => {
     if (["ArrowUp", "ArrowDown", "w", "s"].includes(e.key)) e.preventDefault();
 
@@ -103,7 +122,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
 };
 
 function togglePause() {
-    fetch(`${apiHost}/game/${roomId}/toggle-pause`, { method: "POST" });
+    postGame(`/game/${roomId}/toggle-pause`);
 }
 
 const handleKeyUp = (e: KeyboardEvent) => keysPressed.delete(e.key);
@@ -141,13 +160,7 @@ export function localPongHandlers() {
     });
 
     document.getElementById("startGameBtn")!.addEventListener("click", () => {
-        const token = getAccessToken();
-        fetch(`${apiHost}/game/${roomId}/resume`, { 
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${token}`
-            }
-        });
+        postGame(`/game/${roomId}/resume`);
         (document.getElementById("startGameBtn")!).classList.add("hidden");
         isGameRunning = true;
     });
@@ -171,7 +184,13 @@ function prepareGameUI() {
 
 async function startGame(isAiMode: boolean) {
     const wsHost = `ws://${window.location.hostname}:7000`;
+
     socket = io(wsHost);
+
+    // Join the "local" room after the socket connects to avoid race conditions
+    socket.on('connect', () => {
+        socket.emit("joinRoom", { roomId: "local" });
+    });
 
     isGameRunning = false;
     cancelAnimationFrame(animationFrameId);
@@ -179,22 +198,16 @@ async function startGame(isAiMode: boolean) {
 
     try {
         if (!isAiMode) {
-            await fetch(`${apiHost}/game/${roomId}/stop-ai`, { method: "POST" });
+            await postGame(`/game/${roomId}/stop-ai`);
         }
 
-        const token = getAccessToken();
-        const initResponse = await fetch(`${apiHost}/game/${roomId}/init`, { 
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${token}`
-            }
-        });
+        const initResponse = await postGame(`/game/${roomId}/init`);
         if (!initResponse.ok) {
             throw new Error(`init failed (${initResponse.status})`);
         }
 
         if (isAiMode) {
-            const startAiResponse = await fetch(`${apiHost}/game/${roomId}/start-ai`, { method: "POST" });
+            const startAiResponse = await postGame(`/game/${roomId}/start-ai`);
             if (!startAiResponse.ok) {
                 throw new Error(`start-ai failed (${startAiResponse.status})`);
             }
@@ -211,6 +224,11 @@ async function startGame(isAiMode: boolean) {
         if (state.gameEnded) {
             checkWinner();
         }
+    });
+
+    socket.on('roomFull', (payload: { roomId: string }) => {
+        alert('Local room is full. Please try again later or use Remote mode.');
+        console.warn('Attempted to join full local room', payload);
     });
 
     socket.on("gamePaused", (payload: boolean | { paused: boolean }) => {
