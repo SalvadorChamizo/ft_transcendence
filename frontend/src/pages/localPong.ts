@@ -3,6 +3,7 @@
  * @brief Frontend logic for Local Pong game (1v1 and 1vAI)
  */
 import { io, Socket } from "socket.io-client";
+import { getAccessToken } from "../state/authState";
 
 let socket: Socket;
 let ctx: CanvasRenderingContext2D | null = null;
@@ -141,8 +142,15 @@ export function localPongHandlers() {
     });
 
     document.getElementById("startGameBtn")!.addEventListener("click", () => {
-        fetch(`${apiHost}/game/${roomId}/resume`, { method: "POST" });
+        const token = getAccessToken();
+        fetch(`${apiHost}/game/${roomId}/resume`, { 
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
         (document.getElementById("startGameBtn")!).classList.add("hidden");
+        isGameRunning = true;
     });
 
     document.getElementById("playAgainBtn")!.addEventListener("click", () => {
@@ -181,7 +189,13 @@ async function startGame(isAiMode: boolean) {
             await fetch(`${apiHost}/game/${roomId}/stop-ai`, { method: "POST" });
         }
 
-        const initResponse = await fetch(`${apiHost}/game/${roomId}/init`, { method: "POST" });
+        const token = getAccessToken();
+        const initResponse = await fetch(`${apiHost}/game/${roomId}/init`, { 
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
         if (!initResponse.ok) {
             throw new Error(`init failed (${initResponse.status})`);
         }

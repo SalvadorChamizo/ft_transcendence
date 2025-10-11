@@ -1,25 +1,25 @@
 import { FastifyInstance } from "fastify";
 import * as websocketService from "../services/websocketService";
+import { extractUserId } from "../utils/auth";
 
 export async function websocketRoutes(fastify: FastifyInstance) {
     fastify.register(async function (fastify) {
         fastify.get('/ws', { websocket: true }, (connection, req) => {
             console.log('WebSocket connection established');
 
-            // 1. EXTRACT userId from query string with proper typing
+            // 1. EXTRACT userId from query string (WebSocket can't use headers reliably)
             const query = req.query as { userId?: string };
-            const userId = parseInt(query.userId || '');
-
-            // 2. VALIDATE userId
-            if (!userId || isNaN(userId)) {
-                console.error('Invalid userId provided in WebSocket connection');
-                connection.close(1008, 'Invalid userId'); // Policy Violation
+            const userId = query.userId ? parseInt(query.userId) : null;
+            
+            if (!userId) {
+                console.error('Authentication failed in WebSocket: No userId provided');
+                connection.close(1008, 'Unauthorized'); // Policy Violation
                 return;
             }
 
             console.log(`User ${userId} attempting to connect via WebSocket`);
 
-            // 3. HANDLE CONNECTION - Register user
+            // 2. HANDLE CONNECTION - Register user
             try {
                 websocketService.handleWebSocketConnection(connection);
                 websocketService.addUserConnection(userId, connection);
@@ -30,7 +30,7 @@ export async function websocketRoutes(fastify: FastifyInstance) {
                 return;
             }
 
-            // 4. HANDLE MESSAGES - Process incoming JSON messages
+            // 3. HANDLE MESSAGES - Process incoming JSON messages
             connection.on('message', (rawMessage: any) => {
                 try {
                     // Parse the JSON message
@@ -61,7 +61,7 @@ export async function websocketRoutes(fastify: FastifyInstance) {
                 }
             });
 
-            // 5. HANDLE CLOSE - Clean up when connection closes
+            // 4. HANDLE CLOSE - Clean up when connection closes
             connection.on('close', () => {
                 try {
                     console.log(`User ${userId} disconnected from WebSocket`);
@@ -73,7 +73,7 @@ export async function websocketRoutes(fastify: FastifyInstance) {
                 }
             });
 
-            // 6. HANDLE ERRORS - Log and clean up on errors
+            // 5. HANDLE ERRORS - Log and clean up on errors
             connection.on('error', (error: Error) => {
                 console.error(`WebSocket error for user ${userId}:`, error);
                 try {

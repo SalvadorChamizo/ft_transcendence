@@ -3,13 +3,15 @@ import { getAccessToken, setAccessToken, clearAuth, setTemp2FA } from "../../sta
 import { handleTwoFA } from "./twofa";
 import { render } from "../../main";
 
+const apiHost = `${window.location.hostname}`;
+
 export async function login(username: string, password: string) {
     const result = getElement<HTMLParagraphElement>("#result");
     const form = getElement<HTMLFormElement>("#login-form");
     const logoutBtn = getElement<HTMLButtonElement>("#logout-btn");
 
        try {
-      const res = await fetch("http://localhost:8080/auth/login", {
+      const res = await fetch(`http://${apiHost}:8080/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
@@ -42,7 +44,7 @@ export async function logout() {
 
     try {
       const token = getAccessToken();
-      await fetch("http://localhost:8080/auth/logout", {
+      await fetch(`http://${apiHost}:8080/auth/logout`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -65,7 +67,7 @@ export async function logout() {
 }
 
 export async function fetchCurrentUser(accessToken: string) {
-  const res = await fetch("http://localhost:8080/users/me", {
+  const res = await fetch(`http://${apiHost}:8080/users/me`, {
     method: "GET",
     headers: {
       Authorization: `Bearer ${accessToken}`,

@@ -48,7 +48,7 @@ services:
     networks:
       - backend
 
-  livechat-service:
+  chat-service:
     build: ./chat-service
     expose:
       - "8083"
@@ -63,13 +63,13 @@ services:
     ports:
       - "7000:7000"
     depends_on:
-      - ai-service
+      - ai-opponent
     networks:
       - backend
     
-  ai-service:
+  ai-opponent:
      build: ./ai-opponent
-     container_name: trascendence-ai-service
+     container_name: trascendence-ai-opponent
      env_file:
         - ./ai-opponent/.env
      ports:
@@ -77,6 +77,12 @@ services:
      networks:
         - backend
 
+ # tournament-service:
+  #  build: ./tournament-service
+  #  expose:
+  #    - "8080"
+  #  networks:
+  #    - backend
 
 networks:
   backend:

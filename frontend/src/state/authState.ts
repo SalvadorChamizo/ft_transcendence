@@ -1,5 +1,7 @@
 let accessToken: string | null = null;
 
+const apiHost = `${window.location.hostname}`;
+
 export let tempToken = "";
 export let tempUserId = 0;
 export let tempUsername = "";
@@ -26,16 +28,27 @@ export function clearAuth() {
     accessToken = null;
 }
 
+export function getUserIdFromToken(): number | null {
+    if (!accessToken) return null;
+    
+    try {
+        const payload = JSON.parse(atob(accessToken.split('.')[1]));
+        return payload.id || null;
+    } catch (error) {
+        console.error('Error decoding token:', error);
+        return null;
+    }
+}
+
 export async function refreshAccessToken(): Promise<boolean> {
 
     try {
-        const res = await fetch("http://localhost:8080/auth/refresh", {
+        const res = await fetch(`http://${apiHost}:8080/auth/refresh`, {
             method: "POST",
             credentials: "include",
         });
     
     if (!res.ok) {
-        console.log("Entra");
         clearAuth();
         return (false);
     }

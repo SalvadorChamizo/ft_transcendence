@@ -1,13 +1,29 @@
-import { login, logout } from "./loginService"
-import { isLoggedIn } from "../../state/authState";
+import { login, logout, fetchCurrentUser } from "./loginService"
+import { getAccessToken, isLoggedIn, refreshAccessToken } from "../../state/authState";
 import { hideElement, showElement, setText, getElement } from "./loginDOM";
 import { enable2FAHandlers } from "./login";
 import { Enable2FAHtml } from "./loginTemplate";
 
+const apiHost = `${window.location.hostname}`;
+
+export function userLoggedIn() {
+    if (isLoggedIn()) {
+      const userStr = localStorage.getItem("user");
+      const user = JSON.parse(userStr!);
+      getElement("#login-name").textContent = `${user.user.username}`;
+      getElement("#login-dropdown").classList.remove("hidden");
+    }
+    else
+    {
+      getElement("#login-name").textContent = `Sign in / Sign up`;
+      getElement("#login-dropdown").classList.add("hidden");
+    }
+}
+
 export function setupLoginHandlers() {
     const form = document.querySelector<HTMLFormElement>("#login-form")!;
     const result = document.querySelector<HTMLParagraphElement>("#result")!;
-    const logoutBtn = document.querySelector<HTMLButtonElement>("#logout-btn")!;
+    const logoutBtn = document.querySelector<HTMLAnchorElement>("#logout-btn")!;
     
     logoutBtn.onclick = logout;
 
@@ -17,22 +33,30 @@ export function setupLoginHandlers() {
       const user = JSON.parse(userStr!);
       showElement(result);
       setText(result, "✅ You are already logged in");
-      getElement("#login-name").textContent = `${user.user.username}`;
-      getElement("#twofa-section").innerHTML = Enable2FAHtml();
       hideElement(form);
-      showElement(logoutBtn);
+      getElement("#twofa-section").innerHTML = Enable2FAHtml();
       enable2FAHandlers(user.id, user.username);
       return ;
     }
     
     const fortyTwoBtn = document.querySelector<HTMLButtonElement>("#fortyTwoLoginButton");
     fortyTwoBtn?.addEventListener("click", () => {
-      window.location.href = "http://localhost:8080/auth/42/login";
+      window.location.href = `http://${apiHost}:8080/auth/42/login`;
     });
     
     const googleBtn = document.querySelector<HTMLButtonElement>("#googleLoginButton");
-    googleBtn?.addEventListener("click", () => {
-      window.location.href = "http://localhost:8080/auth/google/login";
+    googleBtn?.addEventListener("click", async () => {
+      window.location.href = `http://${apiHost}:8080/auth/google/login`;
+
+      await refreshAccessToken();
+      console.log("Entra aquí");
+      const accessToken = getAccessToken();
+      console.log(`Access token = ${accessToken}`);
+      if (accessToken) {
+        console.log("Pero aquí no entra");
+        const user = await fetchCurrentUser(accessToken);
+        localStorage.setItem("user", JSON.stringify(user));
+      }
     });
 
     form.onsubmit = async (e) => {

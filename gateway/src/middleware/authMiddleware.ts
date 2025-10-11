@@ -7,6 +7,7 @@ const publicUrls = [
     "/auth/register",
     "/auth/refresh",
     "/ping",
+    "/health",
     "/auth/verify-2fa",
     "/auth/42/login",
     "/auth/42/callback",
@@ -14,11 +15,14 @@ const publicUrls = [
     "/auth/google/callback",
 ];
 
-export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {  
-    const path = parse(req.url).pathname;
+export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
+    // Obtener la ruta sin parámetros de consulta
+    const urlPath = req.url.split('?')[0];
     
-    if (publicUrls.includes(path!))
-        return ;
+    // Permitir rutas públicas y WebSocket
+    if (publicUrls.includes(urlPath) || urlPath.startsWith('/ws')) {
+        return;
+    }
 
     const authHeader = req.headers["authorization"];
     if (!authHeader) {

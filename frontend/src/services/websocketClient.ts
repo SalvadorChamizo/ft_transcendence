@@ -1,6 +1,6 @@
 // WebSocket client for real-time chat functionality
 export interface ChatMessage {
-    type: 'message' | 'user_connected' | 'user_disconnected' | 'typing' | 'stop_typing';
+    type: 'message' | 'user_connected' | 'user_disconnected' | 'typing' | 'stop_typing' | 'game_invitation';
     userId: number;
     conversationId?: number;
     content?: string;
@@ -32,8 +32,11 @@ export class WebSocketClient {
                 return;
             }
 
+            // Clear any existing message handlers to prevent duplicates
+            this.messageHandlers = [];
+
             this.userId = userId;
-            const wsUrl = `ws://localhost:8085/ws?userId=${userId}`;
+            const wsUrl = `ws://localhost:8080/ws?userId=${userId}`;
             
             console.log(`Connecting to WebSocket: ${wsUrl}`);
             this.ws = new WebSocket(wsUrl);
@@ -82,8 +85,13 @@ export class WebSocketClient {
 
         try {
             const messageWithUserId = { ...message, userId: this.userId };
-            this.ws.send(JSON.stringify(messageWithUserId));
-            console.log('📤 Sent WebSocket message:', messageWithUserId);
+            // Wrap message in expected format: {type, payload}
+            const wrappedMessage = {
+                type: message.type,
+                payload: messageWithUserId
+            };
+            this.ws.send(JSON.stringify(wrappedMessage));
+            console.log('📤 Sent WebSocket message:', wrappedMessage);
             return true;
         } catch (error) {
             console.error('Error sending WebSocket message:', error);

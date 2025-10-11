@@ -1,18 +1,17 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import * as chatService from "../services/chatService";
+import * as gameInvitationService from "../services/gameInvitationService";
 import { extractUserId } from "../utils/auth";
 
-export async function sendMessageController(req: FastifyRequest, reply: FastifyReply) {
-    const { recipientId, content, messageType } = req.body as { 
-        recipientId: number; 
-        content: string; 
-        messageType?: string 
+export async function sendGameInvitationController(req: FastifyRequest, reply: FastifyReply) {
+    const { toUserId, gameType } = req.body as { 
+        toUserId: number; 
+        gameType?: string 
     };
 
     try {
         const userId = extractUserId(req.headers);
         
-        const result = await chatService.sendMessage(userId, recipientId, content, messageType);
+        const result = await gameInvitationService.sendGameInvitation(userId, toUserId, gameType);
         return reply.send(result);
     } catch (err: any) {
         if (err.message === 'User not authenticated') {
@@ -22,12 +21,12 @@ export async function sendMessageController(req: FastifyRequest, reply: FastifyR
     }
 }
 
-export async function getConversationsController(req: FastifyRequest, reply: FastifyReply) {
+export async function getPendingInvitationsController(req: FastifyRequest, reply: FastifyReply) {
     try {
         const userId = extractUserId(req.headers);
         
-        const result = chatService.getConversations(userId);
-        return reply.send({ conversations: result });
+        const invitations = gameInvitationService.getPendingInvitations(userId);
+        return reply.send({ invitations });
     } catch (err: any) {
         if (err.message === 'User not authenticated') {
             return reply.code(401).send({ error: 'Unauthorized' });
@@ -36,19 +35,12 @@ export async function getConversationsController(req: FastifyRequest, reply: Fas
     }
 }
 
-export async function getMessagesController(req: FastifyRequest, reply: FastifyReply) {
-    const { userId: otherUserId } = req.params as { userId: string };
-    const { limit } = req.query as { limit?: string };
-
+export async function getSentInvitationsController(req: FastifyRequest, reply: FastifyReply) {
     try {
         const userId = extractUserId(req.headers);
         
-        const result = chatService.getMessages(
-            parseInt(otherUserId), 
-            userId, 
-            limit ? parseInt(limit) : 50
-        );
-        return reply.send({ messages: result });
+        const invitations = gameInvitationService.getSentInvitations(userId);
+        return reply.send({ invitations });
     } catch (err: any) {
         if (err.message === 'User not authenticated') {
             return reply.code(401).send({ error: 'Unauthorized' });
@@ -57,13 +49,13 @@ export async function getMessagesController(req: FastifyRequest, reply: FastifyR
     }
 }
 
-export async function blockUserController(req: FastifyRequest, reply: FastifyReply) {
-    const { userId: blockedUserId } = req.params as { userId: string };
+export async function acceptGameInvitationController(req: FastifyRequest, reply: FastifyReply) {
+    const { id } = req.params as { id: string };
 
     try {
         const userId = extractUserId(req.headers);
         
-        const result = chatService.blockUser(userId, parseInt(blockedUserId));
+        const result = await gameInvitationService.acceptGameInvitation(parseInt(id), userId);
         return reply.send(result);
     } catch (err: any) {
         if (err.message === 'User not authenticated') {
@@ -73,13 +65,13 @@ export async function blockUserController(req: FastifyRequest, reply: FastifyRep
     }
 }
 
-export async function unblockUserController(req: FastifyRequest, reply: FastifyReply) {
-    const { userId: blockedUserId } = req.params as { userId: string };
+export async function rejectGameInvitationController(req: FastifyRequest, reply: FastifyReply) {
+    const { id } = req.params as { id: string };
 
     try {
         const userId = extractUserId(req.headers);
         
-        const result = chatService.unblockUser(userId, parseInt(blockedUserId));
+        const result = await gameInvitationService.rejectGameInvitation(parseInt(id), userId);
         return reply.send(result);
     } catch (err: any) {
         if (err.message === 'User not authenticated') {

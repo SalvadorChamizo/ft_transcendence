@@ -4,10 +4,10 @@ export function getLoginHtml() : string {
         <div class="login-card">
             <ul class="login-nav">
                 <li class="login-nav-item">
-                    <a class="login-nav-link active btl" data-tab="login-tab-panel" href="#login-tab-panel">Login</a>
+                    <button type="button" class="login-nav-link active btl" data-tab="login-tab-panel" href="#/login">Login</a>
                 </li>
                 <li class="login-nav-item">
-                    <a class="login-nav-link btr" data-tab="signup-tab-panel" href="#signup-tab-panel">Signup</a>
+                    <button type="button" class="login-nav-link btr" data-tab="signup-tab-panel" href="#/login">Signup</a>
                 </li>
             </ul>
             <div class="login-tab-content">
@@ -78,7 +78,6 @@ export function getLoginHtml() : string {
         </div>
     </div>
     <div id="twofa-section" style="margin-top:2rem;"></div>
-    <button id="logout-btn" style="display:none; margin-top:1rem;">Logout</button>
   `;
 }
 

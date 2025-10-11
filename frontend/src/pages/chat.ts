@@ -1,5 +1,11 @@
-import { getConversations, sendMessage } from "../services/api";
+import { getConversations, sendMessage, getMessages, blockUser, unblockUser, sendGameInvitation, getGameInvitations, acceptGameInvitation, rejectGameInvitation, getUserProfile } from "../services/api";
 import { websocketClient, ChatMessage } from "../services/websocketClient";
+import { getUserIdFromToken } from "../state/authState";
+
+// Status for active conversation
+let activeConversationId: number | null = null;
+let activeConversationName: string = '';
+let blockedUsers: Set<number> = new Set(); // Track blocked users
 
 export function Chat(): string {
     return `
@@ -11,6 +17,16 @@ export function Chat(): string {
                     <button id="load-conversations" class="refresh-btn">
                         <span>↻</span>
                     </button>
+                </div>
+                
+                <!-- Game Invitations Section -->
+                <div id="game-invitations-section" style="display: none;">
+                    <div class="invitations-header">
+                        <h3>🎮 Game Invitations</h3>
+                    </div>
+                    <div id="game-invitations-list" class="invitations-list">
+                        <!-- Invitations will appear here -->
+                    </div>
                 </div>
                 
                 <div class="conversations-list" id="conversations-list">
@@ -31,6 +47,17 @@ export function Chat(): string {
                             <h3 id="contact-name">Select a conversation</h3>
                             <span id="contact-status">Online</span>
                         </div>
+                    </div>
+                    <div class="chat-actions">
+                        <button id="view-profile-btn" class="view-profile-btn" style="display: none;" title="View profile">
+                            👤
+                        </button>
+                        <button id="invite-game-btn" class="invite-game-btn" style="display: none;" title="Invite to play Pong">
+                            🎮
+                        </button>
+                        <button id="block-user-btn" class="block-btn" style="display: none;" title="Block user">
+                            🚫
+                        </button>
                     </div>
                 </div>
 
@@ -70,6 +97,35 @@ export function Chat(): string {
                 </div>
             </div>
         </div>
+
+        <!-- Profile Modal -->
+        <div id="profile-modal" class="profile-modal" style="display: none;">
+            <div class="profile-modal-content">
+                <div class="profile-modal-header">
+                    <h2>User Profile</h2>
+                    <button id="close-profile-modal" class="close-modal-btn">✕</button>
+                </div>
+                <div class="profile-modal-body">
+                    <div class="profile-avatar-large" id="profile-avatar">?</div>
+                    <h3 id="profile-username" class="profile-username">Username</h3>
+                    <div class="profile-info">
+                        <div class="profile-info-item">
+                            <span class="profile-label">User ID:</span>
+                            <span id="profile-id" class="profile-value">-</span>
+                        </div>
+                        <div class="profile-info-item">
+                            <span class="profile-label">Victories:</span>
+                            <span id="profile-victories" class="profile-value">-</span>
+                        </div>
+                    </div>
+                    <div class="profile-actions">
+                        <button id="invite-from-profile-btn" class="profile-action-btn invite-btn">
+                            🎮 Invite to Game
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     `;
 }
 
@@ -80,11 +136,17 @@ export function chatHandlers() {
     const messageResult = document.getElementById('message-result') as HTMLDivElement;
     const conversationsList = document.getElementById('conversations-list') as HTMLDivElement;
     const messagesContainer = document.getElementById('messages-container') as HTMLDivElement;
+    const blockButton = document.getElementById('block-user-btn') as HTMLButtonElement;
+    const inviteGameButton = document.getElementById('invite-game-btn') as HTMLButtonElement;
+    const viewProfileButton = document.getElementById('view-profile-btn') as HTMLButtonElement;
 
-    if (!messageForm || !loadButton || !messageResult || !conversationsList || !messagesContainer) {
+    if (!messageForm || !loadButton || !messageResult || !conversationsList || !messagesContainer || !blockButton || !inviteGameButton || !viewProfileButton) {
         console.error('Chat elements not found in DOM');
         return;
     }
+
+    // Load game invitations on page load
+    loadGameInvitations();
 
     // Initialize WebSocket connection
     initializeWebSocket();
@@ -165,7 +227,7 @@ export function chatHandlers() {
             if (result.conversations && result.conversations.length > 0) {
                 conversationsList.innerHTML = result.conversations
                     .map((conv: any) => `
-                        <div class="conversation-item" data-conversation-id="${conv.id}">
+                        <div class="conversation-item" data-user-id="${conv.otherUserId}">
                             <div class="conversation-avatar">${conv.otherUserId.toString().slice(-1)}</div>
                             <div class="conversation-info">
                                 <div class="conversation-name">User ${conv.otherUserId}</div>
@@ -174,6 +236,20 @@ export function chatHandlers() {
                         </div>
                     `).join('');
                     
+                // Add click handlers to conversation items
+                setTimeout(() => {
+                    document.querySelectorAll('.conversation-item').forEach(item => {
+                        item.addEventListener('click', () => {
+                            const userId = Number(item.getAttribute('data-user-id'));
+                            const userName = item.querySelector('.conversation-name')?.textContent || '';
+                            // Visual highlight of the active conversation
+                            document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
+                            item.classList.add('active');
+                            selectConversation(userId, userName);
+                        });
+                    });
+                }, 0);
+                
                 console.log('Conversations loaded:', result);
             } else {
                 conversationsList.innerHTML = `
@@ -193,6 +269,66 @@ export function chatHandlers() {
         }
     });
 
+    // Handle block/unblock user button
+    blockButton.addEventListener('click', async () => {
+        if (!activeConversationId) {
+            alert('No conversation selected');
+            return;
+        }
+
+        const isBlocked = blockedUsers.has(activeConversationId);
+        const action = isBlocked ? 'unblock' : 'block';
+        const confirmMessage = isBlocked 
+            ? `Unblock ${activeConversationName}?` 
+            : `Block ${activeConversationName}? You won't receive messages from this user.`;
+
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        try {
+            if (isBlocked) {
+                await unblockUser(activeConversationId);
+                blockedUsers.delete(activeConversationId);
+                blockButton.textContent = '🚫';
+                blockButton.title = 'Block user';
+                messageResult.innerHTML = '<span class="success">✅ User unblocked successfully!</span>';
+            } else {
+                await blockUser(activeConversationId);
+                blockedUsers.add(activeConversationId);
+                blockButton.textContent = '✅';
+                blockButton.title = 'Unblock user';
+                messageResult.innerHTML = '<span class="success">✅ User blocked successfully!</span>';
+            }
+            messageResult.className = 'message-result success';
+            
+            console.log(`User ${activeConversationId} ${action}ed successfully`);
+        } catch (error) {
+            console.error(`Error ${action}ing user:`, error);
+            messageResult.innerHTML = `<span class="error">❌ Failed to ${action} user</span>`;
+            messageResult.className = 'message-result error';
+        }
+    });
+
+    // Handle view profile button click
+    viewProfileButton.addEventListener('click', async () => {
+        if (!activeConversationId) {
+            alert('No conversation selected');
+            return;
+        }
+
+        try {
+            const profile = await getUserProfile(activeConversationId);
+            console.log('User profile:', profile);
+            
+            // Show profile modal
+            showProfileModal(profile);
+        } catch (error) {
+            console.error('Error loading profile:', error);
+            alert('Failed to load user profile');
+        }
+    });
+
     // Initialize WebSocket connection and message handling
     async function initializeWebSocket() {
         try {
@@ -206,11 +342,16 @@ export function chatHandlers() {
                 console.log('Received WebSocket message:', message);
                 
                 if (message.type === 'message') {
-                    // Add received message to UI
-                    addMessageToUI({
-                        ...message,
-                        isSent: false
-                    });
+                    // Check if it's a game invitation event
+                    if (message.data?.event_type) {
+                        handleGameInvitationEvent(message.data);
+                    } else {
+                        // Add received message to UI
+                        addMessageToUI({
+                            ...message,
+                            isSent: false
+                        });
+                    }
                 }
             });
             
@@ -221,6 +362,110 @@ export function chatHandlers() {
             console.error('Failed to connect to WebSocket:', error);
             updateConnectionStatus(false);
         }
+    }
+
+    // Handle game invitation WebSocket events
+    function handleGameInvitationEvent(eventData: any) {
+        const eventType = eventData.event_type;
+        
+        switch (eventType) {
+            case 'game_invitation_received':
+                console.log('🎮 New game invitation received:', eventData);
+                messageResult.innerHTML = `<span class="success">🎮 User ${eventData.from_user_id} invited you to play ${eventData.game_type}!</span>`;
+                messageResult.className = 'message-result success';
+                // Reload invitations to show the new one
+                loadGameInvitations();
+                break;
+                
+            case 'game_invitation_accepted':
+                console.log('✅ Game invitation accepted:', eventData);
+                messageResult.innerHTML = `<span class="success">✅ User ${eventData.to_user_id} accepted your invitation!</span>`;
+                messageResult.className = 'message-result success';
+                // TODO: Redirect to game page
+                break;
+                
+            case 'game_invitation_rejected':
+                console.log('❌ Game invitation rejected:', eventData);
+                messageResult.innerHTML = `<span class="error">❌ User ${eventData.to_user_id} rejected your invitation</span>`;
+                messageResult.className = 'message-result error';
+                break;
+                
+            default:
+                console.log('Unknown game invitation event:', eventType);
+        }
+    }
+
+    // Function to select a conversation and load messages
+    async function selectConversation(otherUserId: number, otherUserName: string) {
+        activeConversationId = otherUserId;
+        activeConversationName = otherUserName;
+
+        // Update the chat header
+        const contactName = document.getElementById('contact-name');
+        if (contactName) contactName.textContent = otherUserName;
+
+        // Show and update block button
+        const blockBtn = document.getElementById('block-user-btn') as HTMLButtonElement;
+        if (blockBtn) {
+            blockBtn.style.display = 'block';
+            const isBlocked = blockedUsers.has(otherUserId);
+            blockBtn.textContent = isBlocked ? '✅' : '🚫';
+            blockBtn.title = isBlocked ? 'Unblock user' : 'Block user';
+        }
+
+        // Show view profile button
+        const profileBtn = document.getElementById('view-profile-btn') as HTMLButtonElement;
+        if (profileBtn) {
+            profileBtn.style.display = 'block';
+        }
+
+        // Show invite to game button
+        const inviteBtn = document.getElementById('invite-game-btn') as HTMLButtonElement;
+        if (inviteBtn) {
+            inviteBtn.style.display = 'block';
+        }
+
+        // Charge indicator display
+        const messagesContainer = document.getElementById('messages-container');
+        if (messagesContainer) {
+            messagesContainer.innerHTML = '<div class="loading">Cargando mensajes...</div>';
+        }
+
+        try {
+            const result = await getMessages(otherUserId);
+            displayMessages(result.messages || []);
+        } catch (err) {
+            if (messagesContainer) {
+                messagesContainer.innerHTML = '<div class="error">Error cargando mensajes</div>';
+            }
+        }
+    }
+
+    // Render messages in the chat area
+    function displayMessages(messages: any[]) {
+        const messagesContainer = document.getElementById('messages-container');
+        if (!messagesContainer) return;
+        if (messages.length === 0) {
+            messagesContainer.innerHTML = '<div class="no-messages">No hay mensajes en esta conversación.</div>';
+            return;
+        }
+        
+        const currentUserId = getCurrentUserId();
+        console.log('🔍 Display Messages - Current User ID:', currentUserId);
+        
+        messagesContainer.innerHTML = messages.map(msg => {
+            // Determine if the message was sent by the current user
+            const isSent = msg.sender_id === currentUserId || msg.isSent;
+            console.log('📨 Message:', { sender_id: msg.sender_id, currentUserId, isSent, content: msg.content?.substring(0, 20) });
+            
+            return `
+                <div class="message-bubble ${isSent ? 'message-sent' : 'message-received'}">
+                    <div class="message-content">${msg.content}</div>
+                    <div class="message-time">${new Date(msg.timestamp || msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                </div>
+            `;
+        }).join('');
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
     // Add message to the UI
@@ -265,8 +510,195 @@ export function chatHandlers() {
 
     // Get current user ID (temporary implementation)
     function getCurrentUserId(): number {
-        // TODO: Get from authState or user input
-        // For now, use a default value
-        return 1;
+        const userId = getUserIdFromToken();
+        return userId || 1; // Fallback to 1 if no token
     }
+
+    // Load game invitations
+    async function loadGameInvitations() {
+        try {
+            const result = await getGameInvitations();
+            const invitations = result.invitations || [];
+            
+            const invitationsSection = document.getElementById('game-invitations-section') as HTMLDivElement;
+            const invitationsList = document.getElementById('game-invitations-list') as HTMLDivElement;
+            
+            if (!invitationsSection || !invitationsList) return;
+            
+            if (invitations.length > 0) {
+                invitationsSection.style.display = 'block';
+                invitationsList.innerHTML = invitations.map((inv: any) => `
+                    <div class="invitation-item" data-invitation-id="${inv.id}">
+                        <div class="invitation-info">
+                            <span class="invitation-user">🎮 User ${inv.from_user_id}</span>
+                            <span class="invitation-game">${inv.game_type}</span>
+                        </div>
+                        <div class="invitation-actions">
+                            <button class="accept-invitation-btn" data-id="${inv.id}">✅</button>
+                            <button class="reject-invitation-btn" data-id="${inv.id}">❌</button>
+                        </div>
+                    </div>
+                `).join('');
+                
+                // Add event listeners to invitation buttons
+                setTimeout(() => {
+                    document.querySelectorAll('.accept-invitation-btn').forEach(btn => {
+                        btn.addEventListener('click', async (e) => {
+                            const id = Number((e.target as HTMLElement).getAttribute('data-id'));
+                            await handleAcceptInvitation(id);
+                        });
+                    });
+                    
+                    document.querySelectorAll('.reject-invitation-btn').forEach(btn => {
+                        btn.addEventListener('click', async (e) => {
+                            const id = Number((e.target as HTMLElement).getAttribute('data-id'));
+                            await handleRejectInvitation(id);
+                        });
+                    });
+                }, 0);
+            } else {
+                invitationsSection.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Error loading game invitations:', error);
+        }
+    }
+
+    // Handle accept game invitation
+    async function handleAcceptInvitation(invitationId: number) {
+        try {
+            const result = await acceptGameInvitation(invitationId);
+            console.log('Invitation accepted:', result);
+            
+            // Show success message
+            messageResult.innerHTML = '<span class="success">✅ Game invitation accepted! Redirecting to game...</span>';
+            messageResult.className = 'message-result success';
+            
+            // Reload invitations
+            await loadGameInvitations();
+            
+            // Redirect to game selection page after 2 seconds
+            setTimeout(() => {
+                // TODO: Change to remote pong with opponent when multiplayer is implemented
+                // window.location.hash = `#/pong/remote?opponent=${result.opponentId}`;
+                // For now, redirect to game selection page
+                window.location.hash = '#/game';
+                console.log('Redirected to game selection. Opponent ID:', result.opponentId);
+            }, 2000);
+        } catch (error: any) {
+            messageResult.innerHTML = `<span class="error">❌ Error: ${error.message}</span>`;
+            messageResult.className = 'message-result error';
+        }
+    }
+
+    // Handle reject game invitation
+    async function handleRejectInvitation(invitationId: number) {
+        try {
+            await rejectGameInvitation(invitationId);
+            console.log('Invitation rejected');
+            
+            // Show rejection message
+            messageResult.innerHTML = '<span class="success">❌ Invitation rejected</span>';
+            messageResult.className = 'message-result';
+            
+            // Reload invitations
+            await loadGameInvitations();
+            
+            // Clear message after 3 seconds
+            setTimeout(() => {
+                messageResult.innerHTML = '';
+            }, 3000);
+        } catch (error: any) {
+            console.error('Error rejecting invitation:', error);
+            messageResult.innerHTML = `<span class="error">❌ Error rejecting invitation</span>`;
+            messageResult.className = 'message-result error';
+        }
+    }
+
+    // Profile Modal Functions
+    function showProfileModal(profile: any) {
+        const modal = document.getElementById('profile-modal');
+        const username = document.getElementById('profile-username');
+        const userId = document.getElementById('profile-id');
+        const avatar = document.getElementById('profile-avatar');
+        const victories = document.getElementById('profile-victories');
+        
+        if (!modal || !username || !userId || !avatar || !victories) {
+            console.error('Profile modal elements not found');
+            return;
+        }
+
+        // Populate modal with profile data
+        username.textContent = profile.username || 'Unknown';
+        userId.textContent = profile.id?.toString() || '-';
+        avatar.textContent = profile.username?.charAt(0).toUpperCase() || '?';
+        victories.textContent = profile.victories?.toString() || '0';
+        
+        // Show modal
+        modal.style.display = 'flex';
+    }
+
+    function closeProfileModal() {
+        const modal = document.getElementById('profile-modal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+
+    // Profile modal event listeners
+    const closeModalBtn = document.getElementById('close-profile-modal');
+    const profileModal = document.getElementById('profile-modal');
+    const inviteFromProfileBtn = document.getElementById('invite-from-profile-btn');
+
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener('click', closeProfileModal);
+    }
+
+    // Close modal when clicking outside
+    if (profileModal) {
+        profileModal.addEventListener('click', (e) => {
+            if (e.target === profileModal) {
+                closeProfileModal();
+            }
+        });
+    }
+
+    // Invite to game from profile modal
+    if (inviteFromProfileBtn) {
+        inviteFromProfileBtn.addEventListener('click', async () => {
+            if (!activeConversationId) {
+                alert('No conversation selected');
+                return;
+            }
+
+            try {
+                await sendGameInvitation(activeConversationId, 'pong');
+                messageResult.innerHTML = '<span class="success">🎮 Game invitation sent!</span>';
+                messageResult.className = 'message-result success';
+                closeProfileModal();
+            } catch (error: any) {
+                messageResult.innerHTML = `<span class="error">❌ ${error.message}</span>`;
+                messageResult.className = 'message-result error';
+            }
+        });
+    }
+
+    // Handle invite to game button
+    inviteGameButton.addEventListener('click', async () => {
+        if (!activeConversationId) {
+            messageResult.innerHTML = '<span class="error">No conversation selected</span>';
+            messageResult.className = 'message-result error';
+            return;
+        }
+
+        try {
+            const result = await sendGameInvitation(activeConversationId, 'pong');
+            messageResult.innerHTML = '<span class="success">🎮 Game invitation sent!</span>';
+            messageResult.className = 'message-result success';
+            console.log('Game invitation sent:', result);
+        } catch (error: any) {
+            messageResult.innerHTML = `<span class="error">❌ ${error.message}</span>`;
+            messageResult.className = 'message-result error';
+        }
+    });
 }

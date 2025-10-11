@@ -16,8 +16,24 @@ export function getRecentMessages(conversation_id: number, limit: number = 50) {
 }
 
 export function markMessagesAsRead(conversation_id: number, user_id: number) {
-    const stmt = db.prepare("UPDATE messages SET is_read = 1 WHERE conversation_id = ? AND sender_id != ? AND is_read = 0");
+    const stmt = db.prepare(`
+        UPDATE messages 
+        SET read_at = CURRENT_TIMESTAMP 
+        WHERE conversation_id = ? 
+        AND sender_id != ? 
+        AND read_at IS NULL
+    `);
     stmt.run(conversation_id, user_id);
+}
+
+export function markMessageAsDelivered(message_id: number) {
+    const stmt = db.prepare(`
+        UPDATE messages 
+        SET delivered_at = CURRENT_TIMESTAMP 
+        WHERE id = ? 
+        AND delivered_at IS NULL
+    `);
+    stmt.run(message_id);
 }
 
 export function getUnreadCount(user_id: number) {
@@ -27,7 +43,7 @@ export function getUnreadCount(user_id: number) {
         JOIN conversations c ON m.conversation_id = c.id 
         WHERE (c.participant1_id = ? OR c.participant2_id = ?) 
         AND m.sender_id != ? 
-        AND m.is_read = 0
+        AND m.read_at IS NULL
     `);
     return stmt.get(user_id, user_id, user_id);
 }

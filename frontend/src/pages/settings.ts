@@ -1,14 +1,28 @@
+import { getAccessToken } from "../state/authState";
+
 export function Settings() {
+  const accessToken = getAccessToken();
+  if (!accessToken) {
+    return `
+      <div class="settings-actions">
+        <h1>Settings</h1>
+        <p>Please log or register in to view your settings.</p>
+      </div>
+    `;
+  }
+  setTimeout(() => settingsHandlers(accessToken), 0); // Pasar el token como parámetro
   return `
-    <h1>Settings</h1>
-    <form id="settings-form">
-      <p id="username"></p>
-      <p id="useremail"></p>
-    </form>
+      <div class="settings-actions">
+        <h1>Settings</h1>
+        <form id="settings-form">
+          <p id="username"></p>
+          <p id="useremail"></p>
+        </form>
+      </div>
   `;
 }
 
-export function registerHandlers() {
+export function settingsHandlers(accessToken: string) {
 
   setTimeout(() => { //Defines la funcion, no se ejecuta aun
     const form = document.querySelector<HTMLFormElement>("#settings-form")!;
@@ -17,17 +31,20 @@ export function registerHandlers() {
   
     async function fetchUserData() {
       try {
-        console.log("Hace la petición");
+        const accessToken = getAccessToken();
         const me = await fetch("http://localhost:8080/users/me", {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include" // Asegura que las cookies se envíen con la solicitud
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
         });
-        console.log("Sale de la petición");
         const data = await me.json();
+        console.log("User data fetched:", data);
         if (me.ok) {
-          usernameField.textContent = `Username: ${data.username}`;
-          emailField.textContent = `Email: ${data.email}`;
+          console.log("username:", data.user.username);
+          usernameField.textContent = `Username: ${data.user.username}`;
+          console.log("Email:", data.user.email);
+          emailField.textContent = `Email: ${data.user.email}`;
         } else {
           console.error("Error fetching user data:", data);
         }

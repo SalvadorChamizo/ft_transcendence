@@ -2,12 +2,13 @@ import { WebSocket } from '@fastify/websocket';
 
 // Types for WebSocket messages
 interface WebSocketMessage {
-    type: 'message' | 'user_connected' | 'user_disconnected' | 'typing' | 'stop_typing' | 'identify';
+    type: 'message' | 'user_connected' | 'user_disconnected' | 'typing' | 'stop_typing' | 'identify' | 'message_delivered' | 'message_read';
     userId: number;
     conversationId?: number;
     content?: string;
     timestamp?: string;
     recipientId?: number;
+    messageId?: number;
     data?: any;
 }
 
@@ -137,6 +138,30 @@ export function notifyUserStoppedTyping(fromUserId: number, toUserId: number, co
     sendToUser(toUserId, message);
 }
 
+export function notifyMessageDelivered(messageId: number, toUserId: number): void {
+    const message: WebSocketMessage = {
+        type: 'message_delivered',
+        userId: toUserId,
+        messageId,
+        timestamp: new Date().toISOString()
+    };
+    
+    // Notify the sender that their message was delivered
+    sendToUser(toUserId, message);
+}
+
+export function notifyMessageRead(messageId: number, toUserId: number): void {
+    const message: WebSocketMessage = {
+        type: 'message_read',
+        userId: toUserId,
+        messageId,
+        timestamp: new Date().toISOString()
+    };
+    
+    // Notify the sender that their message was read
+    sendToUser(toUserId, message);
+}
+
 export function notifyUserConnected(userId: number): void {
     const message: WebSocketMessage = {
         type: 'user_connected',
@@ -219,6 +244,32 @@ export function handleWebSocketMessage(websocket: WebSocket, messageData: string
                 }
                 break;
                 
+            case 'message_delivered':
+                // User received message - mark as delivered
+                if (message.messageId && message.userId) {
+                    import('../repositories/messageRepository.js').then(repo => {
+                        repo.markMessageAsDelivered(message.messageId!);
+                        // Notify sender that message was delivered
+                        if (message.recipientId) {
+                            notifyMessageDelivered(message.messageId!, message.recipientId);
+                        }
+                    });
+                }
+                break;
+                
+            case 'message_read':
+                // User read message - mark as read
+                if (message.conversationId && message.userId) {
+                    import('../repositories/messageRepository.js').then(repo => {
+                        repo.markMessagesAsRead(message.conversationId!, message.userId);
+                        // Notify sender that message was read
+                        if (message.recipientId && message.messageId) {
+                            notifyMessageRead(message.messageId, message.recipientId);
+                        }
+                    });
+                }
+                break;
+                
             default:
                 console.log(`Unknown message type: ${message.type}`);
         }
@@ -239,6 +290,55 @@ export function handleWebSocketDisconnection(websocket: WebSocket): void {
     
     if (disconnectedUserId) {
         removeUserConnection(disconnectedUserId);
+    }
+}
+
+// Game Invitation Functions
+export function notifyGameInvitation(toUserId: number, invitationData: any): void {
+    const message: WebSocketMessage = {
+        type: 'message' as any, // Will be extended
+        userId: invitationData.from_user_id,
+        data: {
+            ...invitationData,
+            event_type: 'game_invitation_received'
+        }
+    };
+    
+    const sent = sendToUser(toUserId, message);
+    if (!sent) {
+        console.log(`User ${toUserId} not connected - invitation will be available when they connect`);
+    }
+}
+
+export function notifyGameInvitationAccepted(fromUserId: number, acceptanceData: any): void {
+    const message: WebSocketMessage = {
+        type: 'message' as any,
+        userId: acceptanceData.to_user_id,
+        data: {
+            ...acceptanceData,
+            event_type: 'game_invitation_accepted'
+        }
+    };
+    
+    const sent = sendToUser(fromUserId, message);
+    if (!sent) {
+        console.log(`User ${fromUserId} not connected - acceptance notification lost`);
+    }
+}
+
+export function notifyGameInvitationRejected(fromUserId: number, rejectionData: any): void {
+    const message: WebSocketMessage = {
+        type: 'message' as any,
+        userId: rejectionData.to_user_id,
+        data: {
+            ...rejectionData,
+            event_type: 'game_invitation_rejected'
+        }
+    };
+    
+    const sent = sendToUser(fromUserId, message);
+    if (!sent) {
+        console.log(`User ${fromUserId} not connected - rejection notification lost`);
     }
 }
 

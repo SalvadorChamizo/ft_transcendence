@@ -33,8 +33,8 @@ export async function register42Controller(req: FastifyRequest, reply: FastifyRe
 		if (userEmail)
 			throw new Error("Email already exists");
 		const result = await register42User(email, username);
-		const id = await getIDbyUsername(username);
-		return reply.send({ result, id });
+		const user = await getUserByUsername(username);
+		return reply.send({ result, user });
 	} 
 	catch (err: any) {
 		console.error("Error occurred during user registration:", err);
@@ -113,6 +113,25 @@ export async function getCurrentUserController(req: FastifyRequest, reply: Fasti
   }
 
 	const user = await getUserById(Number(userId));
-	console.log(`username ${user.username}`);
 	return { user };
+}
+
+// Get public user profile by ID
+export async function getUserProfileController(req: FastifyRequest, reply: FastifyReply) {
+	const { id } = req.params as { id: string };
+	
+	try {
+		const user = await getUserById(Number(id));
+		if (!user) {
+			return reply.code(404).send({ error: "User not found" });
+		}
+		
+		// Return public profile (only username, no password/email)
+		return reply.send({
+			id: user.id,
+			username: user.username
+		});
+	} catch (err: any) {
+		return reply.code(400).send({ error: err.message });
+	}
 }
