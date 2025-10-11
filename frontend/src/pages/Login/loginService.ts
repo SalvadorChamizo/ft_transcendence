@@ -26,6 +26,8 @@ export async function login(username: string, password: string) {
             setText(result, `✅ Logged in as ${username}`);
             hideElement(form);
             showElement(logoutBtn);
+            getElement("#login-name").textContent = `${data.user.username}`;
+            getElement("#login-dropdown").classList.remove("hidden");
         } else if (res.ok && data.requires2FA) {
             setTemp2FA(data.tempToken, data.username, data.userId);
             location.hash = "#/login/2fa";
