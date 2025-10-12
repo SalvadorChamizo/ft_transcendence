@@ -12,8 +12,14 @@ export interface Ball
 {
 	x: number;
 	y: number;
-	vx: number;
-	vy: number;
+	dx: number;
+	dy: number;
+}
+
+export interface Scores
+{
+	left: number;
+	right: number;
 }
 
 export interface GameState
@@ -24,9 +30,6 @@ export interface GameState
 		right: Paddle;
 	};
 	ball: Ball;
-	scores:
-	{
-		left: number;
-		right: number;
-	};
+	scores: Scores;
+	gameEnded: boolean;
 }

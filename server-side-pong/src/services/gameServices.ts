@@ -3,6 +3,7 @@
  * @brief Core game logic for Pong (supports Local + Online rooms)
  */
 
+import { GameState, Paddle, Ball } from "../utils/types";
 import {
 	WINNING_SCORE,
 	CANVAS_WIDTH,
@@ -19,26 +20,12 @@ import {
 // Map to keep pending serve timers per room (including 'local') so we can clear them
 const serveTimers = new Map<string, NodeJS.Timeout>();
 
-export interface Paddle { y: number; }
-export interface Ball { x: number; y: number; dx: number; dy: number; }
-export interface Scores { left: number; right: number; }
-
-export interface GameState {
-	paddles: { left: Paddle; right: Paddle };
-	ball: Ball;
-	scores: Scores;
-	gameEnded: boolean;
-}
+import { roomStates, createInitialState } from "./roomService";
 
 /**
  * State for local game mode
  */
 let localState: GameState = createInitialState();
-
-/**
-* Map for the state in each room 
-*/
-export const roomStates = new Map<string, GameState>();
 
 export const isGameEnded = (roomId?: string) =>
 {
@@ -49,16 +36,6 @@ export const isGameEnded = (roomId?: string) =>
 /**
  * HELPERS
  */
-function createInitialState(): GameState
-{
-	return {
-		paddles: { left: { y: 250 }, right: { y: 250 } },
-		ball: { x: 400, y: 300, dx: 0, dy: 0 },
-		scores: { left: 0, right: 0 },
-		gameEnded: false,
-  	};
-}
-
 export function resetGame(roomId?: string): GameState
 {
 	const state = createInitialState();

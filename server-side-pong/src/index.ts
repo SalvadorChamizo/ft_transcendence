@@ -8,13 +8,14 @@ import { Server } from "socket.io";
 import cors from "@fastify/cors";
 import { gameController, getIsPaused } from "./controllers/gameControllers";
 import {pongAiController} from "./controllers/pongAiController"
+import { roomRoutes } from "./routes/roomRoutes";
+import { roomStates } from "./services/roomService";
 import {
 	getGameState,
 	moveUp,
 	moveDown,
 	updateGame,
 	isGameEnded,
-	roomStates,
 	resetGame,
 	deleteRoom,
 } from "./services/gameServices";
@@ -33,33 +34,6 @@ interface Room
 }
 const rooms: Map<string, Room> = new Map();
 
-function findOrCreateRoom(socketId: string): { roomId: string; role: "left" | "right" }
-{
-	for (const [roomId, room] of rooms.entries())
-	{
-		// If the room has only one player, verify that the player socket is still connected.
-		if (room.players.length === 1)
-		{
-			const existingPlayerId = room.players[0];
-			const existingSocket = io.sockets.sockets.get(existingPlayerId as any);
-			if (!existingSocket || !existingSocket.connected)
-			{
-				// Stale room: remove and continue searching
-				rooms.delete(roomId);
-				deleteRoom(roomId);
-				console.log(`Removed stale room ${roomId} (player ${existingPlayerId} not connected).`);
-				continue;
-			}
-
-			// Valid single-player room, join it
-			room.players.push(socketId);
-			return { roomId, role: "right" };
-		}
-	}
-	const newRoomId = `room-${Math.random().toString(36).substring(2, 8)}`;
-	rooms.set(newRoomId, { id: newRoomId, players: [socketId] });
-	return { roomId: newRoomId, role: "left" };
-}
 /**
  * Register CORS plugin
  */
@@ -72,8 +46,9 @@ app.register(cors, {
 /**
  * Register REST routes
  */
+app.register(roomRoutes, { prefix: "/api" });
 gameController(app, io, rooms);
-pongAiController(app, io, rooms);
+pongAiController(app, io);
 
 /**
  * 	SOCKETS.IO
@@ -91,73 +66,43 @@ io.on("connection", (socket) =>
 	// joinRoom accepts an optional payload: { roomId?: string }
 	socket.on("joinRoom", (payload?: { roomId?: string }) =>
 	{
-		// If client asked to join the special local room, handle it separately
-		if (payload && payload.roomId === "local")
-		{
-			// Use adapter to get a fresh view of the room. This reduces race conditions
-			// when multiple sockets try to join at the same time.
-			const localSetBefore = io.sockets.adapter.rooms.get("local");
-			const localCountBefore = localSetBefore ? localSetBefore.size : 0;
-			if (localCountBefore >= 2) {
-				// Room is full; inform the client
-				socket.emit('roomFull', { roomId: 'local' });
-				console.log(`Socket ${socket.id} attempted to join local but it is full.`);
-				return;
-			}
-
-			// Proceed to join and recompute role based on the updated adapter state
-			socket.join('local');
-			const localSet = io.sockets.adapter.rooms.get('local');
-			const localCount = localSet ? localSet.size : 0;
-			const role: 'left' | 'right' = localCount === 1 ? 'left' : 'right';
-
-			socket.emit('roomJoined', { roomId: 'local', role });
-			console.log(`Socket ${socket.id} joined local as ${role}`);
-
-			// If there are exactly two players now, start the gameReady
-			if (localCount === 2)
-			{
-				console.log(`Local room is full. Emitting 'gameReady'.`);
-				io.to('local').emit('gameReady', { roomId: 'local' });
-			}
+		const roomId = payload?.roomId;
+		if (!roomId) {
+			socket.emit("error", { message: "Room ID is required" });
 			return;
 		}
 
-		// If a custom roomId was provided (e.g., AI rooms), honor it
-		if (payload && payload.roomId && payload.roomId !== 'local') {
-			const customRoomId = payload.roomId;
-			socket.join(customRoomId);
-
-			let room = rooms.get(customRoomId);
-			if (!room) {
-				room = { id: customRoomId, players: [socket.id] };
-				rooms.set(customRoomId, room);
-			} else if (!room.players.includes(socket.id)) {
-				// Keep max 2 players
-				if (room.players.length < 2) room.players.push(socket.id);
-			}
-
-			const role: 'left' | 'right' = room.players[0] === socket.id ? 'left' : 'right';
-			socket.emit('roomJoined', { roomId: customRoomId, role });
-			console.log(`Socket ${socket.id} joined custom room ${customRoomId} as ${role}`);
-
-			if (room.players.length === 2) {
-				console.log(`Room ${customRoomId} is full. Emitting 'gameReady'.`);
-				io.to(customRoomId).emit('gameReady', { roomId: customRoomId });
-			}
+		// Check if the room exists (a game state has been created for it)
+		if (roomId !== "local" && !roomStates.has(roomId)) {
+			socket.emit("roomNotFound", { roomId });
 			return;
 		}
 
-		// Otherwise, perform matchmaking for online rooms
-		const { roomId, role } = findOrCreateRoom(socket.id);
+		const roomAdapter = io.sockets.adapter.rooms.get(roomId);
+		const numPlayers = roomAdapter ? roomAdapter.size : 0;
+
+		if (numPlayers >= 2) {
+			socket.emit("roomFull", { roomId });
+			return;
+		}
+
 		socket.join(roomId);
 
+		// Manage players in the room
+		let room = rooms.get(roomId);
+		if (!room) {
+			room = { id: roomId, players: [] };
+			rooms.set(roomId, room);
+		}
+		if (!room.players.includes(socket.id)) {
+			room.players.push(socket.id);
+		}
+
+		const role: "left" | "right" = room.players.indexOf(socket.id) === 0 ? "left" : "right";
 		socket.emit("roomJoined", { roomId, role });
 		console.log(`Socket ${socket.id} joined ${roomId} as ${role}`);
 
-		const currentRoom = rooms.get(roomId);
-		if (currentRoom && currentRoom.players.length === 2)
-		{
+		if (room.players.length === 2) {
 			console.log(`Room ${roomId} is full. Emitting 'gameReady'.`);
 			io.to(roomId).emit("gameReady", { roomId });
 		}
