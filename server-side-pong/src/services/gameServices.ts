@@ -30,7 +30,7 @@ let localState: GameState = createInitialState();
 export const isGameEnded = (roomId?: string) =>
 {
 	const state = getGameState(roomId);
-	return state.gameEnded;
+	return state ? state.gameEnded : true;
 };
 
 /**
@@ -56,9 +56,9 @@ export function deleteRoom(roomId: string)
 	roomStates.delete(roomId);
 }
 
-export function getGameState(roomId?: string): GameState
+export function getGameState(roomId?: string): GameState | undefined
 {
-	if (roomId && roomId !== "local") return roomStates.get(roomId) ?? resetGame(roomId);
+	if (roomId && roomId !== "local") return roomStates.get(roomId);
 	return localState;
 }
 
@@ -66,18 +66,20 @@ export function getGameState(roomId?: string): GameState
 /**
  * Paddle speed is 10px for the y axis
  */
-export function moveUp(side: "left" | "right", roomId?: string): GameState
+export function moveUp(side: "left" | "right", roomId?: string): GameState | undefined
 {
 	const state = getGameState(roomId);
+	if (!state) return;
 	state.paddles[side].y = Math.max(0, state.paddles[side].y - PADDLE_SPEED);
 	if (roomId && roomId !== "local") roomStates.set(roomId, state);
 	else localState = state;
 	return state;
 }
 
-export function moveDown(side: "left" | "right", roomId?: string): GameState
+export function moveDown(side: "left" | "right", roomId?: string): GameState | undefined
 {
 	const state = getGameState(roomId);
+	if (!state) return;
 	state.paddles[side].y = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, state.paddles[side].y + PADDLE_SPEED);
 	if (roomId && roomId !== "local") roomStates.set(roomId, state);
 	else localState = state;
@@ -111,10 +113,10 @@ function handlePaddleCollision(ball: Ball, paddle: Paddle, side: 'left' | 'right
 	}
 }
 
-export function updateGame(roomId?: string): GameState
+export function updateGame(roomId?: string): GameState | undefined
 {
 	const state = getGameState(roomId);
-	if (state.gameEnded) return state;
+	if (!state || state.gameEnded) return state;
 
 	const ball = state.ball;
 	ball.x += ball.dx;
@@ -247,6 +249,7 @@ function resetBall(state: GameState, serveTo: "left" | "right", roomId?: string)
 export function startBallMovement(roomId?: string)
 {
 	const state = getGameState(roomId);
+	if (!state) return;
 	if (state.ball.dx === 0 && state.ball.dy === 0)
 	{
 		const serveDirection = (state.ball as any).serveDirection || (Math.random() > 0.5 ? "left" : "right");
