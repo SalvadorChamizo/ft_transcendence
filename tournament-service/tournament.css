@@ -254,7 +254,6 @@
   position: absolute;
   width: 2px;
   height: 60px;
-  background-color: #42F3FA;
   margin: 0 auto;
   margin-bottom: 190px;
   margin-left: 190px;
@@ -265,7 +264,6 @@
   position: absolute;
   width: 2px;
   height: 60px;
-  background-color: #ffffff;
   margin: 0 auto;
   margin-bottom: 190px;
   margin-left: 190px;
@@ -279,7 +277,6 @@
   position: absolute;
   width: 100px;
   height: 2px;
-  background-color: #42F3FA;
   bottom: 0;
   box-shadow: 0 0 5px rgba(66,243,250,0.5);
 }
@@ -294,13 +291,11 @@
 
 .tournament-link:hover::before {
   left: -100px;
-    background-color: #ffffff;
   box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
 }
 
 .tournament-link:hover::after {
   right: -100px;
-    background-color: #f0f0f0;
   box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
 }
 
@@ -493,7 +488,6 @@
   background-color: #42F3FA;
   margin: 0 auto;
   margin-bottom: 190px;
-  margin-left: 190px;
   box-shadow: 0 0 5px rgba(66,243,250,0.5);
 }
 
@@ -504,7 +498,6 @@
   background-color: #ffffff;
   margin: 0 auto;
   margin-bottom: 190px;
-  margin-left: 190px;
   box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
 }
 
@@ -529,6 +522,7 @@
   bottom: 0;
   box-shadow: 0 0 5px rgba(66,243,250,0.5);
   right: -100px;
+  z-index: 100;
 }
 
 .tournament-line-middle-left:hover {
