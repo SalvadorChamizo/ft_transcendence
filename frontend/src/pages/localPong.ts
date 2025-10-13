@@ -8,6 +8,7 @@ import { getAccessToken, refreshAccessToken } from "../state/authState";
 let socket: Socket;
 let ctx: CanvasRenderingContext2D | null = null;
 let animationFrameId: number;
+let endGameTimeoutId: number | undefined;
 let isGameRunning = false;
 const roomId = "local"; // Always local for this mode
 
@@ -59,7 +60,6 @@ export function localPongPage(): string {
       <div class="scoreboard-container">
         <button id="startGameBtn" class="pong-button hidden">Start Game</button>
         <div id="scoreboard" class="scoreboard hidden">0 : 0</div>
-        <button id="playAgainBtn" class="pong-button hidden">Play Again</button>
       </div>
 
       <p id="winnerMessage" class="winner-message" style="display: none;"></p>
@@ -85,6 +85,10 @@ export function localPongPage(): string {
 
 function cleanup() {
     console.log("[LocalPong] Cleaning up previous game...");
+    if (endGameTimeoutId) {
+        clearTimeout(endGameTimeoutId);
+        endGameTimeoutId = undefined;
+    }
     if (socket) {
         socket.off('connect');
         socket.off('gameState');
@@ -124,7 +128,8 @@ async function postGame(path: string): Promise<Response> {
 const handleKeyDown = (e: KeyboardEvent) => {
     if (["ArrowUp", "ArrowDown", "w", "s"].includes(e.key)) e.preventDefault();
 
-    if (e.key.toLowerCase() === "p") {
+    if (e.key.toLowerCase() === "p")
+    {
         togglePause();
         return;
     }
@@ -139,7 +144,9 @@ function togglePause() {
 const handleKeyUp = (e: KeyboardEvent) => keysPressed.delete(e.key);
 
 function gameLoop(isAiMode: boolean) {
-    if (socket && isGameRunning) {
+    if (!isGameRunning) return;
+
+    if (socket) {
         if (keysPressed.has("w")) socket.emit("moveUp", "left", roomId);
         if (keysPressed.has("s")) socket.emit("moveDown", "left", roomId);
 
@@ -153,9 +160,6 @@ function gameLoop(isAiMode: boolean) {
 }
 
 export function localPongHandlers() {
-    // Initial cleanup in case of hot-reloading or re-navigation
-    cleanup();
-
     document.getElementById("1v1Btn")!.addEventListener("click", () => {
         prepareGameUI(false);
         startGame(false);
@@ -166,21 +170,8 @@ export function localPongHandlers() {
         startGame(true);
     });
 
-    document.getElementById("playAgainBtn")!.addEventListener("click", () => {
-        cleanup(); // Clean up the finished game
-        
-        // Reset UI to initial state
-        (document.getElementById("modeSelection")!).style.display = "flex";
-        (document.getElementById("gameInfo")!).style.display = "none";
-        (document.getElementById("winnerMessage")!).style.display = "none";
-        (document.getElementById("playAgainBtn")!).classList.add("hidden");
-        (document.getElementById("scoreboard")!).classList.add("hidden");
-        (document.getElementById("extraInfo")!).classList.add("hidden");
-        (document.getElementById("roleInfo")!).textContent = "";
-
-        // Re-attach the main handlers for the mode selection buttons
-        localPongHandlers();
-    });
+    // Initial cleanup in case of hot-reloading or re-navigation
+    cleanup();
 }
 
 function prepareGameUI(isAiMode: boolean) {
@@ -204,7 +195,12 @@ async function startGame(isAiMode: boolean) {
     
     ctx = (document.getElementById("pongCanvas") as HTMLCanvasElement).getContext("2d")!;
     const wsHost = `ws://${window.location.hostname}:7000`;
-    socket = io(wsHost, { transports: ['websocket'] });
+    socket = io(wsHost, { 
+        transports: ['websocket'],
+        auth: {
+            token: "local"
+        }
+    });
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
@@ -237,6 +233,9 @@ async function startGame(isAiMode: boolean) {
             isGameRunning = true;
             console.log("[LocalPong] Game started and resumed.");
 
+            // Start the animation loop
+            gameLoop(isAiMode);
+
         } catch (error) {
             console.error("[LocalPong] Failed to start game:", error);
             // Optional: show an error message to the user
@@ -267,9 +266,6 @@ async function startGame(isAiMode: boolean) {
         console.log("[LocalPong] Socket disconnected.");
         isGameRunning = false;
     });
-
-    // Start the animation loop
-    gameLoop(isAiMode);
 }
 
 function checkWinner() {
@@ -289,9 +285,21 @@ function checkWinner() {
 
 function endGame() {
     isGameRunning = false;
-    cancelAnimationFrame(animationFrameId); // Detiene el bucle de juego
-    document.getElementById("playAgainBtn")!.classList.remove("hidden");
-    (document.getElementById("startGameBtn")!).classList.add("hidden");
+    cancelAnimationFrame(animationFrameId);
+
+    endGameTimeoutId = window.setTimeout(() => {
+        // Don't call cleanup() here, as it will interfere with a new game
+        // if started within the 5-second window.
+        // cleanup() is called at the beginning of startGame().
+        
+        // Reset UI to initial state
+        (document.getElementById("modeSelection")!).style.display = "flex";
+        (document.getElementById("gameInfo")!).style.display = "none";
+        (document.getElementById("winnerMessage")!).style.display = "none";
+        (document.getElementById("scoreboard")!).classList.add("hidden");
+        (document.getElementById("extraInfo")!).classList.add("hidden");
+        (document.getElementById("roleInfo")!).textContent = "";
+    }, 5000);
 }
 
 function draw() {
@@ -336,5 +344,8 @@ function draw() {
 
     // Puntuación
     ctx.shadowBlur = 0;
-    document.getElementById("scoreboard")!.textContent = `${gameState.scores.left} : ${gameState.scores.right}`;
+    const scoreboard = document.getElementById("scoreboard");
+    if (scoreboard) {
+        scoreboard.textContent = `${gameState.scores.left} : ${gameState.scores.right}`;
+    }
 }
