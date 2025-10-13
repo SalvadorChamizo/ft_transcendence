@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import { FastifyReply, FastifyRequest } from "fastify";
-import { registerUser, register42User, getUserByUsername, getUserById, getUserByEmail, getIDbyUsername, getAllUsers } from "../services/usersService";
+import { registerUser, register42User, changeUsername , getUserByUsername, getUserById, getUserByEmail } from "../services/usersService";
 
 export async function registerController(req: FastifyRequest, reply: FastifyReply) {
 	const { email, username, password } = req.body as { email: string; username: string; password: string };
@@ -39,6 +39,52 @@ export async function register42Controller(req: FastifyRequest, reply: FastifyRe
 	catch (err: any) {
 		console.error("Error occurred during user registration:", err);
 		return reply.code(400).send({ error: err.message });	
+	}
+}
+
+export async function usernameChanger(req: FastifyRequest, reply: FastifyReply) {
+	const { newUsername } = req.body as { newUsername: string };
+	const userId = req.headers["x-user-id"];
+
+	if (!userId) {
+		return reply.code(401).send({ error: "Not authenticated" });
+	}
+
+	try {
+		const existingUser = await getUserByUsername(newUsername);
+		if (existingUser) {
+			return reply.code(400).send({ error: "Username already exists" });
+		}
+		console.log("Controller -> Changing username for user ID:", userId);
+		console.log("Controller -> New username:", newUsername);
+		const result = await changeUsername(userId, newUsername);
+		return reply.send({ result });
+	} catch (err: any) {
+		console.error("Error occurred during username change:", err);
+		return reply.code(400).send({ error: err.message });
+	}
+}
+
+export async function usernameChanger(req: FastifyRequest, reply: FastifyReply) {
+	const { newUsername } = req.body as { newUsername: string };
+	const userId = req.headers["x-user-id"];
+
+	if (!userId) {
+		return reply.code(401).send({ error: "Not authenticated" });
+	}
+
+	try {
+		const existingUser = await getUserByUsername(newUsername);
+		if (existingUser) {
+			return reply.code(400).send({ error: "Username already exists" });
+		}
+		console.log("Controller -> Changing username for user ID:", userId);
+		console.log("Controller -> New username:", newUsername);
+		const result = await changeUsername(userId, newUsername);
+		return reply.send({ result });
+	} catch (err: any) {
+		console.error("Error occurred during username change:", err);
+		return reply.code(400).send({ error: err.message });
 	}
 }
 
@@ -114,34 +160,4 @@ export async function getCurrentUserController(req: FastifyRequest, reply: Fasti
 
 	const user = await getUserById(Number(userId));
 	return { user };
-}
-
-// Get public user profile by ID
-export async function getUserProfileController(req: FastifyRequest, reply: FastifyReply) {
-	const { id } = req.params as { id: string };
-	
-	try {
-		const user = await getUserById(Number(id));
-		if (!user) {
-			return reply.code(404).send({ error: "User not found" });
-		}
-		
-		// Return public profile (only username, no password/email)
-		return reply.send({
-			id: user.id,
-			username: user.username
-		});
-	} catch (err: any) {
-		return reply.code(400).send({ error: err.message });
-	}
-}
-
-export async function getAllUsersController(req: FastifyRequest, reply: FastifyReply) {
-	try {
-		const users = await getAllUsers();
-		return reply.send(users);
-	} catch (err: any) {
-		console.error("Error occurred while getting all users:", err);
-		return reply.code(500).send({ error: err.message });
-	}
 }

@@ -2097,19 +2097,9 @@ header {
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 
-.settings-actions h1 {
-  color: #2c3e50;
-  text-align: center;
-  margin-bottom: 2rem;
-  font-size: 2.5rem;
-}
 
-.settings-actions p {
-  color: #7f8c8d;
-  text-align: center;
-  font-size: 1.1rem;
-  margin-bottom: 1.5rem;
-}
+
+
 
 /* ********************************* */
 /*            Settings END           */

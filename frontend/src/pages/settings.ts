@@ -15,9 +15,12 @@ export function Settings() {
   setTimeout(() => settingsHandlers(accessToken), 0); // Pasar el token como parámetro
   return `
       <div class="settings-actions">
-        <h1>Settings</h1>
         <form id="settings-form">
-          <p id="username"></p>
+          <div class="username-change">
+            <p id="username"></p>
+            <input type="text" id="newUsername" value="Enter a new Username" />
+            <button type="button" id="changeUsernameBTN">Change Username</button>
+          </div>
           <p id="useremail"></p>
         </form>
       </div>
@@ -25,37 +28,63 @@ export function Settings() {
 }
 
 export function settingsHandlers(accessToken: string) {
+  const usernameField = document.querySelector<HTMLParagraphElement>("#username")!;
+  const emailField = document.querySelector<HTMLParagraphElement>("#useremail")!;
+  const newUsername = document.querySelector<HTMLInputElement>("#newUsername")!;
+  const changeUsernameBtn = document.querySelector<HTMLButtonElement>("#changeUsernameBTN")!;
 
-  setTimeout(() => { //Defines la funcion, no se ejecuta aun
-    const form = document.querySelector<HTMLFormElement>("#settings-form")!;
-    const usernameField = document.querySelector<HTMLParagraphElement>("#username")!;
-    const emailField = document.querySelector<HTMLParagraphElement>("#useremail")!;
-  
-    async function fetchUserData() {
-      try {
-        const accessToken = getAccessToken();
-        const me = await fetch("http://${apiHost}:8080/users/me", {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        const data = await me.json();
-        console.log("User data fetched:", data);
-        if (me.ok) {
-          console.log("username:", data.user.username);
-          usernameField.textContent = `Username: ${data.user.username}`;
-          console.log("Email:", data.user.email);
-          emailField.textContent = `Email: ${data.user.email}`;
-        } else {
-          console.error("Error fetching user data:", data);
-        }
-      } catch (err) {
-        console.error("⚠️ Failed to reach server");
+  // Traer datos del usuario
+  async function fetchUserData() {
+    try {
+      const res = await fetch("http://localhost:8080/users/me", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        usernameField.textContent = `Username: ${data.user.username}`;
+        emailField.textContent = `Email: ${data.user.email}`;
+      } else {
+        console.error("Error fetching user data:", data);
       }
+    } catch (err) {
+      console.error("⚠️ Failed to reach server", err);
+    }
+  }
+
+  fetchUserData();
+
+  // Listener para cambiar username
+  changeUsernameBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+    const currentUsername = usernameField.textContent?.replace("Username: ", "");
+
+    if (!newUsername.value || newUsername.value.length < 3 || newUsername.value.length > 20 || newUsername.value === currentUsername) {
+      return;
     }
 
-    fetchUserData(); // Aqui se ejecuta la funcion
+    try {
+      const res = await fetch("http://localhost:8080/users/changeUsername", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ newUsername: newUsername.value }),
+      });
 
-  }, 0);
+      const data = await res.json();
+      if (res.ok) {
+        console.log("Username changed successfully");
+        usernameField.textContent = `Username: ${newUsername.value}`;
+        newUsername.value = "";
+      } else {
+        console.error("Error changing username:", data.error);
+      }
+    } catch (err) {
+      console.error("⚠️ Failed to reach server", err);
+    }
+  });
 }

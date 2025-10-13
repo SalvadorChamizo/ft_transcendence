@@ -13,6 +13,15 @@ export function findUserByUsername(username: string) {
 	return stmt.get(username);
 }
 
+export function usernameChanger(id: number, newUsername: string) {
+	const stmt = db.prepare("UPDATE users SET username = ? WHERE id = ?");
+	const user = stmt.run(newUsername, id);
+	console.log("Resultado de la actualización:", user);
+	if (user.changes === 0) {
+		throw new Error("No user found with the given ID");
+	}
+}
+
 export function findUserById(id: number) {
 	const stmt = db.prepare("SELECT * FROM users WHERE id = ?");
 	return stmt.get(id);
