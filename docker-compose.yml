@@ -77,12 +77,12 @@ services:
      networks:
         - backend
 
- # tournament-service:
-  #  build: ./tournament-service
-  #  expose:
-  #    - "8080"
-  #  networks:
-  #    - backend
+  tournament-service:
+    build: ./tournament-service
+    expose:
+      - "8085"
+    networks:
+      - backend
 
 networks:
   backend:

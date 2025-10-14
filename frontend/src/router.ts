@@ -10,6 +10,7 @@ import { Settings } from "./pages/settings";
 import { localPongPage, localPongHandlers } from "./pages/localPong"; // Importar handlers
 import { remotePongPage, remotePongHandlers } from "./pages/remotePong"; // Importar handlers
 import { Game } from "./pages/game"
+import { Tournament } from "./pages/Tournament/tournament";
 
 export function router(route: string): string {
     switch (route) {
@@ -39,6 +40,8 @@ export function router(route: string): string {
             return Settings();
         case "#/game":
             return Game();
+        case "#/tournament":
+            return Tournament();
         case "#/":
         default:
             return Home();
