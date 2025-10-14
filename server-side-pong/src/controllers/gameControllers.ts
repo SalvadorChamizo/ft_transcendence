@@ -52,10 +52,10 @@ export async function gameController(fastify: FastifyInstance, io: Server, rooms
 		const room = rooms.get(roomId);
 
     	// Validation
-		if (roomId !== 'local' && (!room || room.players.length < 2))
+		if (!roomId.startsWith('local_') && roomId !== 'local' && (!room || room.players.length < 2))
 		{
 			return reply.code(400).send({ message: "Cannot resume, waiting for opponent." });
-    	}
+		}
 
 		if (isGameEnded(roomId)) return { message: "Game has ended" };
 
@@ -66,11 +66,11 @@ export async function gameController(fastify: FastifyInstance, io: Server, rooms
 		{
     		// player check for disconnections
 			const currentRoom = rooms.get(roomId);
-			if (roomId !== 'local' && (!currentRoom || currentRoom.players.length < 2))
+			if (!roomId.startsWith('local_') && roomId !== 'local' && (!currentRoom || currentRoom.players.length < 2))
 			{
 				console.log(`[RESUME-DELAY] Start aborted for room ${roomId}, an opponent disconnected.`);
 				return;
-      		}
+			}
     		if (!isGameEnded(roomId) && getIsPaused(roomId))
 			{
         		startBallMovement(roomId);
@@ -88,10 +88,10 @@ export async function gameController(fastify: FastifyInstance, io: Server, rooms
     	const room = rooms.get(roomId);
 
     	// Validation
-    	if (getIsPaused(roomId) && roomId !== 'local' && (!room || room.players.length < 2))
+		if (getIsPaused(roomId) && !roomId.startsWith('local_') && roomId !== 'local' && (!room || room.players.length < 2))
 		{
-    		return reply.code(400).send({ message: "Cannot toggle pause, waiting for opponent." });
-    	}
+			return reply.code(400).send({ message: "Cannot toggle pause, waiting for opponent." });
+		}
 
 		if (isGameEnded(roomId)) return { message: "Game has ended" };
 		if (getIsPaused(roomId)) startBallMovement(roomId);

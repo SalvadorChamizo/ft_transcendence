@@ -72,8 +72,9 @@ io.on("connection", (socket) => {
       return;
     }
 
-    // The game state must exist for a room to be valid.
-    if (roomId !== "local" && !roomStates.has(roomId)) {
+
+    // Permitir cualquier roomId que empiece por 'local_' para partidas locales concurrentes
+    if (!roomId.startsWith("local_") && !roomStates.has(roomId)) {
       socket.emit("roomNotFound", { roomId });
       console.log(`Socket ${socket.id} failed to join non-existent room ${roomId}`);
       return;
@@ -161,14 +162,16 @@ io.on("connection", (socket) => {
 
   socket.on("disconnecting", () => {
     try {
-      if (socket.rooms && socket.rooms.has("local")) {
-        const localSet = io.sockets.adapter.rooms.get("local");
-        const currentSize = localSet ? localSet.size : 0;
-        const remaining = Math.max(0, currentSize - 1);
-        if (remaining > 0) {
-          io.to("local").emit("opponentDisconnected");
-        } else {
-          resetGame("local");
+      for (const roomId of socket.rooms) {
+        if (roomId.startsWith("local_")) {
+          const localSet = io.sockets.adapter.rooms.get(roomId);
+          const currentSize = localSet ? localSet.size : 0;
+          const remaining = Math.max(0, currentSize - 1);
+          if (remaining > 0) {
+            io.to(roomId).emit("opponentDisconnected");
+          } else {
+            resetGame(roomId);
+          }
         }
       }
     } catch (err) {

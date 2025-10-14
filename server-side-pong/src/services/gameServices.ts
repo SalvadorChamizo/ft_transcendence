@@ -54,6 +54,11 @@ export function deleteRoom(roomId: string)
 	}
 	// Remove stored state
 	roomStates.delete(roomId);
+	// Limpieza extra para rooms locales
+	if (roomId.startsWith("local_")) {
+		// No hay un Map global para localState, pero si quieres puedes limpiar variables asociadas aquí
+		// (No-op, pero deja el hook para futuras mejoras)
+	}
 }
 
 export function getGameState(roomId?: string): GameState | undefined

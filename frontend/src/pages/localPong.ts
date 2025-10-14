@@ -5,12 +5,13 @@
 import { io, Socket } from "socket.io-client";
 import { getAccessToken, refreshAccessToken } from "../state/authState";
 
-let socket: Socket;
+let socket: Socket | null = null;
 let ctx: CanvasRenderingContext2D | null = null;
 let animationFrameId: number;
 let endGameTimeoutId: number | undefined;
 let isGameRunning = false;
-const roomId = "local"; // Always local for this mode
+// Genera un roomId único por pestaña para permitir múltiples partidas locales concurrentes
+const roomId = `local_${crypto.randomUUID()}`;
 
 const apiHost = `http://${window.location.hostname}:7000`;
 
@@ -63,6 +64,7 @@ export function localPongPage(): string {
       </div>
 
       <p id="winnerMessage" class="winner-message" style="display: none;"></p>
+      <div id="errorMessage" class="error-message" style="display: none; color: red; text-align: center;"></div>
 
       <div id="gameInfo" class="game-info" style="display:none;">
         <div class="controls left-controls">
@@ -90,12 +92,9 @@ function cleanup() {
         endGameTimeoutId = undefined;
     }
     if (socket) {
-        socket.off('connect');
-        socket.off('gameState');
-        socket.off('roomFull');
-        socket.off('gamePaused');
-        socket.off('disconnect');
+        socket.removeAllListeners();
         socket.disconnect();
+        socket = null;
     }
     if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
@@ -105,6 +104,11 @@ function cleanup() {
     isGameRunning = false;
     keysPressed.clear();
     ctx = null;
+    // Oculta el mensaje de victoria y error inmediatamente
+    const winnerMsg = document.getElementById("winnerMessage");
+    if (winnerMsg) winnerMsg.style.display = "none";
+    const errorMsg = document.getElementById("errorMessage");
+    if (errorMsg) errorMsg.style.display = "none";
 }
 
 // Helper: POST with Authorization header and one retry after token refresh
@@ -143,17 +147,24 @@ function togglePause() {
 
 const handleKeyUp = (e: KeyboardEvent) => keysPressed.delete(e.key);
 
+// Throttle para limitar la frecuencia de envío de eventos de movimiento
+let lastMoveSent = 0;
+const MOVE_THROTTLE_MS = 30;
+
 function gameLoop(isAiMode: boolean) {
     if (isGameRunning && socket) {
-        if (keysPressed.has("w")) socket.emit("moveUp", "left", roomId);
-        if (keysPressed.has("s")) socket.emit("moveDown", "left", roomId);
+        const now = Date.now();
+        if (now - lastMoveSent > MOVE_THROTTLE_MS) {
+            if (keysPressed.has("w")) socket.emit("moveUp", "left", roomId);
+            if (keysPressed.has("s")) socket.emit("moveDown", "left", roomId);
 
-        if (!isAiMode) {
-            if (keysPressed.has("ArrowUp")) socket.emit("moveUp", "right", roomId);
-            if (keysPressed.has("ArrowDown")) socket.emit("moveDown", "right", roomId);
+            if (!isAiMode) {
+                if (keysPressed.has("ArrowUp")) socket.emit("moveUp", "right", roomId);
+                if (keysPressed.has("ArrowDown")) socket.emit("moveDown", "right", roomId);
+            }
+            lastMoveSent = now;
         }
     }
-
     animationFrameId = requestAnimationFrame(() => gameLoop(isAiMode));
 }
 
@@ -191,9 +202,19 @@ function prepareGameUI(isAiMode: boolean) {
 async function startGame(isAiMode: boolean) {
     // Ensure everything is clean before starting
     cleanup();
-    
+
+    // Deshabilita los botones para evitar doble inicio
+    const btn1v1 = document.getElementById("1v1Btn") as HTMLButtonElement;
+    const btn1vAI = document.getElementById("1vAIBtn") as HTMLButtonElement;
+    if (btn1v1) btn1v1.disabled = true;
+    if (btn1vAI) btn1vAI.disabled = true;
+
     ctx = (document.getElementById("pongCanvas") as HTMLCanvasElement).getContext("2d")!;
     const wsHost = `ws://${window.location.hostname}:7000`;
+    if (socket) {
+        // Si por alguna razón hay un socket anterior, límpialo
+        cleanup();
+    }
     socket = io(wsHost, { 
         transports: ['websocket'],
         auth: {
@@ -204,9 +225,9 @@ async function startGame(isAiMode: boolean) {
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
 
-    socket.on('connect', async () => {
-        console.log("[LocalPong] Socket connected, joining room 'local'");
-        socket.emit("joinRoom", { roomId: "local" });
+    socket!.on('connect', async () => {
+        console.log(`[LocalPong] Socket connected, joining room '${roomId}'`);
+        socket!.emit("joinRoom", { roomId });
 
         try {
             // Always stop AI first to ensure a clean state
@@ -223,7 +244,6 @@ async function startGame(isAiMode: boolean) {
                     throw new Error(`start-ai failed (${startAiResponse.status})`);
                 }
             }
-            
             // The game starts paused by default after init, so we resume it.
             const resumeResponse = await postGame(`/game/${roomId}/resume`);
             if (!resumeResponse.ok) {
@@ -232,16 +252,27 @@ async function startGame(isAiMode: boolean) {
             isGameRunning = true;
             console.log("[LocalPong] Game started and resumed.");
 
+            // Habilita los botones de nuevo tras iniciar
+            if (btn1v1) btn1v1.disabled = false;
+            if (btn1vAI) btn1vAI.disabled = false;
+
             // Start the animation loop
             gameLoop(isAiMode);
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("[LocalPong] Failed to start game:", error);
-            // Optional: show an error message to the user
+            const errorMsg = document.getElementById("errorMessage");
+            if (errorMsg) {
+                errorMsg.textContent = error?.message || "Error al iniciar la partida";
+                errorMsg.style.display = "block";
+            }
+            // Habilita los botones para reintentar
+            if (btn1v1) btn1v1.disabled = false;
+            if (btn1vAI) btn1vAI.disabled = false;
         }
     });
 
-    socket.on("gameState", (state: GameState) => {
+    socket!.on("gameState", (state: GameState) => {
         gameState = state;
         draw();
         if (state.gameEnded) {
@@ -249,22 +280,54 @@ async function startGame(isAiMode: boolean) {
         }
     });
 
-    socket.on('roomFull', (payload: { roomId: string }) => {
-        alert('Local room is full. Please try again later or use Remote mode.');
+    socket!.on('roomFull', (payload: { roomId: string }) => {
+        const errorMsg = document.getElementById("errorMessage");
+        if (errorMsg) {
+            errorMsg.textContent = 'La sala local está llena. Intenta más tarde o usa el modo remoto.';
+            errorMsg.style.display = "block";
+        }
         console.warn('Attempted to join full local room', payload);
         cleanup();
     });
 
-    socket.on("gamePaused", (payload: boolean | { paused: boolean }) => {
-        const paused = typeof payload === "boolean" ? payload : payload?.paused;
-        isGameRunning = !paused;
-        console.log(`[LocalPong] Game pause state changed. isGameRunning: ${isGameRunning}`);
+    socket!.on('roomNotFound', (payload: { roomId: string }) => {
+        const errorMsg = document.getElementById("errorMessage");
+        if (errorMsg) {
+            errorMsg.textContent = 'La sala de juego ya no existe o ha sido eliminada. Se reiniciará la partida.';
+            errorMsg.style.display = "block";
+        }
+        cleanup();
+        setTimeout(() => window.location.reload(), 2000);
     });
 
-    socket.on("disconnect", () => {
-        console.log("[LocalPong] Socket disconnected.");
+    socket!.on("disconnect", (reason: string) => {
+        console.log("[LocalPong] Socket disconnected.", reason);
         isGameRunning = false;
+        const errorMsg = document.getElementById("errorMessage");
+        if (errorMsg) {
+            errorMsg.textContent = 'Conexión perdida con el servidor. La partida se reiniciará.';
+            errorMsg.style.display = "block";
+        }
+        cleanup();
+        setTimeout(() => window.location.reload(), 2000);
     });
+
+    // Manejo de reconexión automática: reinicia la UI si socket.io reconecta
+    if (typeof window !== 'undefined') {
+        window.addEventListener('DOMContentLoaded', () => {
+            if (socket) {
+                socket.on('reconnect', () => {
+                    const errorMsg = document.getElementById("errorMessage");
+                    if (errorMsg) {
+                        errorMsg.textContent = 'Reconectando con el servidor. La partida se reiniciará.';
+                        errorMsg.style.display = "block";
+                    }
+                    cleanup();
+                    setTimeout(() => window.location.reload(), 2000);
+                });
+            }
+        });
+    }
 }
 
 function checkWinner() {
