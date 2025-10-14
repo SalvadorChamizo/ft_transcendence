@@ -1,5 +1,13 @@
 import { WebSocket } from '@fastify/websocket';
 
+// WebSocket ready states (standard values)
+const WebSocketState = {
+    CONNECTING: 0,
+    OPEN: 1,
+    CLOSING: 2,
+    CLOSED: 3
+} as const;
+
 // Types for WebSocket messages
 interface WebSocketMessage {
     type: 'message' | 'user_connected' | 'user_disconnected' | 'typing' | 'stop_typing' | 'identify' | 'message_delivered' | 'message_read';
