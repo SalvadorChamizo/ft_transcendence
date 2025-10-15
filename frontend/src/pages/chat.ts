@@ -1165,7 +1165,8 @@ export function chatHandlers() {
             userSearchResults.innerHTML = `<div class="loading">${UI_MESSAGES.LOADING_USERS}</div>`;
             
             // Get all users from the database
-            const allUsers = await getAllUsers();
+            const response = await getAllUsers();
+            const allUsers = response.users || [];
             // Get connected users for online status (from WebSocket service)
             const connectedUsers = getConnectedUsersList();
             

@@ -23,10 +23,44 @@ export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
         return;
     }
 
-    if (publicUrls.includes(urlPath) || urlPath.startsWith('/ws') || urlPath.startsWith('/game/local')) {
+    // Permitir rutas públicas
+    if (publicUrls.includes(urlPath)) {
         return;
     }
 
+    // Permitir game/local sin autenticación
+    if (urlPath.startsWith('/game/local')) {
+        return;
+    }
+
+    // Para WebSocket, buscar token en query params
+    if (urlPath.startsWith('/ws')) {
+        const url = parse(req.url, true);
+        const token = url.query.token as string;
+
+        if (!token) {
+            return reply.code(401).send({ error: "Unauthorized: No token provided in WebSocket" });
+        }
+
+        try {
+            const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+                id: string;
+                username: string;
+                iat?: number;
+                exp?: number;
+            };
+            console.log(`[Auth Middleware WS] Token validated for user: ${decoded.username}`);
+
+            req.user = decoded;
+            req.headers["x-user-id"] = decoded.id;
+            req.headers["x-username"] = decoded.username;
+            return;
+        } catch (err) {
+            return reply.code(401).send({ error: "Unauthorized: Invalid or expired token in WebSocket" });
+        }
+    }
+
+    // Para HTTP normal, buscar token en header Authorization
     const authHeader = req.headers["authorization"];
     if (!authHeader) {
         return reply.code(401).send({ error: "Unauthorized: No token provided" });
@@ -44,7 +78,7 @@ export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
             iat?: number;
             exp?: number;
         };
-        console.log(`[Auth Middleware] Token validated successfully for user: ${decoded.username}`); // LOG ADDED
+        console.log(`[Auth Middleware] Token validated successfully for user: ${decoded.username}`);
 
         req.user = decoded;
 
