@@ -11,7 +11,13 @@ let animationFrameId: number;
 let endGameTimeoutId: number | undefined;
 let isGameRunning = false;
 // Unique room id for multiple concurrent local games
-const roomId = `local_${crypto.randomUUID()}`;
+function simpleUUID() {
+    return (
+        Date.now().toString(36) +
+        Math.random().toString(36).substring(2, 10)
+    );
+}
+const roomId = `local_${simpleUUID()}`;
 
 const apiHost = `http://${window.location.hostname}:8080`;
 
