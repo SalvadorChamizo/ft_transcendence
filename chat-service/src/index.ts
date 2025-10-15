@@ -15,10 +15,18 @@ async function startServer() {
     const app = Fastify({ logger: true });
 
     // Register CORS plugin
-    await app.register(cors, {
-      origin: process.env.CORS_ORIGIN || "http://localhost:5173",
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      credentials: true
+    const whitelist = ["http://localhost:5173", "http://localhost:8083"];
+    app.register(cors, {
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (whitelist.indexOf(origin) !== -1 || /http:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):5173/.test(origin)) {
+        return callback(null, true);
+        }
+        return callback(new Error("Not allowed by CORS"), false);
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
     });
 
     // Register WebSocket plugin for live chat
