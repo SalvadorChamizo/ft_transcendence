@@ -153,22 +153,14 @@ function togglePause() {
 
 const handleKeyUp = (e: KeyboardEvent) => keysPressed.delete(e.key);
 
-// Throttle para limitar la frecuencia de envío de eventos de movimiento
-let lastMoveSent = 0;
-const MOVE_THROTTLE_MS = 30;
-
 function gameLoop(isAiMode: boolean) {
     if (isGameRunning && socket) {
-        const now = Date.now();
-        if (now - lastMoveSent > MOVE_THROTTLE_MS) {
-            if (keysPressed.has("w")) socket.emit("moveUp", "left", roomId);
-            if (keysPressed.has("s")) socket.emit("moveDown", "left", roomId);
+        if (keysPressed.has("w")) socket.emit("moveUp", "left", roomId);
+        if (keysPressed.has("s")) socket.emit("moveDown", "left", roomId);
 
-            if (!isAiMode) {
-                if (keysPressed.has("ArrowUp")) socket.emit("moveUp", "right", roomId);
-                if (keysPressed.has("ArrowDown")) socket.emit("moveDown", "right", roomId);
-            }
-            lastMoveSent = now;
+        if (!isAiMode) {
+            if (keysPressed.has("ArrowUp")) socket.emit("moveUp", "right", roomId);
+            if (keysPressed.has("ArrowDown")) socket.emit("moveDown", "right", roomId);
         }
     }
     animationFrameId = requestAnimationFrame(() => gameLoop(isAiMode));
