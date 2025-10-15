@@ -9,7 +9,7 @@ let socket: Socket;
 let ctx: CanvasRenderingContext2D | null = null;
 let animationFrameId: number;
 let isGameRunning = false;
-let playerRole: "left" | "right" | "spectator" = "spectator";
+let playerRole: "left" | "right" | null = null;
 let roomId: string | null = null;
 
 const apiHost = `http://${window.location.hostname}:8080`;
@@ -52,8 +52,11 @@ export function remotePongPage(): string {
     <div class="pong-container">
       <h1>Pong - Remote Game</h1>
       <div id="modeSelection">
-        <button id="randomBtn" class="pong-button">Random Matchmaking</button>
-        <button id="roomBtn" class="pong-button">Create/Join Room</button>
+        <button id="createRoomBtn" class="pong-button">Create Room</button>
+        <div class="join-room-container">
+          <input type="text" id="roomIdInput" placeholder="Enter Room ID">
+          <button id="joinRoomBtn" class="pong-button">Join Room</button>
+        </div>
       </div>
       <div id="roleInfo"></div>
 
@@ -93,12 +96,12 @@ function cleanup() {
 }
 
 // Helper: POST with Authorization header and retry after refresh on 401
-async function postGame(path: string): Promise<Response> {
+async function postApi(path: string, method: "POST" | "GET" = "POST"): Promise<Response> {
     const makeReq = async () => {
         const token = getAccessToken();
         const headers: Record<string, string> = {};
         if (token) headers["Authorization"] = `Bearer ${token}`;
-        return fetch(`${apiHost}${path}`, { method: "POST", headers });
+        return fetch(`${apiHost}${path}`, { method, headers });
     };
     let res = await makeReq();
     if (res.status === 401) {
@@ -113,7 +116,7 @@ async function postGame(path: string): Promise<Response> {
 const handleKeyDown = (e: KeyboardEvent) => {
     if (["ArrowUp", "ArrowDown", "w", "s"].includes(e.key)) e.preventDefault();
     if (e.key.toLowerCase() === "p" && roomId) {
-        postGame(`/game/${roomId}/toggle-pause`);
+        postApi(`/game/${roomId}/toggle-pause`);
     } else {
         keysPressed.add(e.key);
     }
@@ -122,7 +125,7 @@ const handleKeyDown = (e: KeyboardEvent) => {
 const handleKeyUp = (e: KeyboardEvent) => keysPressed.delete(e.key);
 
 function gameLoop() {
-    if (socket && isGameRunning && roomId && playerRole !== "spectator") {
+    if (socket && isGameRunning && roomId && playerRole) {
         if (keysPressed.has("w") || keysPressed.has("ArrowUp"))
             socket.emit("moveUp", playerRole, roomId);
         if (keysPressed.has("s") || keysPressed.has("ArrowDown"))
@@ -135,18 +138,35 @@ export function remotePongHandlers() {
     cleanup();
     ctx = (document.getElementById("pongCanvas") as HTMLCanvasElement).getContext("2d")!;
     
-    document.getElementById("randomBtn")!.addEventListener("click", () => {
-        prepareGameUI();
-        startGame();
+    document.getElementById("createRoomBtn")!.addEventListener("click", async () => {
+        try {
+            const response = await postApi("/game/rooms");
+            if (!response.ok) throw new Error("Failed to create room");
+            const { roomId: newRoomId } = await response.json();
+            roomId = newRoomId;
+            prepareGameUI();
+            startGame(newRoomId);
+        } catch (error) {
+            console.error("Error creating room:", error);
+            alert("Could not create room. Please try again.");
+        }
     });
 
-    document.getElementById("roomBtn")!.addEventListener("click", () => {
-        alert("Create/Join Room is not implemented yet.");
+    document.getElementById("joinRoomBtn")!.addEventListener("click", () => {
+        const input = document.getElementById("roomIdInput") as HTMLInputElement;
+        const roomIdToJoin = input.value.trim();
+        if (roomIdToJoin) {
+            roomId = roomIdToJoin;
+            prepareGameUI();
+            startGame(roomIdToJoin);
+        } else {
+            alert("Please enter a Room ID.");
+        }
     });
 
     document.getElementById("startGameBtn")!.addEventListener("click", () => {
         if (!roomId) return;
-        postGame(`/game/${roomId}/resume`);
+        postApi(`/game/${roomId}/resume`);
         (document.getElementById("startGameBtn")!).classList.add("hidden");
         // Do NOT set isGameRunning here. Wait for server 'gamePaused' event with paused=false.
     });
@@ -155,7 +175,7 @@ export function remotePongHandlers() {
         if (!roomId) return;
         document.getElementById("winnerMessage")!.style.display = "none";
         document.getElementById("playAgainBtn")!.classList.add("hidden");
-        postGame(`/game/${roomId}/init`).then(() => {
+        postApi(`/game/${roomId}/init`).then(() => {
             (document.getElementById("startGameBtn")!).classList.remove("hidden");
         });
         isGameRunning = false;
@@ -166,48 +186,49 @@ function prepareGameUI() {
     (document.getElementById("modeSelection")!).style.display = "none";
     (document.getElementById("pongCanvas")!).style.display = "block";
     (document.getElementById("gameInfo")!).style.display = "flex";
+    (document.getElementById("winnerMessage")!).style.display = "none";
+    (document.getElementById("playAgainBtn")!).classList.add("hidden");
 }
 
-function startGame() {
+function startGame(roomIdToJoin: string) {
     const wsHost = `ws://${window.location.hostname}:7000`;
     socket = io(wsHost);
 
-    document.getElementById("roleInfo")!.textContent = "Waiting for an opponent...";
-    // Wait for the socket to be connected before emitting joinRoom
+    document.getElementById("roleInfo")!.textContent = `Joining room ${roomIdToJoin}...`;
+    
     socket.on('connect', () => {
-        socket.emit("joinRoom");
+        socket.emit("joinRoom", { roomId: roomIdToJoin });
     });
 
     socket.on("roomJoined", (data: { roomId: string, role: "left" | "right" }) => {
         roomId = data.roomId;
-        // If the server returns no valid role, treat as spectator
-        playerRole = (data && (data as any).role) ? (data as any).role : "spectator";
+        playerRole = data.role;
 
         const roleInfo = document.getElementById("roleInfo")!;
-        if (playerRole === 'spectator') {
-            roleInfo.textContent = `You are a spectator in room ${roomId}. Waiting for players...`;
-            // hide start button for spectators
-            (document.getElementById("startGameBtn")!).classList.add("hidden");
-        } else {
-            roleInfo.textContent = `You are: ${playerRole} in room ${roomId}. Waiting for opponent...`;
-        }
+        roleInfo.textContent = `You are: ${playerRole} in room ${roomId}. Waiting for opponent...`;
     });
 
-    socket.on('roomFull', (payload: { roomId: string }) => {
-        alert('Room is full. Try again later.');
-        console.warn('Attempted to join full room', payload);
+    socket.on('roomFull', (payload: { roomId:string }) => {
+        alert(`Room ${payload.roomId} is full. Try another room or create a new one.`);
+        // Optionally, reset the UI
+        (document.getElementById("modeSelection")!).style.display = "block";
+        (document.getElementById("gameInfo")!).style.display = "none";
+        cleanup();
+    });
+
+    socket.on('roomNotFound', (payload: { roomId: string }) => {
+        alert(`Room ${payload.roomId} not found. Please check the ID and try again.`);
+        // Optionally, reset the UI
+        (document.getElementById("modeSelection")!).style.display = "block";
+        (document.getElementById("gameInfo")!).style.display = "none";
+        cleanup();
     });
 
     socket.on("gameReady", (data: { roomId: string }) => {
         document.getElementById("roleInfo")!.textContent = `Room ${data.roomId} is ready. Opponent found!`;
-        postGame(`/game/${data.roomId}/init`);
+        postApi(`/game/${data.roomId}/init`);
         isGameRunning = false;
-        // Only show start button to actual players
-        if (playerRole === 'left' || playerRole === 'right') {
-            (document.getElementById("startGameBtn")!).classList.remove("hidden");
-        } else {
-            (document.getElementById("startGameBtn")!).classList.add("hidden");
-        }
+        (document.getElementById("startGameBtn")!).classList.remove("hidden");
     });
 
     socket.on("gameState", (state: GameState) => {

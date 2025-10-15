@@ -17,7 +17,7 @@ const CANVAS_HEIGHT = 600;
 const PADDLE_WIDTH = 20;
 const PADDLE_HEIGHT = 100;
 const PADDLE_OFFSET_X = 30;
-const PADDLE_SPEED = 600; // Paddle speed in px/second
+const PADDLE_SPEED = 15 * 60; // Paddle speed in px/second
 
 // Calculated constants
 const FIELD_HEIGHT = CANVAS_HEIGHT;

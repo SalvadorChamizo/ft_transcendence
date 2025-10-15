@@ -34,7 +34,7 @@ const aiKeyState = new Map<string, { up: boolean, down: boolean }>();
 
 export async function pongAiController(fastify: FastifyInstance, io: Server)
 {
-    fastify.post("/game/:roomId/start-ai", async (req, reply) =>
+    fastify.post("/:roomId/start-ai", async (req, reply) =>
     {
         const { roomId } = req.params as { roomId: string };
 
@@ -131,7 +131,7 @@ export async function pongAiController(fastify: FastifyInstance, io: Server)
         }
     }, 1000 / 60);
 
-    fastify.post("/game/:roomId/stop-ai", async (req, reply) => {
+    fastify.post("/:roomId/stop-ai", async (req, reply) => {
         const { roomId } = req.params as { roomId: string };
         stopAi(roomId);
         reply.send({ message: "AI stopped" });

@@ -1,0 +1,35 @@
+# Ignore dependencies (they will be installed fresh in Docker)
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Ignore build artifacts (Docker will build them if needed)
+dist
+build
+
+# Ignore environment files (provide them at runtime instead)
+.env
+.env.local
+.env.*.local
+
+# Ignore logs and temp files
+logs
+*.log
+.cache
+.tmp
+
+# Ignore Git files
+.git
+.gitignore
+
+# Ignore editor/project settings
+.vscode
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db

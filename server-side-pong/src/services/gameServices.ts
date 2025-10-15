@@ -3,6 +3,7 @@
  * @brief Core game logic for Pong (supports Local + Online rooms)
  */
 
+import { GameState, Paddle, Ball } from "../utils/types";
 import {
 	WINNING_SCORE,
 	CANVAS_WIDTH,
@@ -19,46 +20,22 @@ import {
 // Map to keep pending serve timers per room (including 'local') so we can clear them
 const serveTimers = new Map<string, NodeJS.Timeout>();
 
-export interface Paddle { y: number; }
-export interface Ball { x: number; y: number; dx: number; dy: number; }
-export interface Scores { left: number; right: number; }
-
-export interface GameState {
-	paddles: { left: Paddle; right: Paddle };
-	ball: Ball;
-	scores: Scores;
-	gameEnded: boolean;
-}
+import { roomStates, createInitialState } from "./roomService";
 
 /**
  * State for local game mode
  */
 let localState: GameState = createInitialState();
 
-/**
-* Map for the state in each room 
-*/
-export const roomStates = new Map<string, GameState>();
-
 export const isGameEnded = (roomId?: string) =>
 {
 	const state = getGameState(roomId);
-	return state.gameEnded;
+	return state ? state.gameEnded : true;
 };
 
 /**
  * HELPERS
  */
-function createInitialState(): GameState
-{
-	return {
-		paddles: { left: { y: 250 }, right: { y: 250 } },
-		ball: { x: 400, y: 300, dx: 0, dy: 0 },
-		scores: { left: 0, right: 0 },
-		gameEnded: false,
-  	};
-}
-
 export function resetGame(roomId?: string): GameState
 {
 	const state = createInitialState();
@@ -77,11 +54,16 @@ export function deleteRoom(roomId: string)
 	}
 	// Remove stored state
 	roomStates.delete(roomId);
+	// Limpieza extra para rooms locales
+	if (roomId.startsWith("local_")) {
+		// No hay un Map global para localState, pero si quieres puedes limpiar variables asociadas aquí
+		// (No-op, pero deja el hook para futuras mejoras)
+	}
 }
 
-export function getGameState(roomId?: string): GameState
+export function getGameState(roomId?: string): GameState | undefined
 {
-	if (roomId && roomId !== "local") return roomStates.get(roomId) ?? resetGame(roomId);
+	if (roomId && roomId !== "local") return roomStates.get(roomId);
 	return localState;
 }
 
@@ -89,18 +71,20 @@ export function getGameState(roomId?: string): GameState
 /**
  * Paddle speed is 10px for the y axis
  */
-export function moveUp(side: "left" | "right", roomId?: string): GameState
+export function moveUp(side: "left" | "right", roomId?: string): GameState | undefined
 {
 	const state = getGameState(roomId);
+	if (!state) return;
 	state.paddles[side].y = Math.max(0, state.paddles[side].y - PADDLE_SPEED);
 	if (roomId && roomId !== "local") roomStates.set(roomId, state);
 	else localState = state;
 	return state;
 }
 
-export function moveDown(side: "left" | "right", roomId?: string): GameState
+export function moveDown(side: "left" | "right", roomId?: string): GameState | undefined
 {
 	const state = getGameState(roomId);
+	if (!state) return;
 	state.paddles[side].y = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, state.paddles[side].y + PADDLE_SPEED);
 	if (roomId && roomId !== "local") roomStates.set(roomId, state);
 	else localState = state;
@@ -134,10 +118,10 @@ function handlePaddleCollision(ball: Ball, paddle: Paddle, side: 'left' | 'right
 	}
 }
 
-export function updateGame(roomId?: string): GameState
+export function updateGame(roomId?: string): GameState | undefined
 {
 	const state = getGameState(roomId);
-	if (state.gameEnded) return state;
+	if (!state || state.gameEnded) return state;
 
 	const ball = state.ball;
 	ball.x += ball.dx;
@@ -223,6 +207,7 @@ export function updateGame(roomId?: string): GameState
 	if (state.scores.left >= WINNING_SCORE || state.scores.right >= WINNING_SCORE)
 	{
 		state.gameEnded = true;
+		state.gameEndedTimestamp = Date.now();
 		state.ball.dx = 0;
 		state.ball.dy = 0;
 	}
@@ -270,6 +255,7 @@ function resetBall(state: GameState, serveTo: "left" | "right", roomId?: string)
 export function startBallMovement(roomId?: string)
 {
 	const state = getGameState(roomId);
+	if (!state) return;
 	if (state.ball.dx === 0 && state.ball.dy === 0)
 	{
 		const serveDirection = (state.ball as any).serveDirection || (Math.random() > 0.5 ? "left" : "right");

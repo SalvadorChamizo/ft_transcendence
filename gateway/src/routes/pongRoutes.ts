@@ -9,10 +9,12 @@ export default async function pongRoutes(fastify: FastifyInstance) {
   fastify.register(proxy, {
     upstream: "http://pong-service:7000",
     prefix: "/game",
-    rewritePrefix: "/game",
+    // rewritePrefix: "/game",
     
     preHandler: async (request, reply) => {
       fastify.log.info(`[PONG PROXY] Incoming request: ${request.method} ${request.url}`);
+      // Log extra para ver cómo se va a reenviar la petición
+      fastify.log.info(`[PONG PROXY] Will proxy to: ${request.raw.url}`);
     },
     
     replyOptions: {

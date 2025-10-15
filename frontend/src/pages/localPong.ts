@@ -5,13 +5,15 @@
 import { io, Socket } from "socket.io-client";
 import { getAccessToken, refreshAccessToken } from "../state/authState";
 
-let socket: Socket;
+let socket: Socket | null = null;
 let ctx: CanvasRenderingContext2D | null = null;
 let animationFrameId: number;
+let endGameTimeoutId: number | undefined;
 let isGameRunning = false;
-const roomId = "local"; // Always local for this mode
+// Unique room id for multiple concurrent local games
+const roomId = `local_${crypto.randomUUID()}`;
 
-const apiHost = `http://${window.location.hostname}:7000`;
+const apiHost = `http://${window.location.hostname}:8080`;
 
 import {
 	WINNING_SCORE,
@@ -59,10 +61,10 @@ export function localPongPage(): string {
       <div class="scoreboard-container">
         <button id="startGameBtn" class="pong-button hidden">Start Game</button>
         <div id="scoreboard" class="scoreboard hidden">0 : 0</div>
-        <button id="playAgainBtn" class="pong-button hidden">Play Again</button>
       </div>
 
       <p id="winnerMessage" class="winner-message" style="display: none;"></p>
+      <div id="errorMessage" class="error-message" style="display: none; color: red; text-align: center;"></div>
 
       <div id="gameInfo" class="game-info" style="display:none;">
         <div class="controls left-controls">
@@ -84,12 +86,29 @@ export function localPongPage(): string {
 }
 
 function cleanup() {
-    if (socket) socket.disconnect();
-    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    console.log("[LocalPong] Cleaning up previous game...");
+    if (endGameTimeoutId) {
+        clearTimeout(endGameTimeoutId);
+        endGameTimeoutId = undefined;
+    }
+    if (socket) {
+        socket.removeAllListeners();
+        socket.disconnect();
+        socket = null;
+    }
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+    }
     window.removeEventListener("keydown", handleKeyDown);
     window.removeEventListener("keyup", handleKeyUp);
     isGameRunning = false;
     keysPressed.clear();
+    ctx = null;
+    // Oculta el mensaje de victoria y error inmediatamente
+    const winnerMsg = document.getElementById("winnerMessage");
+    if (winnerMsg) winnerMsg.style.display = "none";
+    const errorMsg = document.getElementById("errorMessage");
+    if (errorMsg) errorMsg.style.display = "none";
 }
 
 // Helper: POST with Authorization header and one retry after token refresh
@@ -113,7 +132,8 @@ async function postGame(path: string): Promise<Response> {
 const handleKeyDown = (e: KeyboardEvent) => {
     if (["ArrowUp", "ArrowDown", "w", "s"].includes(e.key)) e.preventDefault();
 
-    if (e.key.toLowerCase() === "p") {
+    if (e.key.toLowerCase() === "p")
+    {
         togglePause();
         return;
     }
@@ -127,98 +147,132 @@ function togglePause() {
 
 const handleKeyUp = (e: KeyboardEvent) => keysPressed.delete(e.key);
 
-function gameLoop(isAiMode: boolean) {
-    if (socket && isGameRunning) {
-        if (keysPressed.has("w")) socket.emit("moveUp", "left", roomId);
-        if (keysPressed.has("s")) socket.emit("moveDown", "left", roomId);
+// Throttle para limitar la frecuencia de envío de eventos de movimiento
+let lastMoveSent = 0;
+const MOVE_THROTTLE_MS = 30;
 
-        if (!isAiMode) {
-            if (keysPressed.has("ArrowUp")) socket.emit("moveUp", "right", roomId);
-            if (keysPressed.has("ArrowDown")) socket.emit("moveDown", "right", roomId);
+function gameLoop(isAiMode: boolean) {
+    if (isGameRunning && socket) {
+        const now = Date.now();
+        if (now - lastMoveSent > MOVE_THROTTLE_MS) {
+            if (keysPressed.has("w")) socket.emit("moveUp", "left", roomId);
+            if (keysPressed.has("s")) socket.emit("moveDown", "left", roomId);
+
+            if (!isAiMode) {
+                if (keysPressed.has("ArrowUp")) socket.emit("moveUp", "right", roomId);
+                if (keysPressed.has("ArrowDown")) socket.emit("moveDown", "right", roomId);
+            }
+            lastMoveSent = now;
         }
     }
-
     animationFrameId = requestAnimationFrame(() => gameLoop(isAiMode));
 }
 
 export function localPongHandlers() {
-    cleanup();
-    ctx = (document.getElementById("pongCanvas") as HTMLCanvasElement).getContext("2d")!;
-    
     document.getElementById("1v1Btn")!.addEventListener("click", () => {
-        prepareGameUI();
-        (document.querySelector(".right-controls p") as HTMLElement).textContent = "Right Player: ↑ / ↓";
-        document.getElementById("roleInfo")!.textContent = "Local mode: Two players, one keyboard";
+        prepareGameUI(false);
         startGame(false);
     });
 
     document.getElementById("1vAIBtn")!.addEventListener("click", () => {
-        prepareGameUI();
-        (document.querySelector(".right-controls p") as HTMLElement).textContent = "Right Player: AI";
-        document.getElementById("roleInfo")!.textContent = "Local mode: Player vs. AI";
+        prepareGameUI(true);
         startGame(true);
     });
 
-    document.getElementById("startGameBtn")!.addEventListener("click", () => {
-        postGame(`/game/${roomId}/resume`);
-        (document.getElementById("startGameBtn")!).classList.add("hidden");
-        isGameRunning = true;
-    });
-
-    document.getElementById("playAgainBtn")!.addEventListener("click", () => {
-        (document.getElementById("modeSelection")!).style.display = "flex";
-        (document.getElementById("pongCanvas")!).style.display = "none";
-        (document.getElementById("gameInfo")!).style.display = "none";
-        (document.getElementById("winnerMessage")!).style.display = "none";
-        (document.getElementById("playAgainBtn")!).classList.add("hidden");
-    });
+    // Initial cleanup in case of hot-reloading or re-navigation
+    cleanup();
 }
 
-function prepareGameUI() {
+function prepareGameUI(isAiMode: boolean) {
+    (document.getElementById("winnerMessage")!).style.display = "none";
     (document.getElementById("modeSelection")!).style.display = "none";
-    (document.getElementById("pongCanvas")!).style.display = "block";
     (document.getElementById("gameInfo")!).style.display = "flex";
     (document.getElementById("scoreboard")!).classList.remove("hidden");
     (document.getElementById("extraInfo")!).classList.remove("hidden");
+
+    if (isAiMode) {
+        (document.querySelector(".right-controls p") as HTMLElement).textContent = "Right Player: AI";
+        document.getElementById("roleInfo")!.textContent = "Local mode: Player vs. AI";
+    } else {
+        (document.querySelector(".right-controls p") as HTMLElement).textContent = "Right Player: ↑ / ↓";
+        document.getElementById("roleInfo")!.textContent = "Local mode: Two players, one keyboard";
+    }
 }
 
 async function startGame(isAiMode: boolean) {
+    // Ensure everything is clean before starting
+    cleanup();
+
+    // Deshabilita los botones para evitar doble inicio
+    const btn1v1 = document.getElementById("1v1Btn") as HTMLButtonElement;
+    const btn1vAI = document.getElementById("1vAIBtn") as HTMLButtonElement;
+    if (btn1v1) btn1v1.disabled = true;
+    if (btn1vAI) btn1vAI.disabled = true;
+
+    ctx = (document.getElementById("pongCanvas") as HTMLCanvasElement).getContext("2d")!;
     const wsHost = `ws://${window.location.hostname}:7000`;
-
-    socket = io(wsHost);
-
-    // Join the "local" room after the socket connects to avoid race conditions
-    socket.on('connect', () => {
-        socket.emit("joinRoom", { roomId: "local" });
+    if (socket) {
+        // Si por alguna razón hay un socket anterior, límpialo
+        cleanup();
+    }
+    socket = io(wsHost, { 
+        transports: ['websocket'],
+        auth: {
+            token: "local"
+        }
     });
 
-    isGameRunning = false;
-    cancelAnimationFrame(animationFrameId);
-    gameLoop(isAiMode);
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
 
-    try {
-        if (!isAiMode) {
+    socket!.on('connect', async () => {
+        console.log(`[LocalPong] Socket connected, joining room '${roomId}'`);
+        socket!.emit("joinRoom", { roomId });
+
+        try {
+            // Always stop AI first to ensure a clean state
             await postGame(`/game/${roomId}/stop-ai`);
-        }
 
-        const initResponse = await postGame(`/game/${roomId}/init`);
-        if (!initResponse.ok) {
-            throw new Error(`init failed (${initResponse.status})`);
-        }
-
-        if (isAiMode) {
-            const startAiResponse = await postGame(`/game/${roomId}/start-ai`);
-            if (!startAiResponse.ok) {
-                throw new Error(`start-ai failed (${startAiResponse.status})`);
+            const initResponse = await postGame(`/game/${roomId}/init`);
+            if (!initResponse.ok) {
+                throw new Error(`init failed (${initResponse.status})`);
             }
-        } else {
-            (document.getElementById("startGameBtn")!).classList.remove("hidden");
-        }
-    } catch (error) {
-        console.error("[LocalPong] Failed to start game", error);
-    }
 
-    socket.on("gameState", (state: GameState) => {
+            if (isAiMode) {
+                const startAiResponse = await postGame(`/game/${roomId}/start-ai`);
+                if (!startAiResponse.ok) {
+                    throw new Error(`start-ai failed (${startAiResponse.status})`);
+                }
+            }
+            // The game starts paused by default after init, so we resume it.
+            const resumeResponse = await postGame(`/game/${roomId}/resume`);
+            if (!resumeResponse.ok) {
+                throw new Error(`resume failed (${resumeResponse.status})`);
+            }
+            isGameRunning = true;
+            console.log("[LocalPong] Game started and resumed.");
+
+            // Habilita los botones de nuevo tras iniciar
+            if (btn1v1) btn1v1.disabled = false;
+            if (btn1vAI) btn1vAI.disabled = false;
+
+            // Start the animation loop
+            gameLoop(isAiMode);
+
+        } catch (error: any) {
+            console.error("[LocalPong] Failed to start game:", error);
+            const errorMsg = document.getElementById("errorMessage");
+            if (errorMsg) {
+                errorMsg.textContent = error?.message || "Error al iniciar la partida";
+                errorMsg.style.display = "block";
+            }
+            // Habilita los botones para reintentar
+            if (btn1v1) btn1v1.disabled = false;
+            if (btn1vAI) btn1vAI.disabled = false;
+        }
+    });
+
+    socket!.on("gameState", (state: GameState) => {
         gameState = state;
         draw();
         if (state.gameEnded) {
@@ -226,22 +280,54 @@ async function startGame(isAiMode: boolean) {
         }
     });
 
-    socket.on('roomFull', (payload: { roomId: string }) => {
-        alert('Local room is full. Please try again later or use Remote mode.');
+    socket!.on('roomFull', (payload: { roomId: string }) => {
+        const errorMsg = document.getElementById("errorMessage");
+        if (errorMsg) {
+            errorMsg.textContent = 'La sala local está llena. Intenta más tarde o usa el modo remoto.';
+            errorMsg.style.display = "block";
+        }
         console.warn('Attempted to join full local room', payload);
+        cleanup();
     });
 
-    socket.on("gamePaused", (payload: boolean | { paused: boolean }) => {
-        const paused = typeof payload === "boolean" ? payload : payload?.paused;
-        isGameRunning = !paused;
+    socket!.on('roomNotFound', (payload: { roomId: string }) => {
+        const errorMsg = document.getElementById("errorMessage");
+        if (errorMsg) {
+            errorMsg.textContent = 'La sala de juego ya no existe o ha sido eliminada. Se reiniciará la partida.';
+            errorMsg.style.display = "block";
+        }
+        cleanup();
+        setTimeout(() => window.location.reload(), 2000);
     });
 
-    socket.on("disconnect", () => {
+    socket!.on("disconnect", (reason: string) => {
+        console.log("[LocalPong] Socket disconnected.", reason);
         isGameRunning = false;
+        const errorMsg = document.getElementById("errorMessage");
+        if (errorMsg) {
+            errorMsg.textContent = 'Conexión perdida con el servidor. La partida se reiniciará.';
+            errorMsg.style.display = "block";
+        }
+        cleanup();
+        setTimeout(() => window.location.reload(), 2000);
     });
 
-    window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("keyup", handleKeyUp);
+    // Manejo de reconexión automática: reinicia la UI si socket.io reconecta
+    if (typeof window !== 'undefined') {
+        window.addEventListener('DOMContentLoaded', () => {
+            if (socket) {
+                socket.on('reconnect', () => {
+                    const errorMsg = document.getElementById("errorMessage");
+                    if (errorMsg) {
+                        errorMsg.textContent = 'Reconectando con el servidor. La partida se reiniciará.';
+                        errorMsg.style.display = "block";
+                    }
+                    cleanup();
+                    setTimeout(() => window.location.reload(), 2000);
+                });
+            }
+        });
+    }
 }
 
 function checkWinner() {
@@ -261,9 +347,21 @@ function checkWinner() {
 
 function endGame() {
     isGameRunning = false;
-    cancelAnimationFrame(animationFrameId); // Detiene el bucle de juego
-    document.getElementById("playAgainBtn")!.classList.remove("hidden");
-    (document.getElementById("startGameBtn")!).classList.add("hidden");
+    cancelAnimationFrame(animationFrameId);
+
+    endGameTimeoutId = window.setTimeout(() => {
+        // Don't call cleanup() here, as it will interfere with a new game
+        // if started within the 5-second window.
+        // cleanup() is called at the beginning of startGame().
+        
+        // Reset UI to initial state
+        (document.getElementById("modeSelection")!).style.display = "flex";
+        (document.getElementById("gameInfo")!).style.display = "none";
+        (document.getElementById("winnerMessage")!).style.display = "none";
+        (document.getElementById("scoreboard")!).classList.add("hidden");
+        (document.getElementById("extraInfo")!).classList.add("hidden");
+        (document.getElementById("roleInfo")!).textContent = "";
+    }, 5000);
 }
 
 function draw() {
@@ -308,5 +406,8 @@ function draw() {
 
     // Puntuación
     ctx.shadowBlur = 0;
-    document.getElementById("scoreboard")!.textContent = `${gameState.scores.left} : ${gameState.scores.right}`;
+    const scoreboard = document.getElementById("scoreboard");
+    if (scoreboard) {
+        scoreboard.textContent = `${gameState.scores.left} : ${gameState.scores.right}`;
+    }
 }

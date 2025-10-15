@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import cors from "@fastify/cors";
 import jwt from "jsonwebtoken";
 
-import { authMiddleware } from "./middleware/authMiddleware.js";
+import { authMiddleware } from "./middleware/authMiddleware";
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
 import chatRoutes from "./routes/chatRoutes";
@@ -23,13 +23,19 @@ app.register(chatRoutes);
 app.register(pongRoutes);
 app.register(userRoutes);
 
-
 // CORS (puedes dejarlo donde estaba)
-await app.register(cors, {
-  origin: "http://localhost:5173",
+const whitelist = ["http://localhost:5173"];
+app.register(cors, {
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (whitelist.indexOf(origin) !== -1 || /http:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):5173/.test(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error("Not allowed by CORS"), false);
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
+  credentials: true,
 });
 
 
