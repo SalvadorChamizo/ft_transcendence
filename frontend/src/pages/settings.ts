@@ -26,6 +26,7 @@ export function Settings() {
             <input type="text" id="newEmail" value="Enter a new Email" />
             <button type="button" id="changeEmailBTN">Change Email</button>
           </div>
+          <pre id="AllUsers"></pre>
         </form>
       </div>
   `;
@@ -38,6 +39,7 @@ export function settingsHandlers(accessToken: string) {
   const changeUsernameBtn = document.querySelector<HTMLButtonElement>("#changeUsernameBTN")!;
   const newEmail = document.querySelector<HTMLInputElement>("#newEmail")!;
   const changeEmailBtn = document.querySelector<HTMLButtonElement>("#changeEmailBTN")!;
+  const allUsersField = document.querySelector<HTMLPreElement>("#AllUsers")!;
 
   // Traer datos del usuario
   async function fetchUserData() {
@@ -61,6 +63,36 @@ export function settingsHandlers(accessToken: string) {
   }
 
   fetchUserData();
+
+  // -> TEMPORALMENTE <-
+
+  // Función para obtener todos los usuarios
+  async function fetchAllUsers() {
+    try {
+      const res = await fetch("http://localhost:8080/users/getAllUsers", {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Formatear la lista de usuarios como "ID - Username"
+        const usersList = data.users.map((user: any) => `${user.id} - ${user.username}`).join('\n');
+        allUsersField.textContent = usersList;
+      } else {
+        console.error("Error fetching all users:", data);
+        allUsersField.textContent = "Error loading users";
+      }
+    } catch (err) {
+      console.error("⚠️ Failed to reach server", err);
+      allUsersField.textContent = "Failed to load users";
+    }
+  }
+
+  fetchAllUsers();
+
+  // -> FINAL TEMPORALMENTE <-
 
   // Listener para cambiar username
   changeUsernameBtn.addEventListener("click", async (e) => {
