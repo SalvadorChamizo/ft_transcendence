@@ -1,5 +1,7 @@
 import { GameState } from "../utils/types";
 
+
+// Just for local games
 export const roomStates = new Map<string, GameState>();
 
 export function createInitialState(): GameState {
@@ -11,15 +13,19 @@ export function createInitialState(): GameState {
   };
 }
 
+
+// just for local games
 export function createRoom(): string {
-  const roomId = generateUniqueId();
+  const roomId = `local_${generateUniqueId()}`;
   roomStates.set(roomId, createInitialState());
   console.log(`Room ${roomId} created with initial state.`);
   return roomId;
 }
 
+
+// Just for lcoal games
 export function getRooms(): string[] {
-  return Array.from(roomStates.keys());
+  return Array.from(roomStates.keys()).filter(id => id.startsWith('local_'));
 }
 
 function generateUniqueId(): string {

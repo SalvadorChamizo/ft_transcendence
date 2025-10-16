@@ -140,7 +140,8 @@ export function remotePongHandlers() {
     
     document.getElementById("createRoomBtn")!.addEventListener("click", async () => {
         try {
-            const response = await postApi("/game/rooms");
+            // new endpoint for remote rooms
+            const response = await postApi("/game/remote-rooms");
             if (!response.ok) throw new Error("Failed to create room");
             const { roomId: newRoomId } = await response.json();
             roomId = newRoomId;
@@ -168,7 +169,6 @@ export function remotePongHandlers() {
         if (!roomId) return;
         postApi(`/game/${roomId}/resume`);
         (document.getElementById("startGameBtn")!).classList.add("hidden");
-        // Do NOT set isGameRunning here. Wait for server 'gamePaused' event with paused=false.
     });
 
     document.getElementById("playAgainBtn")!.addEventListener("click", () => {

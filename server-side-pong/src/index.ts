@@ -10,6 +10,7 @@ import { gameController, getIsPaused } from "./controllers/gameControllers";
 import { pongAiController } from "./controllers/pongAiController";
 import { roomRoutes } from "./routes/roomRoutes";
 import { roomStates } from "./services/roomService";
+import { saveRoom, getRoom, getAllRooms, deleteRoom as dbDeleteRoom } from "./db/roomRepository";
 import {
   getGameState,
   moveUp,
@@ -27,11 +28,7 @@ const io = new Server(app.server, { cors: { origin: "*" } });
 /**
  * ROOMS
  */
-interface Room {
-  id: string;
-  players: string[]; // socket ids
-}
-const rooms: Map<string, Room> = new Map();
+
 
 /**
  * Register CORS plugin
@@ -54,7 +51,7 @@ app.register(cors, {
  * Register REST routes
  */
 app.register(roomRoutes);
-gameController(app, io, rooms);
+gameController(app, io);
 pongAiController(app, io);
 
 /**
@@ -72,12 +69,18 @@ io.on("connection", (socket) => {
       return;
     }
 
-
-    // Permitir cualquier roomId que empiece por 'local_' para partidas locales concurrentes
-    if (!roomId.startsWith("local_") && !roomStates.has(roomId)) {
-      socket.emit("roomNotFound", { roomId });
-      console.log(`Socket ${socket.id} failed to join non-existent room ${roomId}`);
-      return;
+    // Concurrent local rooms that strat with local_
+    if (!roomId.startsWith("local_")) {
+      const dbRoom = getRoom(roomId);
+      if (!dbRoom) {
+        socket.emit("roomNotFound", { roomId });
+        console.log(`Socket ${socket.id} failed to join non-existent room ${roomId}`);
+        return;
+      }
+    } else if (!roomStates.has(roomId)) {
+      // if the local room doesnt exist ,create it
+      resetGame(roomId);
+      console.log(`[Local] Room ${roomId} creada automáticamente en joinRoom`);
     }
 
     const roomAdapter = io.sockets.adapter.rooms.get(roomId);
@@ -91,24 +94,45 @@ io.on("connection", (socket) => {
 
     socket.join(roomId);
 
-    // Manage players in the room
-    let room = rooms.get(roomId);
-    if (!room) {
-      room = { id: roomId, players: [] };
-      rooms.set(roomId, room);
-    }
-    if (!room.players.includes(socket.id)) {
-      room.players.push(socket.id);
+    // Manage players in the room (DB for non-local, memory for local_)
+    if (roomId.startsWith("local_")) {
+      // no persistence for local rooms
+    } else {
+      let dbRoom = getRoom(roomId);
+      if (!dbRoom) {
+        dbRoom = { id: roomId, state: {}, players: [] };
+      }
+      if (!dbRoom.players.includes(socket.id)) {
+        dbRoom.players.push(socket.id);
+        saveRoom(roomId, dbRoom.state, dbRoom.players);
+      }
     }
 
-    const role: "left" | "right" =
-      room.players.indexOf(socket.id) === 0 ? "left" : "right";
+    let role: "left" | "right" = "left";
+    if (roomId.startsWith("local_")) {
+      const roomAdapter = io.sockets.adapter.rooms.get(roomId);
+      const idx = roomAdapter ? Array.from(roomAdapter).indexOf(socket.id) : 0;
+      role = idx === 0 ? "left" : "right";
+    } else {
+      const dbRoom = getRoom(roomId);
+      if (dbRoom) {
+        const idx = dbRoom.players.indexOf(socket.id);
+        role = idx === 0 ? "left" : "right";
+      }
+    }
     socket.emit("roomJoined", { roomId, role });
     console.log(`Socket ${socket.id} joined ${roomId} as ${role}`);
 
-    if (room.players.length === 2) {
-      console.log(`Room ${roomId} is full. Emitting 'gameReady'.`);
-      io.to(roomId).emit("gameReady", { roomId });
+    if (roomId.startsWith("local_")) {
+      const roomAdapter = io.sockets.adapter.rooms.get(roomId);
+      if (roomAdapter && roomAdapter.size === 2) {
+        io.to(roomId).emit("gameReady", { roomId });
+      }
+    } else {
+      const dbRoom = getRoom(roomId);
+      if (dbRoom && dbRoom.players.length === 2) {
+        io.to(roomId).emit("gameReady", { roomId });
+      }
     }
   });
 
@@ -128,34 +152,41 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("Player disconnected:", socket.id);
-    for (const [roomId, room] of rooms.entries()) {
-      const playerIndex = room.players.indexOf(socket.id);
-      if (playerIndex !== -1) {
-        room.players.splice(playerIndex, 1);
-        const remainingPlayerId = room.players[0];
-
-        const state = getGameState(roomId);
-        // Only assign victory if the game existed and was not ended
-        if (state && !state.gameEnded) {
-          const disconnectedPlayerRole = playerIndex === 0 ? "left" : "right";
-          if (disconnectedPlayerRole === "left") {
-            state.scores.right = WINNING_SCORE;
-          } else {
-            state.scores.left = WINNING_SCORE;
+    for (const roomId of socket.rooms) {
+      if (roomId.startsWith("local_")) {
+        continue;
+      }
+      const dbRoom = getRoom(roomId);
+      if (dbRoom) {
+        const playerIndex = dbRoom.players.indexOf(socket.id);
+        if (playerIndex !== -1) {
+          dbRoom.players.splice(playerIndex, 1);
+          const remainingPlayerId = dbRoom.players[0];
+          // Game state
+          const state = getGameState(roomId);
+          if (state && !state.gameEnded) {
+            const disconnectedPlayerRole = playerIndex === 0 ? "left" : "right";
+            if (disconnectedPlayerRole === "left") {
+              state.scores.right = WINNING_SCORE;
+            } else {
+              state.scores.left = WINNING_SCORE;
+            }
+            state.gameEnded = true;
+            state.gameEndedTimestamp = Date.now();
+            io.to(roomId).emit("gameState", state);
           }
-          state.gameEnded = true;
-          state.gameEndedTimestamp = Date.now();
-          io.to(roomId).emit("gameState", state);
+          if (remainingPlayerId) {
+            io.to(roomId).emit("opponentDisconnected");
+          }
+          if (dbRoom.players.length === 0) {
+            dbDeleteRoom(roomId);
+            deleteRoom(roomId); // clean the state
+            console.log(`Room ${roomId} and its game state have been deleted.`);
+          } else {
+            saveRoom(roomId, state, dbRoom.players);
+          }
+          break;
         }
-
-        if (remainingPlayerId) {
-          io.to(roomId).emit("opponentDisconnected");
-        }
-
-        rooms.delete(roomId);
-        deleteRoom(roomId); // Also delete the game state
-        console.log(`Room ${roomId} and its game state have been deleted.`);
-        break;
       }
     }
   });
@@ -206,17 +237,17 @@ setInterval(() => {
 /**
  * GARBAGE COLLECTOR
  */
-setInterval(() => {
-	const now = Date.now();
-	for (const [roomId, state] of roomStates.entries()) {
-	  if (state.gameEnded && state.gameEndedTimestamp) {
-		if (now - state.gameEndedTimestamp > 2000) { // 2 seconds
-		  deleteRoom(roomId);
-		  rooms.delete(roomId);
-		  console.log(`Cleaned up ended room ${roomId}`);
-		}
-	  }
-	}
+  setInterval(() => {
+  const now = Date.now();
+  for (const [roomId, state] of roomStates.entries()) {
+    if (state.gameEnded && state.gameEndedTimestamp) {
+    if (now - state.gameEndedTimestamp > 2000) { // 2 seconds
+      deleteRoom(roomId);
+      if (!roomId.startsWith("local_")) dbDeleteRoom(roomId);
+      console.log(`Cleaned up ended room ${roomId}`);
+    }
+    }
+  }
   }, 5000); // Check every 5 seconds
 
 /**
