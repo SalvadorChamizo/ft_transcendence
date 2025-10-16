@@ -592,7 +592,7 @@ export function chatHandlers() {
             // Set up message handler for incoming messages
             websocketClient.onMessage((message: ChatMessage) => {
                 console.log('Received WebSocket message:', message);
-                
+
                 if (message.type === 'message') {
                     // Check if it's a game invitation event
                     if (message.data?.event_type) {
@@ -603,7 +603,6 @@ export function chatHandlers() {
                             ...message,
                             isSent: false
                         });
-                        
                         // Auto-refresh conversations list to show new message/conversation
                         loadConversationsDebounced();
                     }
@@ -618,6 +617,13 @@ export function chatHandlers() {
                     if (message.userId) {
                         connectedUsersSet.delete(message.userId);
                         console.log(`User ${message.userId} disconnected. Online users:`, Array.from(connectedUsersSet));
+                    }
+                } else if (message.type === 'connected_users_list') {
+                    // Inicializa el Set de usuarios conectados con la lista recibida
+                    connectedUsersSet.clear();
+                    if (Array.isArray(message.data)) {
+                        message.data.forEach((userId: number) => connectedUsersSet.add(userId));
+                        console.log('Lista inicial de usuarios online:', Array.from(connectedUsersSet));
                     }
                 }
             });

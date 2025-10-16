@@ -10,7 +10,7 @@ const WebSocketState = {
 
 // Types for WebSocket messages
 interface WebSocketMessage {
-    type: 'message' | 'user_connected' | 'user_disconnected' | 'typing' | 'stop_typing' | 'identify' | 'message_delivered' | 'message_read';
+    type: 'message' | 'user_connected' | 'user_disconnected' | 'typing' | 'stop_typing' | 'identify' | 'message_delivered' | 'message_read' | 'connected_users_list';
     userId: number;
     conversationId?: number;
     content?: string;
@@ -46,6 +46,14 @@ export function addUserConnection(userId: number, websocket: WebSocket): void {
     
     // Notify other users that this user connected
     notifyUserConnected(userId);
+
+    // Send the current list of connected users to the newly connected user (excluding himself)
+    sendToUser(userId, {
+        type: 'connected_users_list',
+        userId: 0, // system
+        data: getConnectedUsers().filter(id => id !== userId),
+        timestamp: new Date().toISOString()
+    });
 }
 
 export function removeUserConnection(userId: number): void {
