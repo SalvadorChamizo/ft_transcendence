@@ -1,3 +1,4 @@
+import { localTournamentPongPage, playTournamentMatch } from "./localTournament";
 import { getTournamentLobbyHTML, getTournamentListHtml, getTournamentRemoteModeHtml, getTournamentAliasEightHtml, getTournamentCanvasFourHtml, getTournamentAliasFourHtml, getTournamentPlayersHtml } from "./tournamentTemplate";
 import { leftPlayerLoses, rightPlayerLoses } from "./tournamentUtils";
 
@@ -38,6 +39,59 @@ function setTournamentContent(html: string) {
 
   // Rebind handlers
   tournamentHandlers();
+}
+
+function sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function startLocalTournamentFlow(tournamentData: any) {
+    const matches = tournamentData.matches;
+    const players = tournamentData.players;
+    if (!players || players.length === 0) return;
+
+    const playerMap = Object.fromEntries(players.map(p => [p.id, p.username]));
+    let currentMatchIndex = 0;
+    const winners: Record<number, string> = {};
+
+    // Render the page once
+    const tournamentContainer = document.getElementById("tournament-container");
+    if (tournamentContainer) tournamentContainer.innerHTML = localTournamentPongPage();
+
+    const playNextMatch = async () => {
+        if (currentMatchIndex >= matches.length) {
+            alert("All matches done!");
+            console.log("Winners:", winners);
+            return;
+        }
+
+        const match = matches[currentMatchIndex];
+        const player1 = playerMap[match.player1_id];
+        const player2 = playerMap[match.player2_id];
+
+        // Update player names dynamically
+        const leftP = document.querySelector(".left-controls p");
+        const rightP = document.querySelector(".right-controls p");
+        if (leftP) leftP.textContent = `Left Player: ${player1}`;
+        if (rightP) rightP.textContent = `Right Player: ${player2}`;
+
+        console.log(`Starting match ${currentMatchIndex + 1}: ${player1} vs ${player2}`);
+
+        await playTournamentMatch({
+            id: match.id,
+            player1,
+            player2,
+            onFinish: async (winner) => {
+                winners[match.id] = winner;
+                currentMatchIndex++;
+                await sleep(1500);
+                playNextMatch(); // call next match immediately
+            },
+        });
+    };
+
+    // Start the first match
+    playNextMatch();
 }
 
 export async function tournamentHandlers() {
@@ -139,8 +193,12 @@ export async function tournamentHandlers() {
         const response = await fetch(`http://${apiHost}:8080/tournaments/${currentTournament.id}/start`, {
             method: "POST",
         })
-        const matches = await response.json();
-        console.log(matches);
+        const tournamentData = await response.json();
+
+        const currentHTML = tournamentContainer?.innerHTML ?? "";
+        if (tournamentContainer)
+            tournamentContainer.innerHTML = localTournamentPongPage();
+        startLocalTournamentFlow(tournamentData);
         tournamentHandlers();
         //renderMatch(matches[0]);
     });

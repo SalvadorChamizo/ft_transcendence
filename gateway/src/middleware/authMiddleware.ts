@@ -18,13 +18,6 @@ const publicUrls = [
 ];
 
 export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
-<<<<<<< HEAD
-    
-	const urlPath = req.url.split('?')[0];
-    
-    if (req.method === 'OPTIONS') {
-        return;
-=======
     const urlPath = req.url.split("?")[0];
 
     const isPublic = publicUrls.some((publicUrl) => {
@@ -38,7 +31,6 @@ export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
 
     if (isPublic || urlPath.startsWith("/ws")) {
     return;
->>>>>>> feature/tournament
     }
 
     // Permitir rutas públicas

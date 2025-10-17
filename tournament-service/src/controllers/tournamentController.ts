@@ -35,7 +35,7 @@ export async function startTournamentController(req: FastifyRequest, reply: Fast
     try {
         const { id } = req.params as { id: string };
         const tournamentData = await TournamentService.startTournament(Number(id));
-        return reply.code(200).send({tournamentData});
+        return reply.code(200).send(tournamentData);
         
     } catch (err: any) {
         return reply.code(400).send({ error: "Failed to start tournament" });
