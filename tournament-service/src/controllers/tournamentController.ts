@@ -1,7 +1,7 @@
 import type { FastifyRequest, FastifyReply } from "fastify"
-import * as TournamentService from "./../services/tournamentService";
+import * as TournamentService from "../services/tournamentService";
 
-export async function getTournamentsController(req: FastifyRequest, reply: FastifyReply) {
+/*export async function getTournamentsController(req: FastifyRequest, reply: FastifyReply) {
     const tournaments = await TournamentService.getAllTournaments();
     return reply.send(tournaments);
 }
@@ -12,15 +12,37 @@ export async function getTournamentByIdController(req: FastifyRequest, reply: Fa
     if (!tournament)
         return reply.code(404).send({ error: "Tournament not found" });
     return reply.send(tournament);
-}
+}*/
 
 export async function createLocalTournamentController(req: FastifyRequest, reply: FastifyReply) {
-    const data = req.body as any;
-    const newTournament = await TournamentService.createLocalTournament(data);
-    return reply.code(201).send(newTournament);
+    try {
+        const { tournamentName, tournamentPlayers, playerOne, playerTwo, playerThree, playerFour } = req.body as any;
+
+        const newTournament = await TournamentService.createLocalTournament({
+            name: tournamentName,
+            maxPlayers: tournamentPlayers,
+            players: [playerOne, playerTwo, playerThree, playerFour].filter(Boolean),
+        });
+        
+        return reply.code(201).send(newTournament);
+    } catch (err) {
+        console.error(err);
+        return reply.code(500).send({ error: "Failed to create local tournament" });
+    }
 }
 
-export async function createRemoteTournamentController(req: FastifyRequest, reply: FastifyReply) {
+export async function startTournamentController(req: FastifyRequest, reply: FastifyReply) {
+    try {
+        const { id } = req.params as { id: string };
+        const tournamentData = await TournamentService.startTournament(Number(id));
+        return reply.code(200).send({tournamentData});
+        
+    } catch (err: any) {
+        return reply.code(400).send({ error: "Failed to start tournament" });
+    }
+}
+
+/*export async function createRemoteTournamentController(req: FastifyRequest, reply: FastifyReply) {
     const data = req.body as any;
     const newTournament = await TournamentService.createRemoteTourmanet(data);
     return reply.code(201).send(newTournament);
@@ -50,13 +72,6 @@ export async function leaveTournamentController(req: FastifyRequest, reply: Fast
     return reply.code(200).send({ message: "Tournament leaved" });
 }
 
-export async function startTournamentController(req: FastifyRequest, reply: FastifyReply) {
-    const { id } = req.params as { id: string };
-    const started = await TournamentService.startTournament(id);
-    if (!started)
-        return reply.code(400).send({ error: "Failed to start tournament" });
-    return reply.code(200).send({ message: "Tournament started" });
-}
 
 export async function finishTournamentController(req: FastifyRequest, reply: FastifyReply) {
     const { id } = req.params as { id: string };
@@ -107,4 +122,4 @@ export async function updateMatchResultController(req: FastifyRequest, reply: Fa
 
 export async function getTournamentPlayersController(req: FastifyRequest, reply: FastifyReply) {
 
-}
+}*/

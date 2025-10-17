@@ -5,7 +5,7 @@ const db: any = new Database("tournament.db");
 db.prepare(`
     CREATE TABLE IF NOT EXISTS tournaments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT UNIQUE NOT NULL,
+    name TEXT NOT NULL,
     mode TEXT CHECK(mode IN ('local', 'remote')) NOT NULL DEFAULT 'local',
     creator_id INTEGER,
     status TEXT DEFAULT 'pending',
@@ -22,7 +22,7 @@ db.prepare(`
     CREATE TABLE IF NOT EXISTS players (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
-        user_id INTEGER NOT NULL,
+        user_id INTEGER,
         tournament_id INTEGER NOT NULL,
         seed INTEGER,
         score INTEGER DEFAULT 0,
@@ -50,6 +50,6 @@ db.prepare(`
         FOREIGN KEY (player2_id) REFERENCES players(id),
         FOREIGN KEY (winner_id) REFERENCES players(id)
     );
-    `)
+    `).run();
 
 export default db;
