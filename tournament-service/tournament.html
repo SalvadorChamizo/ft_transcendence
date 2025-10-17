@@ -19,7 +19,54 @@
       </div>
     </div>
     <div id="roleInfo"></div>
+    <div id="modeSelection">
+      <h2>Online Tournaments</h2>
+      <div>
+        <button id="new-tournament-btn" class="tournament-type-button">Create new tournament</button>
+        <button id="join-tournament-btn" class="tournament-type-button">Join tournament</button>
+      </div>
+    </div>
+    <div id="tournament-wait-room">
+      <h2> Waiting Room</h2>
+      <div class="waiting-room-players">
+        <h3>Players Joined:</h3>
+        <ul id="tournament-playerList">
+          <li>pepe</li>
+          <li>manolo</li>
+          <li>paquito</li>
+          <li>churrita</li>
+          <li>pepe</li>
+          <li>manolo</li>
+          <li>paquito</li>
+          <li>churrita</li>
+        </ul>
+      </div>
+      <button id="join-tournament" class="tournament-button">Join</button>
+      <button id="leave-tournament" class="tournament-button">Leave</button>
+      <button id="start-tournament" class="tournament-button">Start Tournament</button>
+    </div>
+    <div class="lobby-container">
+  <h2>🏆 Tournament Lobby</h2>
+  <p id="tournament-name">Tournament: <strong>Autumn Cup</strong></p>
+  <p id="tournament-status">Status: <strong>Waiting for players...</strong></p>
 
+  <div class="lobby-players">
+    <h3>Joined Players</h3>
+    <ul id="player-list">
+                <li>pepe</li>
+          <li>manolo</li>
+          <li>paquito</li>
+          <li>churrita</li>
+
+    </ul>
+  </div>
+
+  <div class="lobby-actions">
+    <button id="join-btn" class="lobby-button">Join</button>
+    <button id="leave-btn" class="lobby-button">Leave</button>
+    <button id="start-btn" class="lobby-button start" disabled>Start Tournament</button>
+  </div>
+</div>
     <div class="tournament-players">
       <h2>Select the number of players</h2>
       <div class="players-buttons">
@@ -130,6 +177,8 @@
         <div class="tournament-match">test 4</div>
       </div>
     </div>
+      <button id="start-local-tournament-btn" class="tournament-button">Local tournament</button>
+
   </div>
   <h2>Tournament 8 Players</h2>
   <div class="tournament-container-brackets grid-eight">

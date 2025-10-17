@@ -536,3 +536,101 @@
     background-color: #f0f0f0;
   box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
 }
+
+.waiting-room-container {
+  background: #181741;
+  color: white;
+  border-radius: 10px;
+  padding: 2rem;
+  width: 400px;
+  margin: 2rem auto;
+  text-align: center;
+}
+
+.waiting-room-players {
+  margin: 1.5rem 0;
+  padding: 0px 12px;
+  border: 1px solid #42F3FA;
+  background: #181741;
+  border-radius: 10px;
+  min-height: 407px;
+}
+
+#tournament-playerList {
+  list-style: none;
+  padding: 0;
+}
+
+#tournament-playerList li {
+  background: #262C36;
+  border: 1px solid #5a5f66;
+  margin: 5px 0;
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.lobby-container {
+  background-color: #1b1e2b;
+  color: white;
+  width: 420px;
+  margin: 2rem auto;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
+  text-align: center;
+  font-family: 'Poppins', sans-serif;
+}
+
+.lobby-players {
+  margin: 1.5rem 0;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  padding: 1rem;
+  background-color: rgba(255,255,255,0.05);
+  min-height: 473px;
+}
+
+#player-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#player-list li {
+  background-color: #292f3f;
+  margin: 6px 0;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 500;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.lobby-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  justify-content: space-around;
+}
+
+.lobby-button {
+  background-color: #00c9d9;
+  color: #111;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.lobby-button:hover {
+  background-color: #03e1ff;
+}
+
+.lobby-button.start {
+  background-color: #28d97b;
+}
+
+.lobby-button.start:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
