@@ -1,9 +1,13 @@
-import { getVictoriesByUserId , addVictoryForUserId } from "../repositories/matchResultRepository";
+import { getResultsByUserId , addVictoryForUserId, addDefeatForUserId } from "../repositories/matchResultRepository";
 
-export async function getVictories(userId: number) {
-    return getVictoriesByUserId(userId);
+export async function getResults(userId: number) {
+    return getResultsByUserId(userId);
 }
 
 export async function addVictory(userId: number) {
     return addVictoryForUserId(userId);
+}
+
+export async function addDefeat(userId: number) {
+    return addDefeatForUserId(userId);
 }

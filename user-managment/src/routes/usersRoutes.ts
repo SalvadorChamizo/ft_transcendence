@@ -1,7 +1,7 @@
 import { FastifyInstance } from "fastify";
 import { registerController , register42Controller , usernameChanger , emailChanger , userGetterByEmail, getCurrentUserController,
     userGetterByUsername, userGetterById, passwordControl } from "../controllers/usersController";
-import { getVictoriesController, addVictoryController } from "../controllers/matchResultController";
+import { getResultsController, addVictoryController, addDefeatController } from "../controllers/matchResultController";
 import { getAllUsersController } from "../controllers/friendsController";
 
 export default async (fastify: FastifyInstance) => {
@@ -14,7 +14,8 @@ export default async (fastify: FastifyInstance) => {
     fastify.post("/getUserByName", userGetterByUsername);
     fastify.post("/getUserById", userGetterById);
     fastify.post("/getUserByEmail", userGetterByEmail);
-    fastify.post("/getVictories", getVictoriesController);
+    fastify.get("/getResults", getResultsController);
     fastify.post("/addVictory", addVictoryController);
+    fastify.post("/addDefeat", addDefeatController);
     fastify.get("/me", getCurrentUserController);
 };
