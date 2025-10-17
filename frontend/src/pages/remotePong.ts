@@ -3,7 +3,7 @@
  * @brief Frontend logic for Online Pong game (Random and Rooms)
  */
 import { io, Socket } from "socket.io-client";
-import { getAccessToken, refreshAccessToken } from "../state/authState";
+import { getAccessToken, refreshAccessToken, getUserIdFromToken } from "../state/authState";
 
 let socket: Socket;
 let ctx: CanvasRenderingContext2D | null = null;
@@ -102,6 +102,24 @@ async function postApi(path: string, method: "POST" | "GET" = "POST"): Promise<R
         const headers: Record<string, string> = {};
         if (token) headers["Authorization"] = `Bearer ${token}`;
         return fetch(`${apiHost}${path}`, { method, headers });
+    };
+    let res = await makeReq();
+    if (res.status === 401) {
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+            res = await makeReq();
+        }
+    }
+    return res;
+}
+
+// Helper: POST JSON body with Authorization header and retry after refresh on 401
+async function postApiJson(path: string, data: any): Promise<Response> {
+    const makeReq = async () => {
+        const token = getAccessToken();
+        const headers: Record<string, string> = { "Content-Type": "application/json" };
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        return fetch(`${apiHost}${path}`, { method: "POST", headers, body: JSON.stringify(data) });
     };
     let res = await makeReq();
     if (res.status === 401) {
@@ -264,7 +282,43 @@ function checkWinner() {
     winnerMsg.textContent = (playerRole === winner) ? "You Win!" : "You Lose!";
     
     winnerMsg.style.display = "block";
+    // If the local player won, send a victory to the user-management service
+    const winnerSide = winner;
+    if (playerRole === winnerSide) {
+        sendVictoryToUserManagement().catch(err => console.error('Failed to send victory:', err));
+    }
     endGame();
+}
+
+async function sendVictoryToUserManagement() {
+    try {
+        // Prefer extracting user id from the access token (more reliable), fallback to localStorage
+        let userId = getUserIdFromToken();
+        if (!userId) {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) {
+                console.warn("No user id available (token/localStorage); cannot send victory.");
+                return;
+            }
+            const user = JSON.parse(userStr);
+            userId = user?.id ?? user?.userId ?? null;
+        }
+        if (!userId) {
+            console.warn("Unable to resolve userId for victory.");
+            return;
+        }
+
+        // Gateway exposes user-management under /users (proxied to user-management service)
+        const res = await postApiJson(`/users/addVictory`, { userId });
+        if (!res.ok) {
+            const text = await res.text();
+            console.error("Failed to post victory:", res.status, text);
+        } else {
+            console.log(`Victory recorded for user ${userId}`);
+        }
+    } catch (err) {
+        console.error("Error sending victory:", err);
+    }
 }
 
 function endGame() {
