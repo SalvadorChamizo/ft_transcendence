@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <link rel="stylesheet" href="tournament.css">
+</head>
+
+<body>
+  <div id="tournament-container" class="tournament-container">
+    <h1>Tournament Mode</h1>
+    <div id="modeSelection">
+      <h2> Select a Tournament format</h2>
+      <div>
+        <button id="local-tournament-btn" class="tournament-type-button">Local tournament</button>
+        <button id="online-tournament-btn" class="tournament-type-button">Online tournament</button>
+      </div>
+    </div>
+    <div id="roleInfo"></div>
+    <div id="modeSelection">
+      <h2>Online Tournaments</h2>
+      <div>
+        <button id="new-tournament-btn" class="tournament-type-button">Create new tournament</button>
+        <button id="join-tournament-btn" class="tournament-type-button">Join tournament</button>
+      </div>
+    </div>
+    <div id="tournament-wait-room">
+      <h2> Waiting Room</h2>
+      <div class="waiting-room-players">
+        <h3>Players Joined:</h3>
+        <ul id="tournament-playerList">
+          <li>pepe</li>
+          <li>manolo</li>
+          <li>paquito</li>
+          <li>churrita</li>
+          <li>pepe</li>
+          <li>manolo</li>
+          <li>paquito</li>
+          <li>churrita</li>
+        </ul>
+      </div>
+      <button id="join-tournament" class="tournament-button">Join</button>
+      <button id="leave-tournament" class="tournament-button">Leave</button>
+      <button id="start-tournament" class="tournament-button">Start Tournament</button>
+    </div>
+    <div class="lobby-container">
+  <h2>🏆 Tournament Lobby</h2>
+  <p id="tournament-name">Tournament: <strong>Autumn Cup</strong></p>
+  <p id="tournament-status">Status: <strong>Waiting for players...</strong></p>
+
+  <div class="lobby-players">
+    <h3>Joined Players</h3>
+    <ul id="player-list">
+                <li>pepe</li>
+          <li>manolo</li>
+          <li>paquito</li>
+          <li>churrita</li>
+
+    </ul>
+  </div>
+
+  <div class="lobby-actions">
+    <button id="join-btn" class="lobby-button">Join</button>
+    <button id="leave-btn" class="lobby-button">Leave</button>
+    <button id="start-btn" class="lobby-button start" disabled>Start Tournament</button>
+  </div>
+</div>
+    <div class="tournament-players">
+      <h2>Select the number of players</h2>
+      <div class="players-buttons">
+        <button id="fourPlayerBtn" class="tournament-button">4 Players</button>
+        <button id="eightPlayerBtn" class="tournament-button">8 Players</button>
+      </div>
+    </div>
+
+    <div id="fourPlayerForm" class="tournament-form">
+      <form>
+        <h2>Enter the alias for each player</h2>
+        <div class="tournament-form-inputs">
+          <div>
+            <label for="player-one">Player one:</label><br>
+            <input type="text" id="player-one" name="player-one"><br>
+            <label for="player-two">Player two:</label><br>
+            <input type="text" id="player-two" name="player-two"><br>
+          </div>
+          <div>
+            <label for="player-three">Player three:</label><br>
+            <input type="text" id="player-three" name="player-one"><br>
+            <label for="player-four">Player four:</label><br>
+            <input type="text" id="player-four" name="player-four"><br>
+          </div>
+        </div>
+        <button type="submit">Create Tournament</button>
+      </form>
+    </div>
+
+    <div id="eightPlayerForm" class="tournament-form">
+      <form>
+        <h2>Enter the alias for each player</h2>
+        <div class="tournament-form-inputs">
+          <div>
+            <label for="player-one">Player one:</label><br>
+            <input type="text" id="player-one" name="player-one"><br>
+            <label for="player-two">Player two:</label><br>
+            <input type="text" id="player-two" name="player-two"><br>
+          </div>
+          <div>
+            <label for="player-three">Player three:</label><br>
+            <input type="text" id="player-three" name="player-three"><br>
+            <label for="player-four">Player four:</label><br>
+            <input type="text" id="player-four" name="player-four"><br>
+          </div>
+          <div>
+            <label for="player-five">Player five:</label><br>
+            <input type="text" id="player-five" name="player-five"><br>
+            <label for="player-six">Player six:</label><br>
+            <input type="text" id="player-six" name="player-six"><br>
+          </div>
+          <div>
+            <label for="player-seven">Player seven:</label><br>
+            <input type="text" id="player-seven" name="player-seven"><br>
+            <label for="player-eight">Player eight:</label><br>
+            <input type="text" id="player-eight" name="player-eight"><br>
+          </div>
+        </div>
+        <button type="submit">Create Tournament</button>
+      </form>
+    </div>
+    <div id="extraInfo" class="extra-info hidden">
+      <p>Press 'P' to Pause/Resume</p>
+    </div>
+  </div>
+  <h2>Tournament 4 Players</h2>
+  <div class="tournament-container-brackets grid">
+    <div class="tournament-round">
+      <div class="tournament-match">test 1</div>
+    </div>
+    <div id="semifinal" class="tournament-round justify-space-around">
+      <div id="leftPlayer" class="tournament-match">test 1</div>
+      <div class="tournament-link">
+        <span id="middle-line" class="tournament-line-middle"></span>
+        <span id="middle-line-left" class="tournament-line-middle-left"></span>
+        <span id="middle-line-right" class="tournament-line-middle-right"></span>
+          <span id="down-line-left" class="tournament-line-down-left"></span>
+          <span id="up-line" class="tournament-line-up"></span>
+          <span id="down-line-right" class="tournament-line-down-right"></span>
+      </div>
+      <div id="rightPlayer" class="tournament-match">test 2</div>
+    </div>
+    <div class="tournament-round">
+      <div id="match-one" class="tournament-round">
+        <div class="tournament-match">test 1</div>
+      <div class="tournament-link">
+        <span class="tournament-line-middle"></span>
+        <span class="tournament-line-middle-left"></span>
+        <span class="tournament-line-middle-right"></span>
+          <span class="tournament-line-left top"></span>
+          <span class="tournament-line-down-left"></span>
+          <span class="tournament-line-up-left"></span>
+          <span class="tournament-line-down-right bottom"></span>
+      </div>
+        <div class="tournament-match">test 2</div>
+      </div>
+      <div id="match-two" class="tournament-round">
+        <div class="tournament-match">test 3</div>
+      <div class="tournament-link">
+        <span class="tournament-line-middle"></span>
+        <span class="tournament-line-middle-left"></span>
+        <span class="tournament-line-middle-right"></span>
+          <span class="tournament-line-right  top"></span>
+          <span class="tournament-line-down-left"></span>
+          <span class="tournament-line-up-right"></span>
+          <span class="tournament-line-right tournament-line-down-right bottom"></span>
+      </div>
+        <div class="tournament-match">test 4</div>
+      </div>
+    </div>
+      <button id="start-local-tournament-btn" class="tournament-button">Local tournament</button>
+
+  </div>
+  <h2>Tournament 8 Players</h2>
+  <div class="tournament-container-brackets grid-eight">
+    <div class="tournament-round">
+      <div class="tournament-match">test 1</div>
+    </div>
+    <div class="tournament-round justify-space-around">
+      <div class="tournament-match">test 1</div>
+      <div class="tournament-link">
+        <span class="tournament-line-middle"></span>
+        <span class="tournament-line-middle-left"></span>
+        <span class="tournament-line-middle-right"></span>
+          <span class="tournament-line-down-left top"></span>
+          <span class="tournament-line-up top"></span>
+          <span class="tournament-line-down-right bottom"></span>
+      </div>
+      <div class="tournament-match">test 2</div>
+    </div>
+    <div class="tournament-round">
+      <div class="tournament-round">
+        <div class="tournament-match">test 1</div>
+      <div class="tournament-link">
+        <span class="tournament-line-middle"></span>
+        <span class="tournament-line-middle-left"></span>
+        <span class="tournament-line-middle-right"></span>
+          <span class="tournament-line-left top"></span>
+          <span class="tournament-line-down-left"></span>
+          <span class="tournament-line-up-left"></span>
+          <span class="tournament-line-down-right bottom"></span>
+      </div>
+        <div class="tournament-match">test 2</div>
+      </div>
+      <div class="tournament-round">
+        <div class="tournament-match">test 3</div>
+      <div class="tournament-link">
+        <span class="tournament-line-middle"></span>
+        <span class="tournament-line-middle-left"></span>
+        <span class="tournament-line-middle-right"></span>
+          <span class="tournament-line-right  top"></span>
+          <span class="tournament-line-down-left"></span>
+          <span class="tournament-line-up-right"></span>
+          <span class="tournament-line-right tournament-line-down-right bottom"></span>
+      </div>
+        <div class="tournament-match">test 4</div>
+      </div>
+    </div>
+    <div class="tournament-round">
+      <div class="tournament-round">
+        <div class="tournament-match">test 1</div>
+      <div class="tournament-link">
+        <span class="tournament-line-middle"></span>
+        <span class="tournament-line-middle-left"></span>
+        <span class="tournament-line-middle-right"></span>
+          <span class="tournament-line-left-eight top"></span>
+          <span class="tournament-line-down-left"></span>
+          <span class="tournament-line-up-left-eight"></span>
+          <span class="tournament-line-down-right bottom"></span>
+      </div>
+        <div class="tournament-match">test 2</div>
+      </div>
+      <div class="tournament-round">
+        <div class="tournament-match">test 3</div>
+      <div class="tournament-link">
+        <span class="tournament-line-middle"></span>
+        <span class="tournament-line-middle-left"></span>
+        <span class="tournament-line-middle-right"></span>
+          <span class="tournament-line-left  top"></span>
+          <span class="tournament-line-down-left"></span>
+          <span class="tournament-line-up-left"></span>
+          <span class="tournament-line-right tournament-line-down-right bottom"></span>
+      </div>
+        <div class="tournament-match">test 4</div>
+      </div>
+    <div class="tournament-round">
+      <div class="tournament-round">
+        <div class="tournament-match">test 1</div>
+      <div class="tournament-link">
+          <span class="tournament-line-middle"></span>
+        <span class="tournament-line-middle-left"></span>
+        <span class="tournament-line-middle-right"></span>
+          <span class="tournament-line-right top"></span>
+          <span class="tournament-line-down-left"></span>
+          <span class="tournament-line-up-right"></span>
+          <span class="tournament-line-down-right bottom"></span>
+      </div>
+        <div class="tournament-match">test 2</div>
+      </div>
+      <div class="tournament-round">
+        <div class="tournament-match">test 3</div>
+      <div class="tournament-link">
+          <span class="tournament-line-middle"></span>
+        <span class="tournament-line-middle-left"></span>
+        <span class="tournament-line-middle-right"></span>
+          <span class="tournament-line-right-eight  top"></span>
+          <span class="tournament-line-down-left"></span>
+          <span class="tournament-line-up-right-eight"></span>
+          <span class="tournament-line-right tournament-line-down-right bottom"></span>
+      </div>
+        <div class="tournament-match">test 4</div>
+      </div>
+    </div>
+  </div>
+</body>
+  <script type="module" src="./tournament_utils.ts"></script>
+</html>

@@ -8,6 +8,7 @@ import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
 import chatRoutes from "./routes/chatRoutes";
 import pongRoutes from "./routes/pongRoutes";
+import tournamentRoutes from "./routes/tournamentRoutes.js";
 
 // Loads .env variables into process.env
 dotenv.config();
@@ -22,6 +23,7 @@ app.register(authRoutes);
 app.register(chatRoutes);
 app.register(pongRoutes);
 app.register(userRoutes);
+app.register(tournamentRoutes);
 
 // CORS (puedes dejarlo donde estaba)
 const whitelist = ["http://localhost:5173"];

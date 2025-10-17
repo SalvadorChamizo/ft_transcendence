@@ -8,6 +8,7 @@ import { remotePongPage, remotePongHandlers } from "./pages/remotePong";
 import { handleTwoFA } from "./pages/Login/twofa";
 import { handleOAuthErrors, userLoggedIn } from "./pages/Login/loginHandlers";
 import { fetchCurrentUser } from "./pages/Login/loginService";
+import { tournamentHandlers } from "./pages/Tournament/tournamentHandles";
 export async function render() {
 
     await refreshAccessToken();
@@ -61,6 +62,9 @@ export async function render() {
 	}
 	if (location.hash === "#/pong") {
         pongHandlers();
+    }
+    if (location.hash === "#/tournament") {
+        tournamentHandlers();
     }
     if (location.hash === "" || location.hash === "#/" || location.hash === "#/home") {
         import("./pages/home").then(mod => mod.handleStars());
