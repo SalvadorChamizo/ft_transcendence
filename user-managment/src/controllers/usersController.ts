@@ -169,6 +169,7 @@ export async function passwordControl(req: FastifyRequest, reply: FastifyReply) 
 	} catch (err: any) {
 		return reply.code(400).send({ error: err.message });
 	}
+	//delete this line
 }
 
 export async function getCurrentUserController(req: FastifyRequest, reply: FastifyReply) {
