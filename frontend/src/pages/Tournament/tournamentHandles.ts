@@ -46,9 +46,21 @@ function sleep(ms: number) {
 }
 
 async function startLocalTournamentFlow(tournamentData: any) {
-    const matches = tournamentData.matches;
-    const players = tournamentData.players;
-    if (!players || players.length === 0) return;
+    if ((window as any)._tournamentRunning) {
+        console.warn("[Tournament] Already running, skipping new start...");
+        return;
+    }
+    (window as any)._tournamentRunning = true;
+
+    
+    const matches = tournamentData.tournamentData.matches;
+    const players = tournamentData.tournamentData.players;
+    console.log("Inside startTournament:", tournamentData);
+    if (!players || players.length === 0) {
+        console.log("Hola mundo");
+        return;
+    }
+        
 
     const playerMap = Object.fromEntries(players.map(p => [p.id, p.username]));
     let currentMatchIndex = 0;
@@ -62,6 +74,7 @@ async function startLocalTournamentFlow(tournamentData: any) {
         if (currentMatchIndex >= matches.length) {
             alert("All matches done!");
             console.log("Winners:", winners);
+            (window as any)._tournamentRunning = false;
             return;
         }
 
@@ -194,10 +207,10 @@ export async function tournamentHandlers() {
             method: "POST",
         })
         const tournamentData = await response.json();
-
+        console.log(tournamentData);
         const currentHTML = tournamentContainer?.innerHTML ?? "";
-        if (tournamentContainer)
-            tournamentContainer.innerHTML = localTournamentPongPage();
+       //if (tournamentContainer)
+        //    tournamentContainer.innerHTML = localTournamentPongPage();
         startLocalTournamentFlow(tournamentData);
         tournamentHandlers();
         //renderMatch(matches[0]);
