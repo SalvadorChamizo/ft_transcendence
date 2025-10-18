@@ -13,6 +13,10 @@ let animationFrameId: number;
 let isGameRunning = false;
 let playerRole: "left" | "right" = "left"; // El jugador siempre es 'left'
 let roomId = "";
+let aiStarted = false;
+let handleVisibility: () => void = () => {};
+let beforeUnloadHandler: () => void = () => {};
+let clientUsername = "";
 
 const apiHost = `http://${window.location.hostname}:8080`;
 
@@ -72,6 +76,8 @@ function cleanup() {
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     window.removeEventListener("keydown", handleKeyDown);
     window.removeEventListener("keyup", handleKeyUp);
+    document.removeEventListener('visibilitychange', handleVisibility);
+    window.removeEventListener('beforeunload', beforeUnloadHandler as EventListener);
     isGameRunning = false;
 }
 
@@ -157,10 +163,21 @@ function startGameVsAI() {
 
     socket.on('connect', () => {
         // Join the dedicated AI room on the Pong server
-        socket.emit("joinRoom", { roomId });
+        // Send username so server can map socket.id -> username
+        let username = clientUsername || (document.querySelector('#username') as HTMLElement)?.textContent?.replace('Username: ', '') || '';
+        if (!username) {
+            // generate a simple guest username
+            username = 'guest_' + Math.random().toString(36).substring(2, 8);
+            clientUsername = username;
+        }
+        socket.emit("joinRoom", { roomId, username });
 
-        // Start AI on the backend game controller
-        postGame(`/game/${roomId}/start-ai`);
+    // Do not display username in the UI (we still send it to the server for mapping)
+
+        // Start AI on the backend game controller (guard against double start)
+        if (!aiStarted) {
+            postGame(`/game/${roomId}/start-ai`).then(() => { aiStarted = true; }).catch(() => { aiStarted = false; });
+        }
     });
 
     const initGame = (currentRoomId: string) => {
@@ -180,7 +197,47 @@ function startGameVsAI() {
         if (state.gameEnded) {
             checkWinner();
         }
+        // Always send the latest gameState to the server so the AI can observe
+        // the game state even when the game is paused locally.
+        try {
+            if (socket && socket.connected) {
+                socket.emit("clientGameState", { roomId, state });
+            }
+        } catch (e) {
+            // ignore emission errors
+        }
     });
+
+    // Pause the game when the tab becomes hidden to avoid timing issues.
+    // We only pause on hide and DO NOT auto-resume when visible to avoid race conditions
+    let visibilityPaused = false;
+    handleVisibility = () => {
+        if (document.hidden) {
+            if (isGameRunning) {
+                visibilityPaused = true;
+                // Pause locally and inform server
+                postGame(`/game/${roomId}/pause`).catch(() => {});
+            }
+        } else {
+            // Do NOT auto-resume. Leave the resume action to the user (start button)
+            // This avoids race conditions and broken websocket/state when returning to tab.
+        }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    // Ensure we stop the AI and disconnect cleanly when leaving the page
+    beforeUnloadHandler = () => {
+        if (aiStarted) {
+            // Best-effort notify server to stop AI
+            try {
+                navigator.sendBeacon(`${apiHost}/game/${roomId}/stop-ai`);
+            } catch (e) {
+                // ignore
+            }
+        }
+        if (socket) socket.disconnect();
+    };
+    window.addEventListener('beforeunload', beforeUnloadHandler);
 
     socket.on("gamePaused", ({ paused }: { paused: boolean }) => {
         isGameRunning = !paused;

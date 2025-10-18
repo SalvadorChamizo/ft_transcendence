@@ -70,6 +70,15 @@ const connectedUsersSet: Set<number> = new Set();
 // ==================== UTILITY FUNCTIONS ====================
 
 /**
+ * Sanitiza el texto para evitar inyección de HTML
+ */
+function sanitizeText(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
  * Display error message in the message result area
  * @param message - Error message to display
  * @param messageResultElement - DOM element to display error in
@@ -271,7 +280,7 @@ export function chatHandlers() {
     const viewProfileButton = document.getElementById('view-profile-btn') as HTMLButtonElement;
 
     // Debounce timer for conversation loading
-    let loadConversationsTimeout: number | null = null;
+        let loadConversationsTimeout: ReturnType<typeof setTimeout> | null = null;
 
     // Load game invitations on page load
     loadGameInvitations();
@@ -295,7 +304,7 @@ export function chatHandlers() {
             return;
         }
 
-        const content = messageContentInput.value.trim();
+    const content = sanitizeText(messageContentInput.value.trim());
         const currentUserId = getCurrentUserId();
         const recipientId = activeConversationId;
 
@@ -773,10 +782,9 @@ export function chatHandlers() {
             // Determine if the message was sent by the current user
             const isSent = msg.sender_id === currentUserId || msg.isSent;
             console.log('📨 Message:', { sender_id: msg.sender_id, currentUserId, isSent, content: msg.content?.substring(0, 20) });
-            
             return `
                 <div class="message-bubble ${isSent ? 'message-sent' : 'message-received'}">
-                    <div class="message-content">${msg.content}</div>
+                    <div class="message-content">${sanitizeText(msg.content)}</div>
                     <div class="message-time">${new Date(msg.timestamp || msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
             `;
@@ -805,7 +813,7 @@ export function chatHandlers() {
         });
         
         messageDiv.innerHTML = `
-            <div class="message-content">${message.content}</div>
+            <div class="message-content">${sanitizeText(message.content)}</div>
             <div class="message-time">${time}</div>
         `;
         

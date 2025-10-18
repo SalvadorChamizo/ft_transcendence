@@ -17,6 +17,38 @@ function simpleUUID() {
         Math.random().toString(36).substring(2, 10)
     );
 }
+
+async function startLocalCountdownAndStart(roomToStart: string, isAiMode: boolean, btn1v1?: HTMLButtonElement | null, btn1vAI?: HTMLButtonElement | null) {
+    const countdownEl = document.getElementById('countdown')!;
+    countdownEl.classList.remove('hidden');
+    let counter = 3;
+    countdownEl.textContent = String(counter);
+    await new Promise<void>((resolve) => {
+        const iv = setInterval(() => {
+            counter -= 1;
+            if (counter === 0) {
+                clearInterval(iv);
+                countdownEl.classList.add('hidden');
+                resolve();
+            } else {
+                countdownEl.textContent = String(counter);
+            }
+        }, 1000);
+    });
+
+    // resume and start
+    const resumeResponse = await postGame(`/game/${roomToStart}/resume`);
+    if (!resumeResponse.ok) throw new Error(`resume failed (${resumeResponse.status})`);
+    isGameRunning = true;
+    console.log("[LocalPong] Game started and resumed after countdown.");
+
+    // Habilita los botones de nuevo tras iniciar
+    if (btn1v1) btn1v1.disabled = false;
+    if (btn1vAI) btn1vAI.disabled = false;
+
+    // Start the animation loop
+    gameLoop(isAiMode);
+}
 const roomId = `local_${simpleUUID()}`;
 
 const apiHost = `http://${window.location.hostname}:8080`;
@@ -64,10 +96,10 @@ export function localPongPage(): string {
       </div>
       <div id="roleInfo"></div>
 
-      <div class="scoreboard-container">
-        <button id="startGameBtn" class="pong-button hidden">Start Game</button>
-        <div id="scoreboard" class="scoreboard hidden">0 : 0</div>
-      </div>
+    <div class="scoreboard-container">
+            <button id="startGameBtn" class="pong-button hidden">Start Game</button>
+            <div id="scoreboard" class="scoreboard hidden">0 : 0</div>
+    </div>
 
       <p id="winnerMessage" class="winner-message" style="display: none;"></p>
       <div id="errorMessage" class="error-message" style="display: none; color: red; text-align: center;"></div>
@@ -77,7 +109,8 @@ export function localPongPage(): string {
           <p>Left Player: W / S</p>
         </div>
 
-        <canvas id="pongCanvas" width="800" height="600"></canvas>
+    <canvas id="pongCanvas" width="800" height="600"></canvas>
+    <div id="countdown" class="countdown hidden"></div>
 
         <div class="controls right-controls">
           <p>Right Player: ↑ / ↓</p>
@@ -242,20 +275,22 @@ async function startGame(isAiMode: boolean) {
                     throw new Error(`start-ai failed (${startAiResponse.status})`);
                 }
             }
-            // The game starts paused by default after init, so we resume it.
-            const resumeResponse = await postGame(`/game/${roomId}/resume`);
-            if (!resumeResponse.ok) {
-                throw new Error(`resume failed (${resumeResponse.status})`);
-            }
-            isGameRunning = true;
-            console.log("[LocalPong] Game started and resumed.");
+            // The game starts paused by default after init. Use a 3-2-1 countdown then resume.
+            import("../utils/countdown").then(mod => {
+                mod.runCountdown('countdown', 3).then(async () => {
+                    const resumeResponse = await postGame(`/game/${roomId}/resume`);
+                    if (!resumeResponse.ok) throw new Error(`resume failed (${resumeResponse.status})`);
+                    isGameRunning = true;
+                    console.log("[LocalPong] Game started and resumed after countdown.");
 
-            // Habilita los botones de nuevo tras iniciar
-            if (btn1v1) btn1v1.disabled = false;
-            if (btn1vAI) btn1vAI.disabled = false;
+                    // Habilita los botones de nuevo tras iniciar
+                    if (btn1v1) btn1v1.disabled = false;
+                    if (btn1vAI) btn1vAI.disabled = false;
 
-            // Start the animation loop
-            gameLoop(isAiMode);
+                    // Start the animation loop
+                    gameLoop(isAiMode);
+                });
+            });
 
         } catch (error: any) {
             console.error("[LocalPong] Failed to start game:", error);
