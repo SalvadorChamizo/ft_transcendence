@@ -15,33 +15,29 @@ const publicUrls = [
     "/auth/google/callback",
     "/tournaments/local",
     "/tournaments/:id/start",
+    "/tournaments/:id/advance",
 ];
 
 export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
-    const urlPath = req.url.split("?")[0];
+  const urlPath = req.url.split("?")[0];
 
-    const isPublic = publicUrls.some((publicUrl) => {
+  const isPublic = publicUrls.some((publicUrl) => {
     if (publicUrl.includes(":")) {
-        // Turn `/tournaments/:id/start` into a regex like `/^\/tournaments\/[^/]+\/start$/`
-        const regex = new RegExp("^" + publicUrl.replace(/:[^/]+/g, "[^/]+") + "$");
-        return regex.test(urlPath);
+      const regex = new RegExp("^" + publicUrl.replace(/:[^/]+/g, "[^/]+") + "$");
+      return regex.test(urlPath);
     }
     return publicUrl === urlPath;
-    });
+  });
 
-    if (isPublic || urlPath.startsWith("/ws")) {
+  // ✅ Allow public or WebSocket routes
+  if (isPublic || urlPath.startsWith("/ws")) {
     return;
-    }
+  }
 
-    // Permitir rutas públicas
-    if (publicUrls.includes(urlPath)) {
-        return;
-    }
-
-    // Permitir game/local sin autenticación
-    if (urlPath.startsWith('/game/local')) {
-        return;
-    }
+  // ✅ Allow local games
+  if (urlPath.startsWith("/game/local")) {
+    return;
+  }
 
     // Para WebSocket, buscar token en query params
     if (urlPath.startsWith('/ws')) {

@@ -46,23 +46,56 @@ function sleep(ms: number) {
 }
 
 async function startLocalTournamentFlow(tournamentData: any) {
-    const matches = tournamentData.matches;
+    let matches = tournamentData.matches;
     const players = tournamentData.players;
     if (!players || players.length === 0) return;
 
-    const playerMap = Object.fromEntries(players.map(p => [p.id, p.username]));
+    const playerMap = Object.fromEntries(players.map(p => [p.id, p])); // map by id
     let currentMatchIndex = 0;
-    const winners: Record<number, string> = {};
+    let currentRound = tournamentData.tournament.current_round;
+    const winners: Record<number, { id: number; username: string }> = {};
 
-    // Render the page once
+    // Render page once
     const tournamentContainer = document.getElementById("tournament-container");
     if (tournamentContainer) tournamentContainer.innerHTML = localTournamentPongPage();
 
     const playNextMatch = async () => {
         if (currentMatchIndex >= matches.length) {
-            delete (window as any)._isTournamentMatch;
-            alert("All matches done!");
-            console.log("Winners:", winners);
+            console.log("Round winners:", winners);
+
+            const roundWinners = Object.values(winners); // guaranteed to have id + username
+
+            // Tournament finished
+            if (roundWinners.length === 1) {
+                alert(`Tournament Winner: ${roundWinners[0].username}`);
+                console.log("Tournament completed!");
+                return;
+            }
+
+            // Advance to next round
+            console.log("Sending winners to backend:", roundWinners);
+            const res = await fetch(`http://${apiHost}:8080/tournaments/${currentTournament.id}/advance`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ winners: roundWinners }),
+            });
+
+            const nextData = await res.json();
+            console.log("nextData:", nextData);
+
+            if (!nextData.matches || nextData.matches.length === 0) {
+                alert("Tournament complete! No more matches left.");
+                console.log("Final winners:", roundWinners);
+                return;
+            }
+
+            // Prepare next round
+            matches = nextData.matches;
+            currentRound = nextData.tournament.current_round;
+            currentMatchIndex = 0;
+            for (const key in winners) delete winners[key];
+            await sleep(1000);
+            playNextMatch();
             return;
         }
 
@@ -70,30 +103,38 @@ async function startLocalTournamentFlow(tournamentData: any) {
         const player1 = playerMap[match.player1_id];
         const player2 = playerMap[match.player2_id];
 
-        // Update player names dynamically
+        // Update UI
         const leftP = document.querySelector(".left-controls p");
         const rightP = document.querySelector(".right-controls p");
-        if (leftP) leftP.textContent = `Left Player: ${player1}`;
-        if (rightP) rightP.textContent = `Right Player: ${player2}`;
+        if (leftP) leftP.textContent = `Left Player: ${player1.username}`;
+        if (rightP) rightP.textContent = `Right Player: ${player2.username}`;
 
-        console.log(`Starting match ${currentMatchIndex + 1}: ${player1} vs ${player2}`);
+        console.log(`Starting match ${currentMatchIndex + 1}: ${player1.username} vs ${player2.username}`);
 
         await playTournamentMatch({
             id: match.id,
-            player1,
-            player2,
-            onFinish: async (winner) => {
-                winners[match.id] = winner;
+            player1: player1.username,
+            player2: player2.username,
+            onFinish: async (winnerName: string) => {
+                // Match winner to actual player
+                const winningPlayer = [player1, player2].find(p => winnerName.includes(p.username));
+                if (winningPlayer) {
+                    winners[match.id] = { id: winningPlayer.id, username: winningPlayer.username };
+                } else {
+                    console.warn("Winner not found for match:", match.id, winnerName);
+                }
+
                 currentMatchIndex++;
                 await sleep(1500);
-                playNextMatch(); // call next match immediately
+                playNextMatch();
             },
         });
     };
 
-    // Start the first match
     playNextMatch();
 }
+
+
 
 export async function tournamentHandlers() {
 

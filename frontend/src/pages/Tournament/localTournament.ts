@@ -50,14 +50,9 @@ let gameState: GameState = {
 export function localTournamentPongPage(): string {
     return `
     <div class="pong-container">
-      <div id="modeSelection">
-        <button id="1v1Btn" class="pong-button">1 vs 1</button>
-        <button id="1vAIBtn" class="pong-button">1 vs AI</button>
-      </div>
       <div id="roleInfo"></div>
 
       <div class="scoreboard-container">
-        <button id="startGameBtn" class="pong-button hidden">Start Game</button>
         <div id="scoreboard" class="scoreboard hidden">0 : 0</div>
       </div>
 
@@ -90,7 +85,10 @@ function cleanup() {
         endGameTimeoutId = undefined;
     }
     if (socket) {
-        socket.removeAllListeners();
+        socket.off("gameState");
+        socket.off("disconnect");
+        socket.off("roomFull");
+        socket.off("roomNotFound");
         socket.disconnect();
         socket = null;
     }
@@ -111,7 +109,6 @@ function cleanup() {
 
 function prepareGameUI(isAiMode: boolean) {
     (document.getElementById("winnerMessage")!).style.display = "none";
-    (document.getElementById("modeSelection")!).style.display = "none";
     (document.getElementById("gameInfo")!).style.display = "flex";
     (document.getElementById("scoreboard")!).classList.remove("hidden");
     (document.getElementById("extraInfo")!).classList.remove("hidden");
@@ -129,17 +126,18 @@ function endGame() {
     isGameRunning = false;
     cancelAnimationFrame(animationFrameId);
 
-    // only reboot the ui if we are not in tournamnet
-    if (!(window as any)._tournamentMatchId && !(window as any)._isTournamentMatch) {
-        endGameTimeoutId = window.setTimeout(() => {
-            (document.getElementById("modeSelection")!).style.display = "flex";
-            (document.getElementById("gameInfo")!).style.display = "none";
-            (document.getElementById("winnerMessage")!).style.display = "none";
-            (document.getElementById("scoreboard")!).classList.add("hidden");
-            (document.getElementById("extraInfo")!).classList.add("hidden");
-            (document.getElementById("roleInfo")!).textContent = "";
-        }, 5000);
-    }
+    endGameTimeoutId = window.setTimeout(() => {
+        // Don't call cleanup() here, as it will interfere with a new game
+        // if started within the 5-second window.
+        // cleanup() is called at the beginning of startGame().
+        
+        // Reset UI to initial state
+        (document.getElementById("gameInfo")!).style.display = "none";
+        (document.getElementById("winnerMessage")!).style.display = "none";
+        (document.getElementById("scoreboard")!).classList.add("hidden");
+        (document.getElementById("extraInfo")!).classList.add("hidden");
+        (document.getElementById("roleInfo")!).textContent = "";
+    }, 5000);
 }
 
 function checkWinner() {
@@ -172,7 +170,8 @@ function checkWinner() {
             (window as any).onMatchFinished(winner);
         }
     }
-    endGame();
+
+    //endGame();
 }
 
 export async function playTournamentMatch(match: {
@@ -181,44 +180,56 @@ export async function playTournamentMatch(match: {
     player2: string;
     onFinish: (winner: string) => void;
 }) {
-    // global flag for tournament
-    (window as any)._isTournamentMatch = true;
+    // Prepare the UI for the match
+    prepareGameUI(false);
+
+    // Set a global match ID so startTournamentGame can reference it if needed
     (window as any)._tournamentMatchId = match.id;
+
+    // Override the global onMatchFinished temporarily
     (window as any).onMatchFinished = (winnerName: string) => {
         console.log(`[Tournament] Match ${match.id} finished. Winner: ${winnerName}`);
-        // clan only flags from matches not tournamnet
+
+        // Call the match's onFinish callback with just the username
+        match.onFinish(winnerName);
+
+        // Clean up global flags to avoid conflicts with next matches
         delete (window as any)._tournamentMatchId;
         delete (window as any).onMatchFinished;
-        match.onFinish(winnerName);
-    }
-    prepareGameUI(false);
+    };
+
+    // Start the game with the given players
     await startTournamentGame(false, match.player1, match.player2);
 }
 
 async function startTournamentGame(isAiMode: boolean, playerLeft: string, playerRight: string) {
-    document.querySelector(".left-controls p")!.textContent = `Left Player: ${playerLeft} -> "W / S"`;
-    document.querySelector(".right-controls p")!.textContent = `Right Player: ${playerRight} -> "↑ / ↓"`;
-    
     // Ensure everything is clean before starting
     cleanup();
 
-    // Deshabilita los botones para evitar doble inicio
-    const btn1v1 = document.getElementById("1v1Btn") as HTMLButtonElement;
-    const btn1vAI = document.getElementById("1vAIBtn") as HTMLButtonElement;
-    if (btn1v1) btn1v1.disabled = true;
-    if (btn1vAI) btn1vAI.disabled = true;
+    // Wait for DOM to update (1 frame)
+    await new Promise(requestAnimationFrame);
 
-    ctx = (document.getElementById("pongCanvas") as HTMLCanvasElement).getContext("2d")!;
-    const wsHost = `ws://${window.location.hostname}:7000`;
-    if (socket) {
-        // Si por alguna razón hay un socket anterior, límpialo
-        cleanup();
+    const canvas = document.getElementById("pongCanvas") as HTMLCanvasElement | null;
+    if (!canvas) {
+        console.error("[LocalPong] Canvas not found in DOM!");
+        return;
     }
+
+    ctx = canvas.getContext("2d");
+    if (!ctx) {
+        console.error("[LocalPong] Failed to get 2D context");
+        return;
+    }
+
+    document.querySelector(".left-controls p")!.textContent = `Left Player: ${playerLeft} -> "W / S"`;
+    document.querySelector(".right-controls p")!.textContent = `Right Player: ${playerRight} -> "↑ / ↓"`;
+
+    const wsHost = `ws://${window.location.hostname}:7000`;
+    if (socket) cleanup();
+
     socket = io(wsHost, { 
         transports: ['websocket'],
-        auth: {
-            token: "local"
-        }
+        auth: { token: "local" }
     });
 
     window.addEventListener("keydown", handleKeyDown);
@@ -229,33 +240,20 @@ async function startTournamentGame(isAiMode: boolean, playerLeft: string, player
         socket!.emit("joinRoom", { roomId });
 
         try {
-            // Always stop AI first to ensure a clean state
             await postGame(`/game/${roomId}/stop-ai`);
-
             const initResponse = await postGame(`/game/${roomId}/init`);
-            if (!initResponse.ok) {
-                throw new Error(`init failed (${initResponse.status})`);
-            }
+            if (!initResponse.ok) throw new Error(`init failed (${initResponse.status})`);
 
             if (isAiMode) {
                 const startAiResponse = await postGame(`/game/${roomId}/start-ai`);
-                if (!startAiResponse.ok) {
-                    throw new Error(`start-ai failed (${startAiResponse.status})`);
-                }
+                if (!startAiResponse.ok) throw new Error(`start-ai failed (${startAiResponse.status})`);
             }
-            // The game starts paused by default after init, so we resume it.
+
             const resumeResponse = await postGame(`/game/${roomId}/resume`);
-            if (!resumeResponse.ok) {
-                throw new Error(`resume failed (${resumeResponse.status})`);
-            }
+            if (!resumeResponse.ok) throw new Error(`resume failed (${resumeResponse.status})`);
+
             isGameRunning = true;
             console.log("[LocalPong] Game started and resumed.");
-
-            // Habilita los botones de nuevo tras iniciar
-            if (btn1v1) btn1v1.disabled = false;
-            if (btn1vAI) btn1vAI.disabled = false;
-
-            // Start the animation loop
             gameLoop(isAiMode);
 
         } catch (error: any) {
@@ -265,18 +263,13 @@ async function startTournamentGame(isAiMode: boolean, playerLeft: string, player
                 errorMsg.textContent = error?.message || "Error al iniciar la partida";
                 errorMsg.style.display = "block";
             }
-            // Habilita los botones para reintentar
-            if (btn1v1) btn1v1.disabled = false;
-            if (btn1vAI) btn1vAI.disabled = false;
         }
     });
 
     socket!.on("gameState", (state: GameState) => {
         gameState = state;
         draw();
-        if (state.gameEnded) {
-            checkWinner();
-        }
+        if (state.gameEnded) checkWinner();
     });
 
     socket!.on('roomFull', (payload: { roomId: string }) => {

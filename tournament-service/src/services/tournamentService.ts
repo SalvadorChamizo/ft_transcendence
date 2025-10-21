@@ -73,3 +73,68 @@ export async function startTournament(tournamentId: number) {
     matches,
   };
 }
+
+export async function advanceTournamentRound(tournamentId: number, winners: { id: number; username: string }[]) {
+  const tournament = await TournamentRepository.getById(tournamentId);
+  console.log("Entra al principio");
+  console.log("Winners: ", winners);
+  console.log("tournamentId: ", tournamentId);
+  if (!tournament)
+    throw new Error("Tournament not found");
+
+  if (winners.length === 1) {
+    await TournamentRepository.updateStatus(tournamentId, "completed");
+    await TournamentRepository.setWinner(tournamentId, winners[0].id);
+
+    return {
+      tournament: {
+        ...tournament, status: "completed", winner_id: winners[0].id,
+      }, matches: [],
+    };
+  }
+
+
+
+  const nextRound = (tournament.current_round || 1) + 1;
+
+  const matches: { 
+    id: number;
+    player1_id: number;
+    player2_id: number;
+    round: number;
+    status: string; 
+  }[] = [];
+
+  for (let i = 0; i < winners.length; i += 2) {
+    console.log("Entra");
+    console.log("player1:", winners[i]);
+    console.log("player2:", winners[i + 1]);
+    const player1 = winners[i];
+    const player2 = winners[i + 1];
+    if (!player2)
+      break;
+
+    const matchId = TournamentRepository.addMatch(
+      tournamentId,
+    nextRound,
+    player1.id,
+    player2.id
+  );
+
+  matches.push({
+    id: matchId,
+    player1_id: player1.id,
+    player2_id: player2.id,
+    round: nextRound,
+    status: "pending",
+  });
+}
+
+  await TournamentRepository.updateRound(tournamentId, nextRound);
+
+  return {
+    tournament: { ...tournament, current_round: nextRound },
+    matches,
+  };
+}
+

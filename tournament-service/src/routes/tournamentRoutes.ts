@@ -1,5 +1,6 @@
 import type { FastifyInstance } from "fastify"
 import { 
+    advanceTournamentController,
     createLocalTournamentController,
     startTournamentController,
     /*createRemoteTournamentController,
@@ -21,6 +22,7 @@ export default async function tournamentRoutes(app: FastifyInstance) {
     app.get("/tournament/:id", getTournamentByIdController);*/
     app.post("/tournaments/local", createLocalTournamentController);
     app.post("/tournaments/:id/start", startTournamentController);
+    app.post("/tournaments/:id/advance", advanceTournamentController);
     /*app.post("/tournaments/remote", createRemoteTournamentController);
     app.delete("/tournament/:id", deleteTournamentController);
 

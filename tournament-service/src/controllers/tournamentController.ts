@@ -42,6 +42,17 @@ export async function startTournamentController(req: FastifyRequest, reply: Fast
     }
 }
 
+export async function advanceTournamentController(req: FastifyRequest, reply: FastifyReply) {
+    try {
+        const { id } = req.params as { id: string };
+        const { winners } = req.body as { winners: { id: number; username: string }[] };
+        const data = await TournamentService.advanceTournamentRound(Number(id), winners);
+        return reply.code(200).send(data);
+    } catch (err: any) {
+        return reply.code(400).send({ error: "Failed to advance tournament" });
+    }
+}
+
 /*export async function createRemoteTournamentController(req: FastifyRequest, reply: FastifyReply) {
     const data = req.body as any;
     const newTournament = await TournamentService.createRemoteTourmanet(data);

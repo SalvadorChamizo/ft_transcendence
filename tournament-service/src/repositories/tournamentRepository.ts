@@ -88,4 +88,22 @@ export class TournamentRepository {
     static deleteTournament(id: number) {
         db.prepare("DELETE FROM tournaments WHERE id = ?").run(id);
     }
+
+    static updateRound(tournamentId: number, round: number) {
+        const stmt = db.prepare(`
+            UPDATE tournaments
+            SET current_round = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            `);
+            stmt.run(round, tournamentId);
+    }
+
+    static setWinner(tournamentId: number, winnerId: number) {
+        const stmt = db.prepare(`
+            UPDATE tournaments
+            SET winner_id = ?, status = 'completed', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+            `);
+            stmt.run(winnerId, tournamentId);
+    }
 }
