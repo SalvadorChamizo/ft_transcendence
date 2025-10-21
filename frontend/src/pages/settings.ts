@@ -56,6 +56,15 @@ export function settingsHandlers(accessToken: string) {
       if (res.ok) {
         usernameField.textContent = `Username: ${data.user.username}`;
         emailField.textContent = `Email: ${data.user.email}`;
+        const avatarIMG = await fetch("http://localhost:8080/users/getAvatar", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "x-user-id": data.user.id.toString(),
+          },
+        });
+        console.log("Avatar fetched:", avatarIMG);
+        avatarField.innerHTML = `<img src="${URL.createObjectURL(await avatarIMG.blob())}" alt="User Avatar" width="100" height="100"/>`;
       } else {
         console.error("Error fetching user data:", data);
       }
@@ -159,3 +168,4 @@ export function settingsHandlers(accessToken: string) {
     }
   });
 }
+
