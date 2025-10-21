@@ -8,6 +8,7 @@ import { Chat, chatHandlers } from "./pages/chat";
 // import { pongPage } from "./pages/pong"; // Eliminado
 import { Settings } from "./pages/settings";
 import { localPongPage, localPongHandlers } from "./pages/localPong"; // Importar handlers
+import { localPowerUpPongPage, localPowerUpPongHandlers } from "./pages/localPowerUpPong"; // PowerUp mode
 import { remotePongPage, remotePongHandlers } from "./pages/remotePong"; // Importar handlers
 import { Game } from "./pages/game"
 import { Tournament } from "./pages/Tournament/tournament";
@@ -33,6 +34,9 @@ export function router(route: string): string {
         case "#/pong/local":
             setTimeout(localPongHandlers, 0); // Añadir llamada a handlers
             return localPongPage();
+        case "#/pong/local/powerup":
+            setTimeout(localPowerUpPongHandlers, 0);
+            return localPowerUpPongPage();
         case "#/pong/remote":
             setTimeout(remotePongHandlers, 0); // Añadir llamada a handlers
             return remotePongPage();

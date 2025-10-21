@@ -15,6 +15,8 @@ import {
 	PADDLE_WIDTH,
 	BALL_SPEED_X,
 	BALL_SPEED_Y,
+    POWERUP_ENABLED,
+    POWERUP_SPEED_MULTIPLIER,
 } from "../utils/pong-constants";
 
 // Map to keep pending serve timers per room (including 'local') so we can clear them
@@ -91,7 +93,8 @@ export function getGameState(roomId?: string): GameState | undefined {
 export function moveUp(side: "left" | "right", roomId?: string): GameState | undefined {
 	const state = getGameState(roomId);
 	if (!state) return;
-	state.paddles[side].y = Math.max(0, state.paddles[side].y - PADDLE_SPEED);
+	const paddleSpeed = typeof state.paddleSpeed === 'number' ? state.paddleSpeed : PADDLE_SPEED;
+	state.paddles[side].y = Math.max(0, state.paddles[side].y - paddleSpeed);
 	if (roomId && roomId !== "local") {
 		roomStates.set(roomId, state);
 	} else {
@@ -106,7 +109,8 @@ export function moveUp(side: "left" | "right", roomId?: string): GameState | und
 export function moveDown(side: "left" | "right", roomId?: string): GameState | undefined {
 	const state = getGameState(roomId);
 	if (!state) return;
-	state.paddles[side].y = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, state.paddles[side].y + PADDLE_SPEED);
+	const paddleSpeed = typeof state.paddleSpeed === 'number' ? state.paddleSpeed : PADDLE_SPEED;
+	state.paddles[side].y = Math.min(CANVAS_HEIGHT - PADDLE_HEIGHT, state.paddles[side].y + paddleSpeed);
 	if (roomId && roomId !== "local") {
 		roomStates.set(roomId, state);
 	} else {
@@ -114,13 +118,13 @@ export function moveDown(side: "left" | "right", roomId?: string): GameState | u
 	}
 	return state;
 }
-function handlePaddleCollision(ball: Ball, paddle: Paddle, side: 'left' | 'right') {
+function handlePaddleCollision(ball: Ball, paddle: Paddle, side: 'left' | 'right', multiplier: number = 1) {
 	const paddleCenter = paddle.y + PADDLE_HEIGHT / 2;
 	const impactPoint = ball.y - paddleCenter;
 	const normalizedImpact = impactPoint / (PADDLE_HEIGHT / 2);
 	const bounceAngle = normalizedImpact * (Math.PI / 4); // Max bounce angle: 45 degrees
 
-	const speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+	let speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy) * multiplier;
 	
 	ball.dx = speed * Math.cos(bounceAngle);
 	if (side === 'right')
@@ -185,7 +189,7 @@ export function updateGame(roomId?: string): GameState | undefined {
 
 				// Simple check: if ball is not near the top/bottom edges, treat as front collision
 				if (distY < PADDLE_HEIGHT / 2) {
-					handlePaddleCollision(ball, paddle, side);
+					handlePaddleCollision(ball, paddle, side, state.powerUpMultiplier ?? 1);
 				} else {
 					// It's a corner/edge case, treat as vertical collision
 					ball.dy *= -1;
@@ -215,7 +219,8 @@ export function updateGame(roomId?: string): GameState | undefined {
 		resetBall(state, "right", roomId);
 	}
 
-	if (state.scores.left >= WINNING_SCORE || state.scores.right >= WINNING_SCORE) {
+	const winningScore = typeof state.winningScore === 'number' ? state.winningScore : WINNING_SCORE;
+	if (state.scores.left >= winningScore || state.scores.right >= winningScore) {
 		state.gameEnded = true;
 		state.gameEndedTimestamp = Date.now();
 		state.ball.dx = 0;
@@ -270,9 +275,11 @@ export function startBallMovement(roomId?: string) {
 	if (!state) return;
 	if (state.ball.dx === 0 && state.ball.dy === 0) {
 		const serveDirection = (state.ball as any).serveDirection || (Math.random() > 0.5 ? "left" : "right");
-		state.ball.dx = serveDirection === "left" ? -BALL_SPEED_X : BALL_SPEED_X;
+		const ballSpeedX = typeof state.ballSpeedX === 'number' ? state.ballSpeedX : BALL_SPEED_X;
+		const ballSpeedY = typeof state.ballSpeedY === 'number' ? state.ballSpeedY : BALL_SPEED_Y;
+		state.ball.dx = serveDirection === "left" ? -ballSpeedX : ballSpeedX;
 		// Ensure dy respects ball radius and is not zero
-		state.ball.dy = (Math.random() > 0.5 ? BALL_SPEED_Y : -BALL_SPEED_Y) || BALL_SPEED_Y;
+		state.ball.dy = (Math.random() > 0.5 ? ballSpeedY : -ballSpeedY) || ballSpeedY;
 		delete (state.ball as any).serveDirection; // cleaning
 	}
 	if (roomId && roomId !== "local") {

@@ -19,6 +19,11 @@ export function Game() : string {
                 <h2>Tournament</h2>
             </div>
             </a>
+            <a href="#/pong/local/powerup" class="game-card powerup">
+            <div class="overlay">
+                <h2>Local PowerUp</h2>
+            </div>
+            </a>
         </div>
         </div>
     `

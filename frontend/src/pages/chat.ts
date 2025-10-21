@@ -134,15 +134,6 @@ export function Chat(): string {
                     </button>
                 </div>
                 
-                <!-- Game Invitations Section -->
-                <div id="game-invitations-section" style="display: none;">
-                    <div class="invitations-header">
-                        <h3>🎮 Game Invitations</h3>
-                    </div>
-                    <div id="game-invitations-list" class="invitations-list">
-                        <!-- Invitations will appear here -->
-                    </div>
-                </div>
                 
                 <div class="conversations-list" id="conversations-list">
                     <!-- Conversations will be loaded here dynamically -->
@@ -164,13 +155,13 @@ export function Chat(): string {
                         </div>
                     </div>
                     <div class="chat-actions">
-                        <button id="view-profile-btn" class="view-profile-btn" style="display: none;" title="View profile">
+                        <button id="view-profile-btn" class="view-profile-btn" title="View profile">
                             👤
                         </button>
-                        <button id="invite-game-btn" class="invite-game-btn" style="display: none;" title="Invite to play Pong">
+                        <button id="invite-game-btn" class="invite-game-btn" title="Invite to play Pong">
                             🎮
                         </button>
-                        <button id="block-user-btn" class="block-btn" style="display: none;" title="Block user">
+                        <button id="block-user-btn" class="block-btn" title="Block user">
                             🚫
                         </button>
                     </div>
@@ -282,8 +273,6 @@ export function chatHandlers() {
     // Debounce timer for conversation loading
         let loadConversationsTimeout: ReturnType<typeof setTimeout> | null = null;
 
-    // Load game invitations on page load
-    loadGameInvitations();
 
     // Initialize WebSocket connection
     initializeWebSocket();
@@ -603,18 +592,13 @@ export function chatHandlers() {
                 console.log('Received WebSocket message:', message);
 
                 if (message.type === 'message') {
-                    // Check if it's a game invitation event
-                    if (message.data?.event_type) {
-                        handleGameInvitationEvent(message.data);
-                    } else {
-                        // Add received message to UI
-                        addMessageToUI({
-                            ...message,
-                            isSent: false
-                        });
-                        // Auto-refresh conversations list to show new message/conversation
-                        loadConversationsDebounced();
-                    }
+                    //  Add all messages to UI (received message)
+                    addMessageToUI({
+                        ...message,
+                        isSent: false
+                    });
+                    // Auto-refresh conversations list to show new message/conversation
+                    loadConversationsDebounced();
                 } else if (message.type === 'user_connected') {
                     // Track user connection
                     if (message.userId) {
@@ -652,12 +636,13 @@ export function chatHandlers() {
      */
     function handleGameRedirection(result: any) {
         try {
-            // Future implementation: redirect to multiplayer game when ready
-            // window.location.hash = `#/pong/remote?opponent=${result.opponentId}`;
-            
-            // Current implementation: redirect to game selection
-            window.location.hash = '#/game';
-            console.log('Redirected to game selection. Opponent data:', result);
+            if (result && result.room_id) {
+                window.location.hash = `#/pong/remote?room=${result.room_id}`;
+                console.log('Redirected to remote pong room:', result.room_id);
+            } else {
+                window.location.hash = '#/game';
+                console.log('Redirected to game selection. Opponent data:', result);
+            }
         } catch (error) {
             console.error('Error handling game redirection:', error);
             // Fallback: show error message
@@ -673,48 +658,7 @@ export function chatHandlers() {
      * @param eventData - Event data containing invitation details
      */
     function handleGameInvitationEvent(eventData: any) {
-        const eventType = eventData.event_type;
-        
-        switch (eventType) {
-            case 'game_invitation_received':
-                console.log('🎮 New game invitation received:', eventData);
-                // Get real username instead of hardcoded "User X"
-                getUsername(eventData.from_user_id).then(username => {
-                    if (messageResult) {
-                        messageResult.innerHTML = `<span class="success">🎮 ${username} invited you to play ${eventData.game_type}!</span>`;
-                        messageResult.className = 'message-result success';
-                    }
-                });
-                // Reload invitations to show the new one
-                loadGameInvitations();
-                break;
-                
-            case 'game_invitation_accepted':
-                console.log('✅ Game invitation accepted:', eventData);
-                // Get real username instead of hardcoded "User X"
-                getUsername(eventData.to_user_id).then(username => {
-                    if (messageResult) {
-                        messageResult.innerHTML = `<span class="success">✅ ${username} accepted your invitation!</span>`;
-                        messageResult.className = 'message-result success';
-                    }
-                });
-                // TODO: Implement game redirection when multiplayer is ready
-                break;
-                
-            case 'game_invitation_rejected':
-                console.log('❌ Game invitation rejected:', eventData);
-                // Get real username instead of hardcoded "User X"
-                getUsername(eventData.to_user_id).then(username => {
-                    if (messageResult) {
-                        messageResult.innerHTML = `<span class="error">❌ ${username} rejected your invitation</span>`;
-                        messageResult.className = 'message-result error';
-                    }
-                });
-                break;
-                
-            default:
-                console.log('Unknown game invitation event:', eventType);
-        }
+        // Ya no se maneja lógica especial de invitaciones, todo es por mensajes
     }
 
     // Function to select a conversation and load messages
@@ -727,15 +671,8 @@ export function chatHandlers() {
         if (contactName) contactName.textContent = otherUserName;
 
         // Show and update block button
-        const blockBtn = document.getElementById('block-user-btn') as HTMLButtonElement;
-        if (blockBtn) {
-            blockBtn.style.display = 'block';
-            const isBlocked = blockedUsers.has(otherUserId);
-            blockBtn.textContent = isBlocked ? '✅' : '🚫';
-            blockBtn.title = isBlocked ? 'Unblock user' : 'Block user';
-        }
-
-        // Show view profile button
+        const blockButton = document.getElementById('block-user-btn') as HTMLButtonElement;
+        const viewProfileButton = document.getElementById('view-profile-btn') as HTMLButtonElement;
         const profileBtn = document.getElementById('view-profile-btn') as HTMLButtonElement;
         if (profileBtn) {
             profileBtn.style.display = 'block';
@@ -779,16 +716,51 @@ export function chatHandlers() {
         console.log('🔍 Display Messages - Current User ID:', currentUserId);
         
         messagesContainer.innerHTML = messages.map(msg => {
-            // Determine if the message was sent by the current user
-            const isSent = msg.sender_id === currentUserId || msg.isSent;
-            console.log('📨 Message:', { sender_id: msg.sender_id, currentUserId, isSent, content: msg.content?.substring(0, 20) });
-            return `
-                <div class="message-bubble ${isSent ? 'message-sent' : 'message-received'}">
-                    <div class="message-content">${sanitizeText(msg.content)}</div>
-                    <div class="message-time">${new Date(msg.timestamp || msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                </div>
-            `;
+            // Show sent/received based on current user ID
+            const isSent = msg.sender_id === currentUserId || msg.userId === currentUserId || msg.recipientId === currentUserId || msg.isSent;
+            // Detect if message is a pong invitation
+            const isPongInvite = (msg.data && msg.data.event_type === 'game_invitation_message' && msg.data.room_id)
+                || msg.message_type === 'pong-invite'
+                || (msg.data && msg.data.room_id);
+                let messageHtml = '';
+                if (isPongInvite) {
+                    const room = (msg.data && msg.data.room_id) || (msg.content && (msg.content.match(/<b>([^<]+)<\/b>/) || [])[1]) || '';
+                    // Render pong invitation message
+                    messageHtml = `
+                        <div class="message-bubble ${isSent ? 'message-sent' : 'message-received'} pong-invite">
+                            <div class="message-content">
+                                ${msg.content}
+                                <br>
+                                <button class="join-remote-pong-btn" data-room="${room}">Entrar a la partida</button>
+                            </div>
+                            <div class="message-time">${new Date(msg.timestamp || msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                        </div>
+                    `;
+            } else {
+                messageHtml = `
+                    <div class="message-bubble ${isSent ? 'message-sent' : 'message-received'}">
+                        <div class="message-content">${msg.content}</div>
+                        <div class="message-time">${new Date(msg.timestamp || msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
+                `;
+            }
+            return messageHtml;
         }).join('');
+        // Add event listeners for join pong buttons
+        setTimeout(() => {
+            document.querySelectorAll('.join-remote-pong-btn').forEach(btn => {
+                // Remove existing to avoid duplicate listeners
+                const newBtn = btn.cloneNode(true) as HTMLElement;
+                btn.parentElement?.replaceChild(newBtn, btn);
+                newBtn.addEventListener('click', (e) => {
+                    const roomId = (e.currentTarget as HTMLElement).getAttribute('data-room');
+                    if (roomId) {
+                        // Navigate to remote pong with room query param
+                        window.location.hash = `#/pong/remote?room=${roomId}`;
+                    }
+                });
+            });
+        }, 0);
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 
@@ -812,10 +784,32 @@ export function chatHandlers() {
             minute: '2-digit' 
         });
         
-        messageDiv.innerHTML = `
-            <div class="message-content">${sanitizeText(message.content)}</div>
-            <div class="message-time">${time}</div>
-        `;
+        // Detect if this new message is a pong invitation (WS payload may include data)
+        const isInvite = (message.data && message.data.event_type === 'game_invitation_message' && message.data.room_id) || message.type === 'game_invitation' || (message as any).messageType === 'pong-invite';
+        if (isInvite) {
+            const room = (message.data && message.data.room_id) || ((message.content && (message.content.match(/<b>([^<]+)<\/b>/) || [])[1])) || '';
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    🎮 Invitación a Pong<br>
+                    <b>Sala:</b> <span class="room-id">${room}</span><br>
+                    <button class="join-remote-pong-btn" data-room="${room}">Entrar a la partida</button>
+                </div>
+                <div class="message-time">${time}</div>
+            `;
+            // Attach click handler
+            const btn = messageDiv.querySelector('.join-remote-pong-btn') as HTMLElement | null;
+            if (btn) {
+                btn.addEventListener('click', (e) => {
+                    const roomId = (e.currentTarget as HTMLElement).getAttribute('data-room');
+                    if (roomId) window.location.hash = `#/pong/remote`;
+                });
+            }
+        } else {
+            messageDiv.innerHTML = `
+                <div class="message-content">${message.content}</div>
+                <div class="message-time">${time}</div>
+            `;
+        }
         
         messagesContainer.appendChild(messageDiv);
         
@@ -961,15 +955,16 @@ export function chatHandlers() {
         try {
             const result = await acceptGameInvitation(invitationId);
             console.log('Invitation accepted:', result);
-            
-            // Show success message
-            messageResult.innerHTML = '<span class="success">✅ Game invitation accepted! Redirecting to game...</span>';
+            // Show the room ID if available
+            if (result && result.room_id) {
+                messageResult.innerHTML = `<span class="success">✅ Game invitation accepted!<br>Room code: <b>${result.room_id}</b><br>Redirigiendo a Pong...</span>`;
+            } else {
+                messageResult.innerHTML = '<span class="success">✅ Game invitation accepted! Redirecting to game...</span>';
+            }
             messageResult.className = 'message-result success';
-            
             // Reload invitations
             await loadGameInvitations();
-            
-            // Redirect to game page after 2 seconds
+            // Redirect to game page after 2 segundos
             setTimeout(() => {
                 handleGameRedirection(result);
             }, CHAT_CONFIG.GAME_REDIRECT_DELAY);
@@ -1074,28 +1069,36 @@ export function chatHandlers() {
     // Handle invite to game button (if it exists)
     if (inviteGameButton) {
         inviteGameButton.addEventListener('click', async () => {
-        if (!activeConversationId) {
-            if (messageResult) {
-                messageResult.innerHTML = '<span class="error">No conversation selected</span>';
-                messageResult.className = 'message-result error';
+            if (!activeConversationId) {
+                if (messageResult) {
+                    messageResult.innerHTML = '<span class="error">No conversation selected</span>';
+                    messageResult.className = 'message-result error';
+                }
+                return;
             }
-            return;
-        }
 
-        try {
-            const result = await sendGameInvitation(activeConversationId, 'pong');
-            if (messageResult) {
-                messageResult.innerHTML = '<span class="success">🎮 Game invitation sent!</span>';
-                messageResult.className = 'message-result success';
+            try {
+                const result = await sendGameInvitation(activeConversationId, 'pong');
+                if (result && result.roomId) {
+                    // Save roomId to localStorage for pending redirection
+                    localStorage.setItem('pendingRemoteRoomId', result.roomId);
+                    // Automatically redirect to the remote room
+                    window.location.hash = `#/pong/remote?room=${result.roomId}`;
+                } else {
+                    if (messageResult) {
+                        messageResult.innerHTML = '<span class="success">🎮 Game invitation sent! (No roomId)"</span>';
+                        messageResult.className = 'message-result success';
+                    }
+                }
+                console.log('Game invitation sent:', result);
+            } catch (error) {
+                const errMsg = (error instanceof Error) ? error.message : String(error);
+                if (messageResult) {
+                    messageResult.innerHTML = `<span class="error">❌ ${errMsg}</span>`;
+                    messageResult.className = 'message-result error';
+                }
             }
-            console.log('Game invitation sent:', result);
-        } catch (error: any) {
-            if (messageResult) {
-                messageResult.innerHTML = `<span class="error">❌ ${error.message}</span>`;
-                messageResult.className = 'message-result error';
-            }
-        }
-    });
+        });
     }
 
     // Function to show/hide message input based on conversation selection

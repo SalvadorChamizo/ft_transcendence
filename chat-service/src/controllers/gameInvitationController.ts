@@ -10,8 +10,10 @@ export async function sendGameInvitationController(req: FastifyRequest, reply: F
 
     try {
         const userId = extractUserId(req.headers);
-        
-        const result = await gameInvitationService.sendGameInvitation(userId, toUserId, gameType);
+        // Extraer JWT del header Authorization
+        const authHeader = req.headers['authorization'];
+        const token = authHeader ? authHeader.replace('Bearer ', '').trim() : '';
+        const result = await gameInvitationService.sendGameInvitation(userId, toUserId, gameType, token);
         return reply.send(result);
     } catch (err: any) {
         if (err.message === 'User not authenticated') {
@@ -54,8 +56,10 @@ export async function acceptGameInvitationController(req: FastifyRequest, reply:
 
     try {
         const userId = extractUserId(req.headers);
-        
-        const result = await gameInvitationService.acceptGameInvitation(parseInt(id), userId);
+        // Extraer JWT del header Authorization
+        const authHeader = req.headers['authorization'];
+        const token = authHeader ? authHeader.replace('Bearer ', '').trim() : '';
+        const result = await gameInvitationService.acceptGameInvitation(parseInt(id), userId, token);
         return reply.send(result);
     } catch (err: any) {
         if (err.message === 'User not authenticated') {

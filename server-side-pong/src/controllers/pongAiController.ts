@@ -6,6 +6,7 @@ import { FastifyInstance } from "fastify";
 import { Server } from "socket.io";
 import fetch from "node-fetch";
 import { getGameState, moveUp, moveDown, isGameEnded } from "../services/gameServices";
+import { PADDLE_SPEED as DEFAULT_PADDLE_SPEED } from "../utils/pong-constants";
 import { getIsPaused } from "./gameControllers";
 
 const aiIntervals = new Map<string, NodeJS.Timeout>();
@@ -76,10 +77,14 @@ export async function pongAiController(fastify: FastifyInstance, io: Server)
                     stateForAI.ball.dy = stateForAI.ball.dy * 60;
                 }
 
+                // Convert paddle speed from px/frame to px/sec (60fps). Use state override if present.
+                const paddleFrameSpeed = typeof state.paddleSpeed === 'number' ? state.paddleSpeed : DEFAULT_PADDLE_SPEED;
+                const paddleSpeedPxSec = paddleFrameSpeed * 60;
+
                 const response = await fetch(`${aiServiceUrl}/ai/update`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ state: stateForAI, side: "right", dt: 1.0 }), // dt is 1 second
+                    body: JSON.stringify({ state: stateForAI, side: "right", dt: 1.0, paddleSpeed: paddleSpeedPxSec }), // dt is 1 second
                 });
 
                 if (!response.ok) throw new Error(`AI service error: ${response.statusText}`);

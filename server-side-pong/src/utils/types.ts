@@ -33,4 +33,12 @@ export interface GameState
 	scores: Scores;
 	gameEnded: boolean;
 	gameEndedTimestamp?: number; // Add this line
+	// Multiplier applied to ball speed on every paddle hit (default 1 = no change)
+	powerUpMultiplier?: number;
+	// Optional per-room speed overrides. If undefined, server constants are used.
+	paddleSpeed?: number;
+	ballSpeedX?: number;
+	ballSpeedY?: number;
+	// Optional per-room winning score override. If undefined, server default is used.
+	winningScore?: number;
 }

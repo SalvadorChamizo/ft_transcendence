@@ -49,7 +49,8 @@ db.prepare(`
         status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'accepted', 'rejected', 'expired')),
         game_type TEXT DEFAULT 'pong',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        expires_at DATETIME NOT NULL
+    expires_at DATETIME NOT NULL,
+    room_id TEXT DEFAULT NULL
     )
 `).run();
 

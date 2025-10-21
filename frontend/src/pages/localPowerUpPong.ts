@@ -1,6 +1,6 @@
 /**
- * @file localPong.ts
- * @brief Frontend logic for Local Pong game (1v1 and 1vAI)
+ * @file localPowerUpPong.ts
+ * @brief Local Pong with Power-up enabled (ball speeds up on paddle hits)
  */
 import { io, Socket } from "socket.io-client";
 import { getAccessToken, refreshAccessToken } from "../state/authState";
@@ -40,7 +40,7 @@ async function startLocalCountdownAndStart(roomToStart: string, isAiMode: boolea
     const resumeResponse = await postGame(`/game/${roomToStart}/resume`);
     if (!resumeResponse.ok) throw new Error(`resume failed (${resumeResponse.status})`);
     isGameRunning = true;
-    console.log("[LocalPong] Game started and resumed after countdown.");
+    console.log("[LocalPowerUpPong] Game started and resumed after countdown.");
 
     // Habilita los botones de nuevo tras iniciar
     if (btn1v1) btn1v1.disabled = false;
@@ -54,12 +54,12 @@ const roomId = `local_${simpleUUID()}`;
 const apiHost = `http://${window.location.hostname}:8080`;
 
 import {
-	WINNING_SCORE,
-	CANVAS_WIDTH,
-	CANVAS_HEIGHT,
-	BALL_RADIUS,
-	PADDLE_HEIGHT,
-	PADDLE_WIDTH,
+    WINNING_SCORE,
+    CANVAS_WIDTH,
+    CANVAS_HEIGHT,
+    BALL_RADIUS,
+    PADDLE_HEIGHT,
+    PADDLE_WIDTH,
     PADDLE_OFFSET_X,
     PADDLE_SPEED,
     BALL_SPEED_X,
@@ -77,7 +77,6 @@ interface GameState {
     ball: Ball;
     scores: Scores;
     gameEnded: boolean;
-    winningScore?: number;
 }
 
 let gameState: GameState = {
@@ -90,28 +89,31 @@ let gameState: GameState = {
 /**
  * HTML for the router
  */
-export function localPongPage(): string {
+export function localPowerUpPongPage(): string {
     return `
     <div class="pong-container">
-      <h1>Pong - Local Game</h1>
+      <h1>Pong - Local Power-Up</h1>
             <div id="modeSelection">
-                                <div class="speed-controls">
-                                        <label>Difficulty:
-                                            <select id="difficultySelect">
-                                                <option value="">Default</option>
-                                                <option value="easy">Easy</option>
-                                                <option value="medium">Medium</option>
-                                                <option value="hard">Hard</option>
-                                            </select>
-                                        </label>
-                                        <label>Game Length:
-                                            <select id="gameLengthSelect">
-                                                <option value="">Default</option>
-                                                <option value="short">Short (5)</option>
-                                                <option value="long">Long (10)</option>
-                                            </select>
-                                        </label>
-                                </div>
+                <div class="speed-controls">
+                    <label>Difficulty:
+                        <select id="difficultySelect">
+                            <option value="">Default</option>
+                            <option value="easy">Easy</option>
+                            <option value="medium">Medium</option>
+                            <option value="hard">Hard</option>
+                        </select>
+                    </label>
+                    <label>Game Length:
+                        <select id="gameLengthSelect">
+                            <option value="">Default</option>
+                            <option value="short">Short (5)</option>
+                            <option value="long">Long (10)</option>
+                        </select>
+                    </label>
+                    <label>Paddle Speed: <input type="number" id="paddleSpeedInput" placeholder="${PADDLE_SPEED}" step="1"/></label>
+                    <label>Ball Speed X: <input type="number" id="ballSpeedXInput" placeholder="${BALL_SPEED_X}" step="0.1"/></label>
+                    <label>Ball Speed Y: <input type="number" id="ballSpeedYInput" placeholder="${BALL_SPEED_Y}" step="0.1"/></label>
+                </div>
                 <button id="1v1Btn" class="pong-button">1 vs 1</button>
                 <button id="1vAIBtn" class="pong-button">1 vs AI</button>
             </div>
@@ -146,7 +148,7 @@ export function localPongPage(): string {
 }
 
 function cleanup() {
-    console.log("[LocalPong] Cleaning up previous game...");
+    console.log("[LocalPowerUpPong] Cleaning up previous game...");
     if (endGameTimeoutId) {
         clearTimeout(endGameTimeoutId);
         endGameTimeoutId = undefined;
@@ -173,21 +175,6 @@ function cleanup() {
 
 // Helper: POST with Authorization header and one retry after token refresh
 async function postGame(path: string): Promise<Response> {
-    const makeReq = async () => {
-        const token = getAccessToken();
-        const headers: Record<string, string> = {};
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-        return fetch(`${apiHost}${path}`, { method: "POST", headers });
-    };
-    let res = await makeReq();
-    if (res.status === 401) {
-        const refreshed = await refreshAccessToken();
-        if (refreshed) {
-            res = await makeReq();
-        }
-    }
-    return res;
-}
 
 // POST JSON body helper
 async function postGameJson(path: string, data: any): Promise<Response> {
@@ -207,9 +194,24 @@ async function postGameJson(path: string, data: any): Promise<Response> {
 async function applySpeedsToRoom(roomIdToSet: string) {
     const difficulty = (document.getElementById('difficultySelect') as HTMLSelectElement)?.value;
     const gameLength = (document.getElementById('gameLengthSelect') as HTMLSelectElement)?.value;
+    const paddleInput = (document.getElementById('paddleSpeedInput') as HTMLInputElement);
+    const ballXInput = (document.getElementById('ballSpeedXInput') as HTMLInputElement);
+    const ballYInput = (document.getElementById('ballSpeedYInput') as HTMLInputElement);
     const body: any = {};
     if (difficulty && difficulty.trim() !== '') body.difficulty = difficulty;
     if (gameLength && gameLength.trim() !== '') body.gameLength = gameLength;
+    if (paddleInput && paddleInput.value.trim() !== '') {
+        const n = Number(paddleInput.value);
+        if (Number.isFinite(n)) body.paddleSpeed = n;
+    }
+    if (ballXInput && ballXInput.value.trim() !== '') {
+        const n = Number(ballXInput.value);
+        if (Number.isFinite(n)) body.ballSpeedX = n;
+    }
+    if (ballYInput && ballYInput.value.trim() !== '') {
+        const n = Number(ballYInput.value);
+        if (Number.isFinite(n)) body.ballSpeedY = n;
+    }
     // Only post if body has at least one property
     if (Object.keys(body).length === 0) return;
     try {
@@ -218,6 +220,23 @@ async function applySpeedsToRoom(roomIdToSet: string) {
         console.warn('Failed to set speeds for room', roomIdToSet, e);
     }
 }
+    const makeReq = async () => {
+        const token = getAccessToken();
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        return fetch(`${apiHost}${path}`, { method: "POST", headers });
+    };
+    let res = await makeReq();
+    if (res.status === 401) {
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+            res = await makeReq();
+        }
+    }
+    return res;
+}
+
+// (helpers already defined above)
 
 const handleKeyDown = (e: KeyboardEvent) => {
     if (["ArrowUp", "ArrowDown", "w", "s"].includes(e.key)) e.preventDefault();
@@ -250,7 +269,7 @@ function gameLoop(isAiMode: boolean) {
     animationFrameId = requestAnimationFrame(() => gameLoop(isAiMode));
 }
 
-export function localPongHandlers() {
+export function localPowerUpPongHandlers() {
     document.getElementById("1v1Btn")!.addEventListener("click", () => {
         prepareGameUI(false);
         startGame(false);
@@ -308,18 +327,29 @@ async function startGame(isAiMode: boolean) {
     window.addEventListener("keyup", handleKeyUp);
 
     socket!.on('connect', async () => {
-        console.log(`[LocalPong] Socket connected, joining room '${roomId}'`);
+        console.log(`[LocalPowerUpPong] Socket connected, joining room '${roomId}'`);
         socket!.emit("joinRoom", { roomId });
 
         try {
             // Always stop AI first to ensure a clean state
             await postGame(`/game/${roomId}/stop-ai`);
+
             const initResponse = await postGame(`/game/${roomId}/init`);
             if (!initResponse.ok) {
                 throw new Error(`init failed (${initResponse.status})`);
             }
-            // Apply any custom speeds from UI after init (init resets state)
+            // Apply speeds (if any) after initializing the game for this room (init resets state)
             await applySpeedsToRoom(roomId);
+            if (!initResponse.ok) {
+                throw new Error(`init failed (${initResponse.status})`);
+            }
+
+            // Enable the powerup for this local room
+            try {
+                await postGame(`/game/${roomId}/powerup?enabled=true`);
+            } catch (e) {
+                console.warn('Failed to enable powerup for room', roomId, e);
+            }
 
             if (isAiMode) {
                 const startAiResponse = await postGame(`/game/${roomId}/start-ai`);
@@ -333,7 +363,7 @@ async function startGame(isAiMode: boolean) {
                     const resumeResponse = await postGame(`/game/${roomId}/resume`);
                     if (!resumeResponse.ok) throw new Error(`resume failed (${resumeResponse.status})`);
                     isGameRunning = true;
-                    console.log("[LocalPong] Game started and resumed after countdown.");
+                    console.log("[LocalPowerUpPong] Game started and resumed after countdown.");
 
                     // Habilita los botones de nuevo tras iniciar
                     if (btn1v1) btn1v1.disabled = false;
@@ -345,7 +375,7 @@ async function startGame(isAiMode: boolean) {
             });
 
         } catch (error: any) {
-            console.error("[LocalPong] Failed to start game:", error);
+            console.error("[LocalPowerUpPong] Failed to start game:", error);
             const errorMsg = document.getElementById("errorMessage");
             if (errorMsg) {
                 errorMsg.textContent = error?.message || "Error al iniciar la partida";
@@ -386,7 +416,7 @@ async function startGame(isAiMode: boolean) {
     });
 
     socket!.on("disconnect", (reason: string) => {
-        console.log("[LocalPong] Socket disconnected.", reason);
+        console.log("[LocalPowerUpPong] Socket disconnected.", reason);
         isGameRunning = false;
         const errorMsg = document.getElementById("errorMessage");
         if (errorMsg) {
@@ -420,8 +450,8 @@ function checkWinner() {
 
     const winnerMsg = document.getElementById("winnerMessage")!;
     const isAiMode = (document.querySelector(".right-controls p") as HTMLElement).textContent === "Right Player: AI";
+    const winning = (gameState as any).winningScore ?? WINNING_SCORE;
 
-    const winning = gameState.winningScore ?? WINNING_SCORE;
     if (gameState.scores.left >= winning) {
         winnerMsg.textContent = "Player 1 Wins!";
     } else if (gameState.scores.right >= winning) {

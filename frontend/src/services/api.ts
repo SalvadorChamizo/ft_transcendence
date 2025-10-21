@@ -198,7 +198,12 @@ export async function acceptGameInvitation(invitationId: number) {
             const errorData = await res.json();
             throw new Error(errorData.error || `HTTP error! Status: ${res.status}`);
         }
-        return await res.json();
+        const data = await res.json();
+        // If room_id is not directly in response, check acceptanceData
+        if (!data.room_id && data.acceptanceData && data.acceptanceData.room_id) {
+            data.room_id = data.acceptanceData.room_id;
+        }
+        return data;
     } catch (err) {
         console.error("Failed to accept game invitation:", err);
         throw err;

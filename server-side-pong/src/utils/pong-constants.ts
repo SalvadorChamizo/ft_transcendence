@@ -13,3 +13,5 @@ export const PADDLE_OFFSET_X = 30;
 export const PADDLE_WIDTH = 20;
 export const BALL_SPEED_X = 8;
 export const BALL_SPEED_Y = 8;
+// Power-up settings: when enabled, ball speed multiplies by this factor on every paddle hit
+export const POWERUP_SPEED_MULTIPLIER = 1.2;

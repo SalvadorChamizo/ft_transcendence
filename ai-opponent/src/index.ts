@@ -37,26 +37,29 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 */
 app.post('/ai/update', (req, res) => {
     try {
-        const { state, side, dt } = req.body as { state: GameState; side: Side; dt?: number };
+    const { state, side, dt, paddleSpeed } = req.body as { state: GameState; side: Side; dt?: number, paddleSpeed?: number };
         if (!state || !side) {
             return res.status(400).json({ error: 'Missing state or side' });
         }
 
         const paddle = side === 'left' ? state.paddles.left : state.paddles.right;
         const targetX = side === 'left' ? PADDLE_X_LEFT : PADDLE_X_RIGHT;
-        const dtSeconds = typeof dt === 'number' && dt > 0 ? dt : 1.0; // Default to 1 second if dt is not provided
+    const dtSeconds = typeof dt === 'number' && dt > 0 ? dt : 1.0; // Default to 1 second if dt is not provided
 
         const currentPaddleTopY = paddle.y;
         const currentCenterY = currentPaddleTopY + (PADDLE_HEIGHT / 2);
 
         // Call the original function that generates key events
+        // Allow AIS caller to override paddle speed (px/sec). Otherwise use local default.
+        const paddleSpeedUsed = typeof paddleSpeed === 'number' && paddleSpeed > 0 ? paddleSpeed : PADDLE_SPEED;
+
         const aiResponse: AIActionResponse = computeAIKeyEvents(
             currentCenterY,
             PADDLE_HEIGHT,
             state.ball,
             FIELD_HEIGHT,
             targetX,
-            PADDLE_SPEED,
+            paddleSpeedUsed,
             dtSeconds
         );
 

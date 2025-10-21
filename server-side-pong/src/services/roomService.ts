@@ -10,6 +10,13 @@ export function createInitialState(): GameState {
     ball: { x: 400, y: 300, dx: 0, dy: 0 },
     scores: { left: 0, right: 0 },
     gameEnded: false,
+    powerUpMultiplier: 1,
+    // speeds left undefined so server uses default constants
+    paddleSpeed: undefined,
+    ballSpeedX: undefined,
+    ballSpeedY: undefined,
+    // winning score default: use server constant
+    winningScore: undefined,
   };
 }
 

@@ -2,8 +2,11 @@
 import * as gameInvitationRepo from "../repositories/gameInvitationRepository";
 import * as blockRepo from "../repositories/blockRepository";
 import * as websocketService from "./websocketService";
+import { findConversation, createConversation } from "../repositories/conversationRepository";
+import { createMessage } from "../repositories/messageRepository";
 
-export async function sendGameInvitation(fromUserId: number, toUserId: number, gameType: string = 'pong') {
+
+export async function sendGameInvitation(fromUserId: number, toUserId: number, gameType: string = 'pong', jwtToken?: string) {
     // 1. Validate that user is not trying to invite themselves
     if (fromUserId === toUserId) {
         throw new Error("Cannot invite yourself to a game");
@@ -21,23 +24,69 @@ export async function sendGameInvitation(fromUserId: number, toUserId: number, g
         throw new Error("There is already a pending invitation to this user");
     }
 
-    // 4. Create the invitation (expires in 2 minutes by default)
-    const invitationId = gameInvitationRepo.createInvitation(fromUserId, toUserId, gameType, 2);
+    // 4. creates room via HTTP if gameType requires it
+    let roomId: string | undefined = undefined;
+    if (gameType === 'pong') {
+        const gatewayUrl = process.env.GATEWAY_URL || 'http://gateway:8080';
+        if (!jwtToken) {
+            throw new Error('JWT token must be provided as argument to sendGameInvitation');
+        }
+        try {
+            const res = await fetch(`${gatewayUrl}/game/remote-rooms`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${jwtToken}`
+                },
+                body: JSON.stringify({})
+            });
+            if (!res.ok) throw new Error('No se pudo crear la sala remota');
+            const data = await res.json();
+            roomId = data.roomId;
+        } catch (err) {
+            console.error('Error creando sala remota:', err);
+            throw new Error('No se pudo crear la sala remota');
+        }
+    }
 
-    // 5. Send real-time notification via WebSocket if recipient is connected
+    // SAve roomId in the invitation and send invite message in conversation
+    let conversation = await findConversation(fromUserId, toUserId);
+    if (!conversation) {
+        await createConversation(fromUserId, toUserId);
+        conversation = await findConversation(fromUserId, toUserId);
+    }
+    if (roomId && conversation) {
+        const joinUrl = `#/pong/remote`;
+        const inviteHtml = `🎮 Invitación a Pong: <b>${roomId}</b> <a href='${joinUrl}' class='join-remote-pong-btn'>Unirse a la sala</a>`;
+        await createMessage(conversation.id, fromUserId, inviteHtml, 'pong-invite');
+    }
+
+    // 5. Create the invitation with roomId
+    const invitationId = gameInvitationRepo.createInvitation(fromUserId, toUserId, gameType, 2, roomId);
+
+    // 6. Send message in the conversation to both users with the room_id and button
     try {
         const invitationData = {
             id: invitationId,
             from_user_id: fromUserId,
             to_user_id: toUserId,
             game_type: gameType,
-            timestamp: new Date().toISOString()
+            room_id: roomId,
+            timestamp: new Date().toISOString(),
+            event_type: 'game_invitation_message'
         };
-        
-        websocketService.notifyGameInvitation(toUserId, invitationData);
-        console.log(`🎮 Game invitation sent from user ${fromUserId} to user ${toUserId}`);
+        const message = {
+            type: 'message' as 'message',
+            userId: fromUserId,
+            recipientId: toUserId,
+            content: `🎮 Invitación a Pong: <b>${roomId}</b>`,
+            timestamp: invitationData.timestamp,
+            data: invitationData
+        };
+        websocketService.sendToConversation(fromUserId, toUserId, message);
+        console.log(`🎮 Game invitation message sent to conversation between ${fromUserId} and ${toUserId}`);
     } catch (wsError) {
-        console.warn(`Failed to send WebSocket notification for game invitation:`, wsError);
+        console.warn(`Failed to send game invitation message:`, wsError);
     }
 
     return { 
@@ -64,7 +113,7 @@ export function getSentInvitations(userId: number) {
     return gameInvitationRepo.getSentInvitations(userId);
 }
 
-export async function acceptGameInvitation(invitationId: number, userId: number) {
+export async function acceptGameInvitation(invitationId: number, userId: number, jwtToken?: string) {
     // 1. Get the invitation
     const invitation = gameInvitationRepo.getInvitationById(invitationId);
     
@@ -72,37 +121,49 @@ export async function acceptGameInvitation(invitationId: number, userId: number)
         throw new Error("Invitation not found");
     }
 
-    // 2. Validate that the user is the recipient
-    if (invitation.to_user_id !== userId) {
-        throw new Error("You are not the recipient of this invitation");
-    }
-
     // 3. Validate that invitation is still pending
     if (invitation.status !== 'pending') {
-        throw new Error(`Invitation is ${invitation.status}`);
-    }
-
-    // 4. Check if invitation has expired
-    const expiresAt = new Date(invitation.expires_at);
-    if (expiresAt < new Date()) {
-        gameInvitationRepo.updateInvitationStatus(invitationId, 'expired');
         throw new Error("Invitation has expired");
     }
 
     // 5. Update invitation status to accepted
     gameInvitationRepo.updateInvitationStatus(invitationId, 'accepted');
 
-    // 6. Notify the sender via WebSocket
+    // 6. Join opponent to the room if roomId exists (via HTTP)
+    if (invitation.room_id) {
+        if (!jwtToken) {
+            console.warn('JWT token must be provided as argument to acceptGameInvitation');
+        } else {
+            try {
+                const gatewayUrl = process.env.GATEWAY_URL || 'http://gateway:8080';
+                await fetch(`${gatewayUrl}/game/rooms/${invitation.room_id}/add-player`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${jwtToken}`
+                    },
+                    body: JSON.stringify({ playerId: String(userId) })
+                });
+            } catch (err) {
+                console.warn('No se pudo unir al usuario a la sala remota:', err);
+            }
+        }
+    }
+
+    // 7. Notify both users with the roomId if exists
     try {
         const acceptanceData = {
             invitation_id: invitationId,
             from_user_id: invitation.from_user_id,
             to_user_id: userId,
-            game_type: invitation.game_type
+            game_type: invitation.game_type,
+            room_id: invitation.room_id || null
         };
-        
+        // Notify creator
         websocketService.notifyGameInvitationAccepted(invitation.from_user_id, acceptanceData);
-        console.log(`✅ Game invitation ${invitationId} accepted by user ${userId}`);
+        // Notify accepter
+        websocketService.notifyGameInvitationAccepted(userId, acceptanceData);
+        console.log(` Game invitation ${invitationId} accepted by user ${userId} (room: ${acceptanceData.room_id})`);
     } catch (wsError) {
         console.warn(`Failed to send acceptance notification:`, wsError);
     }
@@ -111,7 +172,8 @@ export async function acceptGameInvitation(invitationId: number, userId: number)
         success: true, 
         message: "Invitation accepted",
         gameType: invitation.game_type,
-        opponentId: invitation.from_user_id
+        opponentId: invitation.from_user_id,
+        room_id: invitation.room_id || null
     };
 }
 
