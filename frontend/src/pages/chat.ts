@@ -1076,11 +1076,6 @@ export function chatHandlers() {
                     localStorage.setItem('pendingRemoteRoomId', result.roomId);
                     // Automatically redirect to the remote room
                     window.location.hash = `#/pong/remote?room=${result.roomId}`;
-                } else {
-                    if (messageResult) {
-                        messageResult.innerHTML = '<span class="success">🎮 Game invitation sent! (No roomId)"</span>';
-                        messageResult.className = 'message-result success';
-                    }
                 }
                 console.log('Game invitation sent:', result);
             } catch (error) {
