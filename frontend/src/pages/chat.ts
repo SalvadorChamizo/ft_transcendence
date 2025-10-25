@@ -276,37 +276,29 @@ export function chatHandlers() {
     // Initialize WebSocket connection
     initializeWebSocket();
 
-    // Handle message form submission
-    messageForm.addEventListener('submit', async (e: Event) => {
+    // Definir el handler fuera para poder eliminarlo antes de añadirlo
+    const handleMessageFormSubmit = async (e: Event) => {
         e.preventDefault();
-        
         if (!activeConversationId) {
             showErrorMessage(UI_MESSAGES.NO_CONVERSATION_SELECTED, messageResult);
             return;
         }
-        
         const messageContentInput = document.getElementById('message-content') as HTMLInputElement;
-        
         if (!messageContentInput) {
             showErrorMessage(UI_MESSAGES.MESSAGE_INPUT_NOT_FOUND, messageResult);
             return;
         }
-
-    const content = sanitizeText(messageContentInput.value.trim());
+        const content = sanitizeText(messageContentInput.value.trim());
         const currentUserId = getCurrentUserId();
         const recipientId = activeConversationId;
-
         if (!content) {
             showErrorMessage(UI_MESSAGES.ENTER_MESSAGE, messageResult);
             return;
         }
-
         try {
             showInfoMessage(UI_MESSAGES.SENDING_MESSAGE, messageResult);
-            
             // Send message via HTTP API (for persistence)
             const httpResult = await sendMessage(recipientId, content);
-            
             // Send message via WebSocket (for real-time delivery)
             const wsMessage: ChatMessage = {
                 type: 'message',
@@ -315,14 +307,11 @@ export function chatHandlers() {
                 content: content,
                 timestamp: new Date().toISOString()
             };
-            
             const wsSent = websocketClient.sendMessage(wsMessage);
-            
             if (wsSent) {
                 if (messageResult) {
                     messageResult.innerHTML = `<span class="success">${UI_MESSAGES.MESSAGE_SENT_SUCCESS}</span>`;
                 }
-                
                 // Add message to UI immediately (sent message)
                 addMessageToUI({
                     ...wsMessage,
@@ -333,19 +322,14 @@ export function chatHandlers() {
                     messageResult.innerHTML = `<span class="success">${UI_MESSAGES.MESSAGE_SENT_HTTP_ONLY}</span>`;
                 }
             }
-            
             if (messageResult) {
                 messageResult.className = 'message-result success';
             }
-            
             // Auto-refresh conversations list after sending message
             loadConversationsDebounced();
-            
             // Clear form
             messageContentInput.value = '';
-            
             console.log('Message sent:', { http: httpResult, websocket: wsSent });
-            
         } catch (error) {
             console.error('Error sending message:', error);
             if (messageResult) {
@@ -353,7 +337,11 @@ export function chatHandlers() {
                 messageResult.className = 'message-result error';
             }
         }
-    });
+    };
+
+    // Eliminar el listener previo antes de añadirlo
+    messageForm.removeEventListener('submit', handleMessageFormSubmit);
+    messageForm.addEventListener('submit', handleMessageFormSubmit);
 
     /**
      * Debounced conversation loading to prevent excessive API calls
