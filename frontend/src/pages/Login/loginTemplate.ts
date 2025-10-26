@@ -77,7 +77,6 @@ export function getLoginHtml() : string {
             </div>
         </div>
     </div>
-    <div id="twofa-section" style="margin-top:2rem;"></div>
   `;
 }
 
@@ -123,7 +122,7 @@ export function TwoFAFormHtml(): string {
 
 export function Enable2FAHtml(): string {
     return `
-      <h2 style="color:white">Two-Factor Authentication</h2>
+      <h2>Two-Factor Authentication</h2>
       <button id="enable-2fa-btn">Enable 2FA</button>
       <button id="show-qr-btn" style="display:none; margin-left:1rem;">Generate QR</button>
 
