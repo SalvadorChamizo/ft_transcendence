@@ -1,4 +1,4 @@
-import { login, logout, fetchCurrentUser } from "./loginService"
+import { login, logout, logoutOutsideLoginPage,fetchCurrentUser } from "./loginService"
 import { getAccessToken, isLoggedIn, refreshAccessToken } from "../../state/authState";
 import { hideElement, showElement, setText, getElement } from "./loginDOM";
 import { enable2FAHandlers } from "./login";
@@ -13,11 +13,8 @@ export function userLoggedIn() {
       const username = user.user ? user.user.username : user.username;
       getElement("#login-name").textContent = `${username}`;
       getElement("#login-dropdown").classList.remove("hidden");
-    }
-    else
-    {
-      getElement("#login-name").textContent = `Sign in / Sign up`;
-      getElement("#login-dropdown").classList.add("hidden");
+      const logoutBtn = document.querySelector<HTMLAnchorElement>("#logout-btn")!;
+      logoutBtn.onclick = logoutOutsideLoginPage;
     }
 }
 
@@ -25,8 +22,11 @@ export function setupLoginHandlers() {
     const form = document.querySelector<HTMLFormElement>("#login-form")!;
     const result = document.querySelector<HTMLParagraphElement>("#result")!;
     const logoutBtn = document.querySelector<HTMLAnchorElement>("#logout-btn")!;
-    
-    logoutBtn.onclick = logout;
+
+    if (window.location.hash === "#/login")
+      logoutBtn.onclick = logout;
+    else
+      logoutBtn.onclick = logoutOutsideLoginPage;
 
     
     if (isLoggedIn()) {

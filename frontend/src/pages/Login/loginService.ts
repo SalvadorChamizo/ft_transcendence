@@ -28,6 +28,7 @@ export async function login(username: string, password: string) {
             showElement(logoutBtn);
             getElement("#login-name").textContent = `${data.user.username}`;
             getElement("#login-dropdown").classList.remove("hidden");
+            window.location.hash = "#/";
         } else if (res.ok && data.requires2FA) {
             setTemp2FA(data.tempToken, data.username, data.userId);
             location.hash = "#/login/2fa";
@@ -65,6 +66,8 @@ export async function logout() {
       localStorage.removeItem("user");
       showElement(form);
       hideElement(logoutBtn);
+      getElement("#login-name").textContent = `Sign in / Sign up`;
+      getElement("#login-dropdown").classList.add("hidden");
       setText(result, "⚠️ Logged out successfully");
 
       if (window.location.hash === "#/login")
@@ -73,6 +76,34 @@ export async function logout() {
         window.location.hash = "#/login";
     } catch {
       setText(result, "⚠️ Failed to logout")
+    }
+}
+
+export async function logoutOutsideLoginPage() {
+
+    try {
+      const token = getAccessToken();
+      await fetch(`http://${apiHost}:8080/auth/logout`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+      // Cerrar el WebSocket de chat si está abierto
+      try {
+        // Importar el cliente WebSocket y desconectar
+        const { websocketClient } = await import("../../services/websocketClient");
+        websocketClient.disconnect();
+      } catch (wsError) {
+        console.warn("No se pudo cerrar el WebSocket de chat:", wsError);
+      }
+      clearAuth();
+      localStorage.removeItem("user");
+      getElement("#login-name").textContent = `Sign in / Sign up`;
+      getElement("#login-dropdown").classList.add("hidden");
+      window.location.hash = "#/login";
+    } catch {
     }
 }
 
