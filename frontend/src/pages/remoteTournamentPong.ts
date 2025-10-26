@@ -1,6 +1,6 @@
 /**
- * @file remotePong.ts
- * @brief Frontend logic for Online Pong game (Random and Rooms)
+ * @file remoteTournamentPong.ts
+ * @brief Frontend logic for Online Pong game in Tournament mode
  */
 import { io, Socket } from "socket.io-client";
 import { getAccessToken, refreshAccessToken, getUserIdFromToken } from "../state/authState";
@@ -11,8 +11,11 @@ let animationFrameId: number;
 let isGameRunning = false;
 let playerRole: "left" | "right" | null = null;
 let roomId: string | null = null;
-let isRoomCreator = false;
 let gameInitialized = false;
+let matchId: number | null = null;
+let isPlayer1: boolean = false;
+let player1Id: number | null = null;
+let player2Id: number | null = null;
 
 const apiHost = `http://${window.location.hostname}:8080`;
 
@@ -53,49 +56,19 @@ let gameState: GameState = {
 /**
  * HTML for the router
  */
-export function remotePongPage(): string {
+export function remoteTournamentPongPage(): string {
     return `
     <div class="pong-container">
-      <h1>Pong - Remote Game</h1>
-            <div id="pong-lobby">
-                <h2>🏓 Pong Matchmaking Lobby</h2>
-                <div class="speed-controls">
-                    <label>Difficulty:
-                        <select id="difficultySelect">
-                            <option value="">Default</option>
-                            <option value="easy">Easy</option>
-                            <option value="medium">Medium</option>
-                            <option value="hard">Hard</option>
-                        </select>
-                    </label>
-                    <label>Game Length:
-                        <select id="gameLengthSelect">
-                            <option value="">Default</option>
-                            <option value="short">Short (5)</option>
-                            <option value="long">Long (10)</option>
-                        </select>
-                    </label>
-                </div>
-                <div class="lobby-players">
-                    <h3>Joined Players</h3>
-                    <ul id="player-list"></ul>
-                </div>
-                <div class="lobby-actions">
-                    <button id="join-matchmaking-btn" class="lobby-button">Join Matchmaking</button>
-                    <button id="leave-matchmaking-btn" class="lobby-button">Leave</button>
-                </div>
-            </div>
+      <h1>Pong - Tournament Match</h1>
       <div id="roleInfo"></div>
 
-            <div class="scoreboard-container">
-                <button id="startGameBtn" class="pong-button hidden">Start Game</button>
-                <div id="scoreboard" class="scoreboard">0 : 0</div>
-                <button id="playAgainBtn" class="pong-button hidden">Play Again</button>
-            </div>
+      <div class="scoreboard-container">
+        <div id="scoreboard" class="scoreboard">0 : 0</div>
+      </div>
 
       <p id="winnerMessage" class="winner-message" style="display: none;"></p>
 
-      <div id="gameInfo" class="game-info" style="display:none;">
+      <div id="gameInfo" class="game-info" style="display:flex;">
         <div class="controls left-controls">
           <p>Left Player: W / S</p>
         </div>
@@ -108,9 +81,9 @@ export function remotePongPage(): string {
         </div>
       </div>
 
-            <div id="extraInfo" class="extra-info">
-                <p>Pause key disabled in remote matches</p>
-            </div>
+      <div id="extraInfo" class="extra-info">
+        <p>Tournament match in progress</p>
+      </div>
     </div>
   `;
 }
@@ -121,7 +94,6 @@ function cleanup() {
     window.removeEventListener("keydown", handleKeyDown);
     window.removeEventListener("keyup", handleKeyUp);
     isGameRunning = false;
-    isRoomCreator = false;
     gameInitialized = false;
 }
 
@@ -163,8 +135,6 @@ async function postApiJson(path: string, data: any): Promise<Response> {
 
 const handleKeyDown = (e: KeyboardEvent) => {
     if (["ArrowUp", "ArrowDown", "w", "s"].includes(e.key)) e.preventDefault();
-    // Disable 'P' pause in remote pong view
-    if (e.key.toLowerCase() === "p") return;
     keysPressed.add(e.key);
 };
 
@@ -180,72 +150,66 @@ function gameLoop() {
     animationFrameId = requestAnimationFrame(gameLoop);
 }
 
-export function remotePongHandlers() {
+export function remoteTournamentPongHandlers() {
     cleanup();
     ctx = (document.getElementById("pongCanvas") as HTMLCanvasElement).getContext("2d")!;
 
-    // Only add lobby event listeners for manual games
-    document.getElementById("createRoomBtn")!.addEventListener("click", async () => {
-        try {
-            const response = await postApi("/game/remote-rooms");
-            if (!response.ok) throw new Error("Failed to create room");
-            const { roomId: newRoomId } = await response.json();
-            roomId = newRoomId;
-            isRoomCreator = true;
-            prepareGameUI();
-            startGame(newRoomId);
-        } catch (error) {
-            console.error("Error creating room:", error);
-            alert("Could not create room. Please try again.");
-        }
-    });
+    // Detect matchId in the URL
+    const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+    const matchId = urlParams.get('matchId');
+    if (matchId) {
+        loadMatchInfo(Number(matchId));
+    } else {
+        // No matchId, should not happen for tournament
+        alert("No match specified for tournament match");
+    }
+}
 
-    document.getElementById("joinRoomBtn")!.addEventListener("click", () => {
-        const input = document.getElementById("roomIdInput") as HTMLInputElement;
-        const roomIdToJoin = input.value.trim();
-        if (roomIdToJoin) {
-            roomId = roomIdToJoin;
-            isRoomCreator = false;
-            prepareGameUI();
-            startGame(roomIdToJoin);
-        } else {
-            alert("Please enter a Room ID.");
-        }
-    });
-
-    document.getElementById("startGameBtn")!.addEventListener("click", () => {
-        if (!roomId) return;
-        postApi(`/game/${roomId}/resume`);
-        (document.getElementById("startGameBtn")!).classList.add("hidden");
-    });
-
-    document.getElementById("playAgainBtn")!.addEventListener("click", () => {
-        if (!roomId) return;
-        document.getElementById("winnerMessage")!.style.display = "none";
-        document.getElementById("playAgainBtn")!.classList.add("hidden");
-        postApi(`/game/${roomId}/init`).then(() => {
-            (document.getElementById("startGameBtn")!).classList.remove("hidden");
+async function loadMatchInfo(matchIdParam: number) {
+    try {
+        const token = getAccessToken();
+        const response = await fetch(`http://${window.location.hostname}:8080/tournaments/matches/${matchIdParam}`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+            },
+            credentials: "include",
         });
-        isGameRunning = false;
-    });
+        if (!response.ok) throw new Error("Failed to load match info");
+        const match = await response.json();
+        
+        // Get current user
+        const currentUserId = getUserIdFromToken();
+        isPlayer1 = match.player1_id === currentUserId;
+        player1Id = match.player1_id;
+        player2Id = match.player2_id;
+        const opponent = isPlayer1 ? match.player2_username : match.player1_username;
+        
+        // Set matchId and roomId
+        matchId = matchIdParam;
+        roomId = match.roomId;
+        prepareGameUI();
+        
+        // Start game directly
+        startGame(match.roomId);
+    } catch (error) {
+        console.error("Error loading match info:", error);
+        alert("Failed to load match information");
+    }
 }
 
 function prepareGameUI() {
-    (document.getElementById("pong-lobby")!).style.display = "none";
+    // For tournament, show game directly (no lobby)
     (document.getElementById("pongCanvas")!).style.display = "block";
     (document.getElementById("gameInfo")!).style.display = "flex";
     (document.getElementById("winnerMessage")!).style.display = "none";
-    (document.getElementById("playAgainBtn")!).classList.add("hidden");
-    
-    // For manual games, start button will be shown after init
-    (document.getElementById("startGameBtn")!).classList.add("hidden");
 }
 
 function startGame(roomIdToJoin: string) {
     const wsHost = `ws://${window.location.hostname}:7000`;
     socket = io(wsHost);
 
-    document.getElementById("roleInfo")!.textContent = `Joining room ${roomIdToJoin}...`;
+    document.getElementById("roleInfo")!.textContent = `Joining tournament room ${roomIdToJoin}...`;
     
     socket.on('connect', () => {
         socket.emit("joinRoom", { roomId: roomIdToJoin });
@@ -256,58 +220,34 @@ function startGame(roomIdToJoin: string) {
         playerRole = data.role;
 
         const roleInfo = document.getElementById("roleInfo")!;
-        roleInfo.textContent = `You are: ${playerRole} in room ${roomId}. Waiting for opponent...`;
-        window.history.replaceState(null, '', `#/remote-pong?room=${data.roomId}`);
+        roleInfo.textContent = `You are: ${playerRole} in tournament room ${roomId}. Waiting for opponent...`;
+        // Keep matchId in URL
     });
 
     socket.on('roomFull', (payload: { roomId:string }) => {
-        alert(`Room ${payload.roomId} is full. Try another room or create a new one.`);
-        // Optionally, reset the UI
-        (document.getElementById("pong-lobby")!).style.display = "block";
-        (document.getElementById("gameInfo")!).style.display = "none";
+        alert(`Tournament room ${payload.roomId} is full.`);
         cleanup();
     });
 
     socket.on('roomNotFound', (payload: { roomId: string }) => {
-        alert(`Room ${payload.roomId} not found. Please check the ID and try again.`);
-        // Optionally, reset the UI
-        (document.getElementById("pong-lobby")!).style.display = "block";
-        (document.getElementById("gameInfo")!).style.display = "none";
+        alert(`Tournament room ${payload.roomId} not found.`);
         cleanup();
     });
 
     socket.on("gameReady", (data: { roomId: string }) => {
-        document.getElementById("roleInfo")!.textContent = `Room ${data.roomId} is ready. Opponent found!`;
+        document.getElementById("roleInfo")!.textContent = `Tournament room ${data.roomId} is ready. Opponent found!`;
         
-        // Only initialize the game once per room to avoid conflicts
+        // Game is already visible, just ensure it's ready
         if (!gameInitialized) {
             gameInitialized = true;
-            // Initialize the game state on the server and then apply custom options
             postApi(`/game/${data.roomId}/init`).then(async () => {
-                // Only the player who created the room may apply the difficulty/length settings
-                if (isRoomCreator) {
-                    try {
-                        const difficulty = (document.getElementById('difficultySelect') as HTMLSelectElement)?.value;
-                        const gameLength = (document.getElementById('gameLengthSelect') as HTMLSelectElement)?.value;
-                        const body: any = {};
-                        if (difficulty && difficulty.trim() !== '') body.difficulty = difficulty;
-                        if (gameLength && gameLength.trim() !== '') body.gameLength = gameLength;
-                        if (Object.keys(body).length > 0) {
-                            console.log('[RemotePong] Applying room options', body);
-                            const resp = await postApiJson(`/game/${data.roomId}/speeds`, body);
-                            console.log('[RemotePong] Speeds POST status', resp.status);
-                        }
-                    } catch (e) {
-                        console.warn('Failed to apply room options for', data.roomId, e);
-                    }
-                }
-
+                // Apply default settings or none for tournament
                 isGameRunning = false;
-                // Don't start countdown here, wait for server "gameStarting" event
-                // The resume will be called after init, and server will emit gameStarting
+                setTimeout(() => {
+                    postApi(`/game/${data.roomId}/resume`);
+                }, 500);
             });
         } else {
-            // For the second player, just wait for the game to start
             isGameRunning = false;
         }
     });
@@ -325,10 +265,8 @@ function startGame(roomIdToJoin: string) {
     });
 
     socket.on("gameStarting", () => {
-        // Start countdown for all players when game is about to start
         import("../utils/countdown").then(mod => {
             mod.runCountdown('countdown', 1).then(() => {
-                // Game will start automatically after countdown
             });
         });
     });
@@ -346,24 +284,6 @@ function startGame(roomIdToJoin: string) {
     gameLoop();
 }
 
-function startCountdownAndResume(roomToStart: string) {
-    const countdownEl = document.getElementById('countdown')!;
-    countdownEl.classList.remove('hidden');
-    let counter = 3;
-    countdownEl.textContent = String(counter);
-    const iv = setInterval(() => {
-        counter -= 1;
-        if (counter === 0) {
-            clearInterval(iv);
-            countdownEl.classList.add('hidden');
-            // resume game
-            postApi(`/game/${roomToStart}/resume`).catch(() => {});
-        } else {
-            countdownEl.textContent = String(counter);
-        }
-    }, 1000);
-}
-
 function checkWinner() {
     if (!gameState.gameEnded || !isGameRunning) return;
 
@@ -373,17 +293,30 @@ function checkWinner() {
     winnerMsg.textContent = (playerRole === winner) ? "You Win!" : "You Lose!";
     
     winnerMsg.style.display = "block";
-    // If the local player won, send a victory to the user-management service
     const winnerSide = winner;
     if (playerRole === winnerSide) {
         sendVictoryToUserManagement().catch(err => console.error('Failed to send victory:', err));
     }
+
+    // Report match result
+    if (matchId) {
+        const winnerPlayerId = (playerRole === winnerSide) ? (isPlayer1 ? player1Id : player2Id) : (isPlayer1 ? player2Id : player1Id);
+        if (winnerPlayerId !== null && winnerPlayerId !== undefined) {
+            const winnerIdNum: number = winnerPlayerId!;
+            reportMatchResult(matchId, winnerIdNum);
+            
+            // Handle tournament flow after 3 seconds
+            setTimeout(async () => {
+                await handleTournamentMatchEnd(matchId, winnerIdNum, playerRole === winnerSide);
+            }, 3000);
+        }
+    }
+
     endGame();
 }
 
 async function sendVictoryToUserManagement() {
     try {
-        // Prefer extracting user id from the access token (more reliable), fallback to localStorage
         let userId = getUserIdFromToken();
         if (!userId) {
             const userStr = localStorage.getItem("user");
@@ -399,7 +332,6 @@ async function sendVictoryToUserManagement() {
             return;
         }
 
-        // Gateway exposes user-management under /users (proxied to user-management service)
         const res = await postApiJson(`/users/addVictory`, { userId });
         if (!res.ok) {
             const text = await res.text();
@@ -414,8 +346,88 @@ async function sendVictoryToUserManagement() {
 
 function endGame() {
     isGameRunning = false;
-    document.getElementById("playAgainBtn")!.classList.remove("hidden");
-    (document.getElementById("startGameBtn")!).classList.add("hidden");
+}
+
+async function reportMatchResult(matchId: number, winnerId: number) {
+    try {
+        const token = getAccessToken();
+        const response = await fetch(`http://${window.location.hostname}:8080/tournaments/matches/${matchId}/result`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`,
+            },
+            body: JSON.stringify({ winnerId }),
+            credentials: "include",
+        });
+        if (!response.ok) throw new Error("Failed to report match result");
+        console.log("Match result reported successfully");
+    } catch (error) {
+        console.error("Error reporting match result:", error);
+    }
+}
+
+async function handleTournamentMatchEnd(matchId: number, winnerId: number, isWinner: boolean) {
+    if (!winnerId) {
+        console.error("Winner ID is null, cannot handle tournament end");
+        return;
+    }
+    try {
+        // Get match details to find tournament ID
+        const token = getAccessToken();
+        const matchResponse = await fetch(`http://${window.location.hostname}:8080/tournaments/matches/${matchId}`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+            },
+            credentials: "include",
+        });
+        
+        if (!matchResponse.ok) {
+            console.error("Failed to get match details");
+            return;
+        }
+        
+        const match = await matchResponse.json();
+        const tournamentId = match.tournament_id;
+        
+        if (isWinner) {
+            // Winner: go back to tournament lobby
+            console.log("Player won the match, returning to tournament lobby");
+            window.location.hash = `#/tournament`;
+            
+            // After navigation, we need to load the tournament lobby
+            // This will be handled by the tournament router
+        } else {
+            // Loser: leave the tournament
+            console.log("Player lost the match, leaving tournament");
+            const leaveResponse = await fetch(`http://${window.location.hostname}:8080/tournaments/${tournamentId}/leave`, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                },
+                credentials: "include",
+            });
+            
+            if (leaveResponse.ok) {
+                console.log("Successfully left tournament");
+                // Go back to tournament list
+                window.location.hash = `#/tournament`;
+            } else {
+                console.error("Failed to leave tournament");
+                window.location.hash = `#/tournament`;
+            }
+        }
+        
+        // Clean up game state
+        cleanup();
+        
+    } catch (error) {
+        console.error("Error handling tournament match end:", error);
+        // Fallback: go back to tournament page
+        window.location.hash = `#/tournament`;
+        cleanup();
+    }
 }
 
 function draw() {

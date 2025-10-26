@@ -126,7 +126,7 @@ export async function loadTournamentPlayers(tournamentId: number) {
             const currentUserId = getUserIdFromToken();
             const startBtn = document.getElementById("start-btn") as HTMLButtonElement | null;
             if (startBtn) {
-                if (currentUserId === tournamentData.creator_id && playersData.length === tournamentData.max_players / 2) {
+                if (currentUserId === tournamentData.creator_id && playersData.length === tournamentData.max_players) {
                     startBtn.style.display = "inline-block";
                     startBtn.disabled = false;
                 } else {
@@ -149,6 +149,16 @@ export async function showTournamentMatchesLobbyForPlayers(tournamentId: number)
     const token = getAccessToken();
     
     try {
+        // Get tournament data to show the name
+        const tournamentResponse = await fetch(`http://${apiHost}:8080/tournaments/${tournamentId}`, {
+            method: "GET",
+            headers: {
+                "Authorization": `Bearer ${token}`,
+            },
+            credentials: "include",
+        });
+        const tournamentData = await tournamentResponse.json();
+
         const response = await fetch(`http://${apiHost}:8080/tournaments/${tournamentId}/matches`, {
             method: "GET",
             headers: {
@@ -168,13 +178,13 @@ export async function showTournamentMatchesLobbyForPlayers(tournamentId: number)
         const matchesHtml = matches.map((match: any) => {
             const player1 = match.player1?.username || 'Player1';
             const player2 = match.player2?.username || 'Player2';
-            const roomLink = match.roomId ? `<a href="#/remote-pong?room=${match.roomId}">Join Room</a>` : 'Room not ready';
+            const roomLink = match.roomId ? `<a href="#/remote-tournament-pong?matchId=${match.id}">Join Room</a>` : 'Room not ready';
             return `<li>${player1} vs ${player2} - ${roomLink}</li>`;
         }).join('');
 
         const html = `
             <div class="tournament-matches-lobby">
-                <h2>🏆 Tournament Matches</h2>
+                <h2>🏆 ${tournamentData.name}</h2>
                 <p>Tournament started! Click on your match to join the room.</p>
                 <ul>
                     ${matchesHtml}

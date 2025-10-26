@@ -238,6 +238,18 @@ async function showTournamentMatchesLobby(tournamentData: any) {
         return;
     }
 
+    // Get tournament name
+    const token = getAccessToken();
+    const tournamentResponse = await fetch(`http://${apiHost}:8080/tournaments/${currentTournamentId}`, {
+        method: "GET",
+        headers: {
+            "Authorization": `Bearer ${token}`,
+        },
+        credentials: "include",
+    });
+    const tournamentInfo = await tournamentResponse.json();
+    const tournamentName = tournamentInfo.name || "Tournament";
+
     const matchesWithRooms = await Promise.all(matches.map(async (match: any) => {
         console.log("Creating room for match:", match.id);
         const response = await postApi("/game/remote-rooms");
@@ -246,7 +258,6 @@ async function showTournamentMatchesLobby(tournamentData: any) {
         console.log("Created roomId:", roomId, "for match:", match.id);
         
         // Update the match with the roomId in the database
-        const token = getAccessToken();
         console.log("Updating match", match.id, "with roomId:", roomId);
         const updateResponse = await fetch(`http://${apiHost}:8080/tournaments/matches/${match.id}/room`, {
             method: "PUT",
@@ -264,12 +275,12 @@ async function showTournamentMatchesLobby(tournamentData: any) {
     const matchesHtml = matchesWithRooms.map((match: any) => {
         const player1 = match.player1?.username || 'Player1';
         const player2 = match.player2?.username || 'Player2';
-        return `<li>${player1} vs ${player2} - <a href="#/remote-pong?room=${match.roomId}">Join Room</a></li>`;
+        return `<li>${player1} vs ${player2} - <a href="#/remote-tournament-pong?matchId=${match.id}">Join Room</a></li>`;
     }).join('');
 
     const html = `
         <div class="tournament-matches-lobby">
-            <h2>🏆 Tournament Matches</h2>
+            <h2>🏆 ${tournamentName}</h2>
             <p>Tournament started! Click on your match to join the room.</p>
             <ul>
                 ${matchesHtml}

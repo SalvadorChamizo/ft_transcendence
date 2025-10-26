@@ -123,6 +123,15 @@ export class TournamentRepository {
         stmt.run(roomId, matchId);
     }
 
+    static updateMatchResult(matchId: number, winnerId: number) {
+        const stmt = db.prepare(`
+            UPDATE matches
+            SET winner_id = ?, status = 'completed', updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+        `);
+        stmt.run(winnerId, matchId);
+    }
+
     static deleteTournament(id: number) {
         db.prepare("DELETE FROM tournaments WHERE id = ?").run(id);
     }
@@ -146,5 +155,16 @@ export class TournamentRepository {
             ORDER BY m.round ASC, m.id ASC
         `);
         return stmt.all(tournamentId);
+    }
+
+    static getMatchById(matchId: number) {
+        const stmt = db.prepare(`
+            SELECT m.*, p1.username as player1_username, p2.username as player2_username
+            FROM matches m
+            LEFT JOIN players p1 ON m.player1_id = p1.id
+            LEFT JOIN players p2 ON m.player2_id = p2.id
+            WHERE m.id = ?
+        `);
+        return stmt.get(matchId);
     }
 }

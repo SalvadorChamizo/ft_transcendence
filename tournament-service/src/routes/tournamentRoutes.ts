@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify"
-import { 
+import {
     advanceTournamentController,
     createLocalTournamentController,
     startTournamentController,
@@ -12,11 +12,13 @@ import {
     getTournamentByIdController,
     updateMatchRoomController,
     getTournamentMatchesWithRoomsController,
+    getMatchByIdController,
+    updateMatchResultController
     /*finishTournamentController,
-    updateMatchResultController,
     getTournamentMatchesController,
     deleteTournamentController,*/
  } from "./../controllers/tournamentController"
+import { updateRemoteMatchResultController } from "./../controllers/remoteTournamentController"
 
 
 export default async function tournamentRoutes(app: FastifyInstance) {
@@ -33,12 +35,22 @@ export default async function tournamentRoutes(app: FastifyInstance) {
     app.get("/tournaments/:id/players", getTournamentPlayersController);
     app.put("/tournaments/matches/:matchId/room", updateMatchRoomController);
     app.get("/tournaments/:id/matches", getTournamentMatchesWithRoomsController);
-    /*app.delete("/tournament/:id", deleteTournamentController);
+    app.get("/tournaments/matches/:matchId", getMatchByIdController);
 
+    // Use remote controller for remote tournaments, regular controller for local
+    app.patch("/tournaments/matches/:matchId/result", async (req, reply) => {
+        const { matchId } = req.params as { matchId: string };
+        const match = await import("../repositories/tournamentRepository").then(repo => repo.TournamentRepository.getMatchById(Number(matchId)));
 
-    app.post("/tournaments/:id/finish", finishTournamentController)
+        if (match) {
+            const tournament = await import("../repositories/tournamentRepository").then(repo => repo.TournamentRepository.getById(match.tournament_id));
+            if (tournament && tournament.mode === 'remote') {
+                return updateRemoteMatchResultController(req, reply);
+            }
+        }
 
-    app.post("/tournaments/:id/matches", getTournamentMatchesController);
-    app.patch("/matches/:matchId/result", updateMatchResultController);*/
+        // Default to regular controller (for local tournaments or fallback)
+        return updateMatchResultController(req, reply);
+    });
 
 }

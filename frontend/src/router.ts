@@ -10,15 +10,20 @@ import { Settings } from "./pages/settings";
 import { localPongPage, localPongHandlers } from "./pages/localPong"; // Importar handlers
 import { localPowerUpPongPage, localPowerUpPongHandlers } from "./pages/localPowerUpPong"; // PowerUp mode
 import { remotePongPage, remotePongHandlers } from "./pages/remotePong"; // Importar handlers
+import { remoteTournamentPongPage, remoteTournamentPongHandlers } from "./pages/remoteTournamentPong"; // Importar handlers
 import { Game } from "./pages/game"
 import { Profile, profileHandlers } from "./pages/profile";
 import { Tournament } from "./pages/Tournament/tournament";
 
 export function router(route: string): string {
-	// for the roomid to be visible
+    // for the roomid to be visible
     if (route.startsWith("#/remote-pong")) {
         setTimeout(remotePongHandlers, 0);
         return remotePongPage();
+    }
+    if (route.startsWith("#/remote-tournament-pong")) {
+        setTimeout(remoteTournamentPongHandlers, 0);
+        return remoteTournamentPongPage();
     }
     switch (route) {
         case "#/profile":
