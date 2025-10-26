@@ -1,4 +1,7 @@
-import { getAccessToken } from "../state/authState";
+import { getAccessToken, isLoggedIn } from "../state/authState";
+import { Enable2FAHtml } from "./Login/loginTemplate";
+import { getElement } from "./Login/loginDOM";
+import { enable2FAHandlers } from "./Login/login";
 
 const apiHost = `${window.location.hostname}`;
 
@@ -28,7 +31,8 @@ export function Settings() {
             <button type="button" id="changeEmailBTN">Change Email</button>
           </div>
           <pre id="AllUsers"></pre>
-        </form>
+          </form>
+          <div id="twofa-section" style="margin-top:2rem;"></div>
       </div>
   `;
 }
@@ -42,6 +46,14 @@ export function settingsHandlers(accessToken: string) {
   const newEmail = document.querySelector<HTMLInputElement>("#newEmail")!;
   const changeEmailBtn = document.querySelector<HTMLButtonElement>("#changeEmailBTN")!;
   const allUsersField = document.querySelector<HTMLPreElement>("#AllUsers")!;
+
+  if (isLoggedIn()) {
+    const userStr = localStorage.getItem("user");
+    const user = JSON.parse(userStr!);
+    const actualUser = user.user || user;
+    getElement("#twofa-section").innerHTML = Enable2FAHtml();
+    enable2FAHandlers(actualUser.id, actualUser.username);
+  }
 
   // Traer datos del usuario
   async function fetchUserData() {
