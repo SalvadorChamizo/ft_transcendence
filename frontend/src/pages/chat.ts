@@ -1239,11 +1239,11 @@ export function chatHandlers() {
                     ${user.username.charAt(0).toUpperCase()}
                     <div class="user-status ${isOnline ? 'online' : 'offline'}"></div>
                 </div>
-                <div class="user-info">
-                    <div class="user-name">${user.username}</div>
-                    <div class="user-status-text" style="display:block;text-align:center;color:${isOnline ? '#25D366' : '#ff4444'};margin-top:4px;">${isOnline ? 'Online' : 'Offline'}</div>
+                <div class="user-info" style="display:flex;flex-direction:column;align-items:flex-start;">
+                    <div class="user-name" style="width:auto;display:inline-block;">${user.username}</div>
+                    <div class="user-status-text" style="display:block;text-align:left;color:${isOnline ? '#25D366' : '#ff4444'};margin-top:4px;">${isOnline ? 'Online' : 'Offline'}</div>
                 </div>
-                <button class="start-conversation-btn" data-user-id="${user.id}" data-username="${user.username}" style="background:${isOnline ? '#25D366' : '#ff4444'};color:white;">
+                <button class="start-conversation-btn" data-user-id="${user.id}" data-username="${user.username}">
                     Chat
                 </button>
             </div>
