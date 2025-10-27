@@ -1,8 +1,7 @@
 import { Home } from "./pages/home";
 import { About } from "./pages/About/about";
 import { Login, TwoFALogin } from "./pages/Login/login";
-import { Health, healthHandlers } from "./pages/health";
-import { Ping } from "./pages/ping";
+import { Status, refreshStatus } from "./pages/status";
 import { Chat, chatHandlers } from "./pages/chat";
 // import { pongPage } from "./pages/pong"; // Eliminado
 import { Settings } from "./pages/settings";
@@ -39,11 +38,9 @@ export function router(route: string): string {
             return Login();
         case "#/forgot-pass":
             return forgotPass();
-        case "#/health":
-            setTimeout(healthHandlers, 0);
-            return Health();
-            case "#/ping":
-                return Ping();
+            case "#/status":
+                setTimeout(refreshStatus, 0);
+                return Status();
             case "#/chat":
                 if (isLoggedIn()) {
                     setTimeout(chatHandlers, 0);

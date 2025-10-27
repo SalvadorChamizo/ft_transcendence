@@ -253,6 +253,18 @@ setInterval(() => {
 /**
  * START SERVER
  */
+app.get("/health", async (req, reply) => {
+  const uptime = process.uptime();
+
+  return reply.status(200).send({
+    service: "pong-service",
+    status: "ok",
+    uptime: Math.round(uptime),
+    timestamp: new Date().toISOString(),
+    version: "1.0.0",
+  });
+});
+
 const PORT = process.env.PORT || 7000;
 app.listen({ port: Number(PORT), host: "0.0.0.0" }, () =>
 {

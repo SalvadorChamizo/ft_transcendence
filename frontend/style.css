@@ -86,7 +86,7 @@ body {
 /* ******************************** */
 
 header {
-  background: #10202B;
+  background: #181741;
   background-size: cover;
   background-repeat: no-repeat;
   background-position: center;
@@ -2293,6 +2293,10 @@ header {
   background-image: url("./public/tournament_pong.png");
 }
 
+.game-card.powerup {
+  background-image: url("./public/powerUp_pong.png");
+}
+
 
 /* ********************************* */
 /*          Game page end            */
@@ -3465,4 +3469,118 @@ header {
 
 /* ********************************* */
 /*             About END             */
+/* ********************************* */
+
+/* ********************************* */
+/*               Status              */
+/* ********************************* */
+
+#status-container {
+  width: 85%;
+  max-width: 900px;
+  margin: 4rem auto;
+  padding: 1.5rem;
+  border-radius: 10px;
+  background: #262C36;
+  border: 1px solid #5a5f66;
+  box-shadow: 0 0 5px rgba(0, 0, 255, .3),
+              0 0 10px rgba(0, 0, 255, .2),
+              0 0 15px rgba(0, 0, 255, .1),
+              0 2px 0 black;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #fff;
+}
+
+#status-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  padding-bottom: 0.5rem;
+}
+
+#status-header h2 {
+  font-size: 1.8rem;
+  color: #42F3FA;
+  text-shadow: 0 0 8px rgba(66, 243, 250, 0.8);
+  margin: 0;
+}
+
+#status-refresh-btn {
+  background: #181741;
+  color: #fff;
+  border: 1px solid #5a5f66;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+#status-refresh-btn:hover {
+  color: #42F3FA;
+  border-color: #42F3FA;
+  box-shadow: 0 0 8px rgba(66,243,250,0.6);
+}
+
+#status-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #1b1b2f;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+#status-table thead {
+  background: #181741;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+#status-table th {
+  color: #42F3FA;
+  font-weight: bold;
+  padding: 0.8rem;
+  text-align: center;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 6px rgba(66, 243, 250, 0.6);
+}
+
+#status-table tbody tr {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background 0.3s ease, transform 0.2s ease;
+}
+
+#status-table tbody tr:hover {
+  background: rgba(66, 243, 250, 0.08);
+  transform: scale(1.01);
+}
+
+#status-table td {
+  padding: 0.75rem;
+  text-align: center;
+  color: #ddd;
+}
+
+.status-ok {
+  color: #42F3FA;
+  font-weight: bold;
+  text-shadow: 0 0 6px rgba(66,243,250,0.7);
+}
+
+.status-error {
+  color: #FA4242;
+  font-weight: bold;
+  text-shadow: 0 0 6px rgba(250,66,66,0.7);
+}
+
+.status-degraded {
+  color: #FFA726;
+  font-weight: bold;
+  text-shadow: 0 0 6px rgba(255,167,38,0.7);
+}
+
+/* ********************************* */
+/*             Status END            */
 /* ********************************* */
