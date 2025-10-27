@@ -1,5 +1,16 @@
 import { FastifyInstance } from "fastify";
-import { callbackGoogleController, loginGoogleController, callback42Controller, login42Controller, registerController, loginController, refreshController, logoutController, generateQRController, verify2FAController, enable2FAController } from "../controllers/authController";
+import { callbackGoogleController,
+         loginGoogleController,
+         callback42Controller,
+         login42Controller,
+         registerController,
+         loginController,
+         refreshController,
+         logoutController,
+         generateQRController,
+         verify2FAController,
+         enable2FAController,
+         forgotPasswordController } from "../controllers/authController";
 
 export default async function authRoutes(app: FastifyInstance) {
     app.post("/login", loginController);
@@ -13,4 +24,5 @@ export default async function authRoutes(app: FastifyInstance) {
     app.get("/42/callback", callback42Controller);
     app.get("/google/login", loginGoogleController);
     app.get("/google/callback", callbackGoogleController);
+    app.post("/forgot-password", forgotPasswordController);
 }
