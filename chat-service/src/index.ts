@@ -33,12 +33,16 @@ async function startServer() {
     await app.register(websocket);
 
     // Health check endpoint
-    app.get("/health", async () => {
-        return { 
-            status: "ok", 
-            service: "chat-service",
-            uptime: process.uptime() 
-        };
+    app.get("/health", async (req, reply) => {
+    const uptime = process.uptime();
+
+    return reply.status(200).send({
+        service: "chat-service",
+        status: "ok",
+        uptime: Math.round(uptime),
+        timestamp: new Date().toISOString(),
+        version: "1.0.0",
+    });
     });
 
     // Ping endpoint to test the server

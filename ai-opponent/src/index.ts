@@ -28,7 +28,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+app.get("/health", async (req, reply) => {
+  const uptime = process.uptime();
+
+  return reply.status(200).send({
+    service: "ai-opponent",
+    status: "ok",
+    uptime: Math.round(uptime),
+    timestamp: new Date().toISOString(),
+    version: "1.0.0",
+  });
+});
 
 /**
 * POST /ai/update
