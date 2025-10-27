@@ -31,19 +31,28 @@ export function Settings() {
             <input type="text" id="newEmail" value="Enter a new Email" />
             <button type="button" id="changeEmailBTN">Change Email</button>
           </div>
+          <div class="password-change">
+            <p id="userpassword"></p>
+            <input type="password" id="newPassword" value="Enter a new Password" />
+            <input type="password" id="confirmPassword" value="Confirm new Password" />
+            <button type="button" id="changePasswordBTN">Change Password</button>
+          </div>
         </form>
       </div>
   `;
 }
 
 export function settingsHandlers(accessToken: string) {
-  const avatarField = document.querySelector<HTMLParagraphElement>("#avatar")!;
   const usernameField = document.querySelector<HTMLParagraphElement>("#username")!;
-  const emailField = document.querySelector<HTMLParagraphElement>("#useremail")!;
   const newUsername = document.querySelector<HTMLInputElement>("#newUsername")!;
   const changeUsernameBtn = document.querySelector<HTMLButtonElement>("#changeUsernameBTN")!;
+  const emailField = document.querySelector<HTMLParagraphElement>("#useremail")!;
   const newEmail = document.querySelector<HTMLInputElement>("#newEmail")!;
   const changeEmailBtn = document.querySelector<HTMLButtonElement>("#changeEmailBTN")!;
+  const newPassword = document.querySelector<HTMLInputElement>("#newPassword")!;
+  const confirmPassword = document.querySelector<HTMLInputElement>("#confirmPassword")!;
+  const changePasswordBtn = document.querySelector<HTMLButtonElement>("#changePasswordBTN")!;
+  const avatarField = document.querySelector<HTMLParagraphElement>("#avatar")!;
   const avatarInput = document.querySelector<HTMLInputElement>("#newAvatar")!;
   const changeAvatarBtn = document.querySelector<HTMLButtonElement>("#changeAvatarBTN")!;
 
@@ -132,6 +141,35 @@ export function settingsHandlers(accessToken: string) {
       }
       else {
         console.error("Error changing email:", data.error);
+      }
+    }
+    catch (err) {
+      console.error("⚠️ Failed to reach server", err);
+    }
+  });
+
+  changePasswordBtn.addEventListener("click", async (e) => {
+    e.preventDefault();
+    if (!newPassword.value || !confirmPassword.value || newPassword.value !== confirmPassword.value) {
+      return;
+    }
+    //Politica de contraseñas por implementar
+    try {
+      const res = await fetch ("http://localhost:8080/users/changePassword", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ newPassword: newPassword.value }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        console.log("Password changed successfully");
+        location.reload();
+      }
+      else {
+        console.error("Error changing password:", data.error);
       }
     }
     catch (err) {

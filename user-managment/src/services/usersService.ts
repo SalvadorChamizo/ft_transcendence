@@ -1,7 +1,17 @@
 import * as fs from "fs";
 import path from "path";
 
-import { createUser, usernameChanger, emailChanger , findUserByUsername, findUserById, findUserByEmail, findIDByUsername, findAllUsers } from "../repositories/usersRepository";
+import { 
+  createUser,
+  usernameChanger,
+  emailChanger,
+  passwordChanger,
+  findUserByUsername,
+  findUserById,
+  findUserByEmail,
+  findIDByUsername,
+  findAllUsers
+} from "../repositories/usersRepository";
 
 export async function registerUser(email: string, username: string, password: string) {
     createUser(username, password, email);
@@ -21,6 +31,11 @@ export async function changeUsername(id: number, newUsername: string) {
 export async function changeEmail(id: number, newEmail: string) {
     emailChanger(id, newEmail);
     return { message: "Email changed successfully" };
+}
+
+export async function changePassword(id: number, hashedNewPassword: string) {
+    passwordChanger(id, hashedNewPassword);
+    return { message: "Password changed successfully" };
 }
 
 export async function getUserByUsername(username: string ) {

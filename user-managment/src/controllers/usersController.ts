@@ -4,7 +4,8 @@ import {
 	registerUser, 
 	register42User, 
 	changeUsername, 
-	changeEmail, 
+	changeEmail,
+	changePassword,
 	getUserByUsername, 
 	getUserById, 
 	getUserByEmail, 
@@ -203,6 +204,26 @@ export async function passwordControl(req: FastifyRequest, reply: FastifyReply) 
 		if (!valid)
 			throw new Error("Invalid password");
 		return reply.send({ message: "Password is valid" });
+	} catch (err: any) {
+		return reply.code(400).send({ error: err.message });
+	}
+}
+
+export async function passwordChanger(req: FastifyRequest, reply: FastifyReply) {
+	const userId = req.headers["x-user-id"];
+	const { newPassword } = req.body as { newPassword: string };
+
+	try {
+		const user = await getUserById(Number(userId));
+		if (!user.id) throw new Error("User not found");
+
+		const valid = await bcrypt.compare(newPassword, user.password);
+		if (valid)
+			throw new Error("Invalid password");
+
+		const hashedNewPassword = await bcrypt.hash(newPassword, 10);
+		await changePassword(userId, hashedNewPassword);
+		return reply.send({ message: "Password changed successfully" });
 	} catch (err: any) {
 		return reply.code(400).send({ error: err.message });
 	}
