@@ -13,6 +13,7 @@ import { Game } from "./pages/game"
 import { Profile, profileHandlers } from "./pages/profile";
 import { Tournament } from "./pages/Tournament/tournament";
 import { isLoggedIn } from "./state/authState";
+import { forgotPass } from "./pages/Login/forgotPass";
 
 export function router(route: string): string {
     const cleanRoute = route.split('?')[0];
@@ -36,6 +37,8 @@ export function router(route: string): string {
                 return TwoFALogin();
             }
             return Login();
+        case "#/forgot-pass":
+            return forgotPass();
         case "#/health":
             setTimeout(healthHandlers, 0);
             return Health();

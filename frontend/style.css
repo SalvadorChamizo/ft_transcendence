@@ -792,6 +792,9 @@ header {
     font-size: 14px;
     font-weight: bold;
     text-decoration: none;
+    cursor: pointer;
+    border: none;
+    background: none;
     display: block;
 }
 
@@ -800,6 +803,27 @@ header {
 }
 
 .login-nav-link-password:hover {
+    color: #fa4242;
+}
+
+.login-nav-link-back {
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    background: none;
+    display: block;
+    position:relative;
+    margin-left: 145px;
+}
+
+.login-nav-link-back.active {
+    padding-top: 1rem;
+}
+
+.login-nav-link-back:hover {
     color: #fa4242;
 }
 

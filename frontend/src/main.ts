@@ -11,6 +11,7 @@ import { handleOAuthErrors, userLoggedIn } from "./pages/Login/loginHandlers";
 import { fetchCurrentUser } from "./pages/Login/loginService";
 import { tournamentHandlers } from "./pages/Tournament/tournamentHandles";
 import { aboutHandlers } from "./pages/About/about";
+import { forgotPassHandle } from "./pages/Login/forgotPass";
 
 export async function render() {
 
@@ -74,6 +75,9 @@ export async function render() {
     }
     if (location.hash === "#/about") {
         aboutHandlers();
+    }
+    if (location.hash === "#/forgot-pass") {
+        forgotPassHandle();
     }
     if (location.hash === "" || location.hash === "#/" || location.hash === "#/home") {
         import("./pages/home").then(mod => mod.handleStars());
