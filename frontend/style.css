@@ -1910,7 +1910,7 @@ header {
 }
 
 .user-status.offline {
-  background: #999;
+  background: #ff4444;
 }
 
 .user-info {

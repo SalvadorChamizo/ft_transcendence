@@ -1212,7 +1212,7 @@ export function chatHandlers() {
                 }
                 
                 if (offlineUsers.length > 0) {
-                    html += '<div class="users-section"><h4>⚫ Offline Users</h4>';
+                    html += '<div class="users-section"><h4>🔴 Offline Users</h4>';
                     html += renderUserList(offlineUsers, false);
                     html += '</div>';
                 }
