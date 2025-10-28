@@ -1,6 +1,6 @@
 import Database from "better-sqlite3"
 
-const db: any = new Database("tournament.db");
+const db: any = new Database("app/data/tournament.db");
 
 db.prepare(`
     CREATE TABLE IF NOT EXISTS tournaments (
