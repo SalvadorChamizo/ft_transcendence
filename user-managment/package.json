@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "@fastify/cookie": "^11.0.2",
+    "@fastify/multipart": "^9.3.0",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^12.2.0",
     "dotenv": "^17.2.1",

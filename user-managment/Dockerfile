@@ -8,8 +8,6 @@ COPY package*.json tsconfig.json ./
 
 RUN npm install
 
-RUN npm install @fastify/multipart
-
 COPY . .
 
 CMD ["npx", "tsx", "src/index.ts"]
