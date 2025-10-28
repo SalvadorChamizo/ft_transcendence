@@ -65,7 +65,7 @@ export function getLoginHtml() : string {
                             <div class="terms-wrapper">
                             <label>
                                 <input type="checkbox" id="signup-terms" required>
-                                I agree to the <a href="/terms-and-conditions" target="_blank">Terms and Conditions</a>
+                                I agree to the <a href="#/terms">Terms and Conditions</a>
                             </label>
                         </div>
                         <div class="login-link-wrapper">
