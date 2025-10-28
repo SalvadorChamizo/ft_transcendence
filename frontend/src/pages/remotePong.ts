@@ -80,9 +80,18 @@ export function remotePongPage(): string {
                     <h3>Joined Players</h3>
                     <ul id="player-list"></ul>
                 </div>
+                <!-- NEW: lobby actions for public rooms -->
                 <div class="lobby-actions">
-                    <button id="join-matchmaking-btn" class="lobby-button">Join Matchmaking</button>
-                    <button id="leave-matchmaking-btn" class="lobby-button">Leave</button>
+                    <button id="createRoomBtn" class="lobby-button">Create Public Room</button> <!-- create public room -->
+                    <input id="roomIdInput" placeholder="Room ID to join" />
+                    <button id="joinRoomBtn" class="lobby-button">Join by ID</button>
+                    <button id="refreshRoomsBtn" class="lobby-button">Refresh Rooms</button> <!-- refresh public rooms list -->
+                </div>
+
+                <!-- NEW: public rooms list -->
+                <div class="rooms-list" id="roomsListContainer">
+                    <h3>Public Rooms</h3>
+                    <ul id="roomsList"></ul>
                 </div>
             </div>
       <div id="roleInfo"></div>
@@ -184,6 +193,25 @@ export function remotePongHandlers() {
     cleanup();
     ctx = (document.getElementById("pongCanvas") as HTMLCanvasElement).getContext("2d")!;
 
+    // Load public rooms on open
+    loadPublicRooms().catch(err => console.warn("Failed loading rooms", err));
+
+    // If URL contains ?room=<id> (from invitation link), auto-join that room
+    try {
+        const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+        const inviteRoom = urlParams.get('room');
+        if (inviteRoom) {
+            // auto-join invited room
+            roomId = inviteRoom;
+            isRoomCreator = false;
+            prepareGameUI();
+            startGame(inviteRoom);
+            return; // skip adding manual create/join listeners duplication
+        }
+    } catch (err) {
+        console.warn('Failed parsing invite room param', err);
+    }
+
     // Only add lobby event listeners for manual games
     document.getElementById("createRoomBtn")!.addEventListener("click", async () => {
         try {
@@ -239,6 +267,45 @@ function prepareGameUI() {
     
     // For manual games, start button will be shown after init
     (document.getElementById("startGameBtn")!).classList.add("hidden");
+}
+
+// New helper to fetch and render only public rooms
+async function loadPublicRooms() {
+    try {
+        // GET /game/rooms?public=true via gateway
+        const res = await postApi("/game/rooms?public=true", "GET");
+        if (!res.ok) {
+            console.warn("Failed fetching rooms:", res.status);
+            return;
+        }
+        const rooms = await res.json();
+        const ul = document.getElementById("roomsList") as HTMLUListElement;
+        if (!ul) return;
+        ul.innerHTML = "";
+        if (!Array.isArray(rooms) || rooms.length === 0) {
+            ul.innerHTML = "<li>No public rooms available</li>";
+            return;
+        }
+        rooms.forEach((r: any) => {
+            const li = document.createElement("li");
+            // server room object shape: { id, state, players }
+            const id = r.id ?? r.roomId ?? r.id;
+            const playersCount = (r.players || []).length;
+            li.textContent = `${id} (${playersCount} players) `;
+            const btn = document.createElement("button");
+            btn.textContent = "Join";
+            btn.addEventListener("click", () => {
+                roomId = id;
+                isRoomCreator = false;
+                prepareGameUI();
+                startGame(id);
+            });
+            li.appendChild(btn);
+            ul.appendChild(li);
+        });
+    } catch (err: any) {
+        console.error("Error loading public rooms:", err);
+    }
 }
 
 function startGame(roomIdToJoin: string) {
@@ -299,6 +366,13 @@ function startGame(roomIdToJoin: string) {
                         }
                     } catch (e) {
                         console.warn('Failed to apply room options for', data.roomId, e);
+                    }
+                    // After initializing and applying options, the room creator will automatically resume the game
+                    // so the match actually starts when both players are present.
+                    try {
+                        await postApi(`/game/${data.roomId}/resume`);
+                    } catch (e) {
+                        console.warn('Failed to auto-resume room', data.roomId, e);
                     }
                 }
 

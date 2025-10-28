@@ -22,6 +22,9 @@ import {
 // Map to keep pending serve timers per room (including 'local') so we can clear them
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const serveTimers = new Map<string, any>();
+// Map to keep scheduled deletion timers for finished rooms
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const deletionTimers = new Map<string, any>();
 
 import { roomStates, createInitialState } from "./roomService";
 import { getRoom, saveRoom, deleteRoom as dbDeleteRoom } from "../db/roomRepository";
@@ -221,10 +224,30 @@ export function updateGame(roomId?: string): GameState | undefined {
 
 	const winningScore = typeof state.winningScore === 'number' ? state.winningScore : WINNING_SCORE;
 	if (state.scores.left >= winningScore || state.scores.right >= winningScore) {
+		// Mark as ended and schedule room cleanup (if not already scheduled)
+		const wasEnded = !!state.gameEnded;
 		state.gameEnded = true;
 		state.gameEndedTimestamp = Date.now();
 		state.ball.dx = 0;
 		state.ball.dy = 0;
+
+		if (!wasEnded && roomId && !roomId.startsWith('local_') && roomId !== 'local') {
+			// schedule deletion after short grace period so clients see final state
+			if (!deletionTimers.has(roomId)) {
+				const t = setTimeout(() => {
+					try {
+						// deleteRoom will clear timers and DB
+						deleteRoom(roomId);
+						console.log(`Auto-deleted finished room ${roomId}`);
+					} catch (err) {
+						console.warn('Error auto-deleting room', roomId, err);
+					} finally {
+						deletionTimers.delete(roomId);
+					}
+				}, 3000); // 3s grace period
+				deletionTimers.set(roomId, t);
+			}
+		}
 	}
 
 	if (roomId && roomId !== "local") {

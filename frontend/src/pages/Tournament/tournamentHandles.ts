@@ -251,8 +251,16 @@ async function showTournamentMatchesLobby(tournamentData: any) {
     const tournamentName = tournamentInfo.name || "Tournament";
 
     const matchesWithRooms = await Promise.all(matches.map(async (match: any) => {
-        console.log("Creating room for match:", match.id);
-        const response = await postApi("/game/remote-rooms");
+        console.log("Creating private room for match:", match.id);
+        // Create PRIVATE room for tournament match so it won't appear in public lobby
+        const response = await fetch(`http://${apiHost}:8080/game/remote-rooms`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ public: false })
+        });
         if (!response.ok) throw new Error("Failed to create room");
         const { roomId } = await response.json();
         console.log("Created roomId:", roomId, "for match:", match.id);

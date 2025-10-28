@@ -196,3 +196,42 @@ export async function gameController(fastify: FastifyInstance, io: Server)
 		return { message: 'Speeds updated', state };
 	});
 }
+
+// Expose a server-side resume helper so other modules (index.ts) can trigger a
+// server-driven resume when the room reaches 2 connected sockets.
+export function resumeRoom(io: Server, roomId: string) {
+	// Validation similar to POST /:roomId/resume
+	const dbRoom = getRoom(roomId);
+	if (!roomId.startsWith('local_') && roomId !== 'local' && (!dbRoom || dbRoom.players.length < 2)) {
+		console.log(`[resumeRoom] Cannot resume ${roomId}: waiting for opponent.`);
+		return;
+	}
+	if (isGameEnded(roomId)) {
+		console.log(`[resumeRoom] Room ${roomId} already ended.`);
+		return;
+	}
+
+	// Ensure there's an initialized state; if not, initialize it (but avoid overwriting existing state)
+	const currentState = getGameState(roomId);
+	if (!currentState) {
+		resetGame(roomId);
+	}
+
+	// Notify clients that game is about to start
+	io.to(roomId).emit("gameStarting");
+
+	setTimeout(() => {
+		// Re-check players before actually starting
+		const currentRoom = getRoom(roomId);
+		if (!roomId.startsWith('local_') && roomId !== 'local' && (!currentRoom || currentRoom.players.length < 2)) {
+			console.log(`[RESUME-DELAY] Start aborted for room ${roomId}, an opponent disconnected.`);
+			return;
+		}
+		if (!isGameEnded(roomId) && getIsPaused(roomId)) {
+			startBallMovement(roomId);
+			// Un-pause for this room (use local setter)
+			setIsPaused(false, roomId);
+			io.to(roomId).emit("gamePaused", { paused: false });
+		}
+	}, 1000);
+}

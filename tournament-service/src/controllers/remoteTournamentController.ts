@@ -2,6 +2,7 @@ import type { FastifyRequest, FastifyReply } from "fastify"
 import * as TournamentService from "../services/tournamentService";
 import { PlayerRepository } from "../repositories/playerRepository";
 import { TournamentRepository } from "../repositories/tournamentRepository";
+import jwt from 'jsonwebtoken';
 
 export async function updateRemoteMatchResultController(req: FastifyRequest, reply: FastifyReply) {
     try {
@@ -79,6 +80,9 @@ export async function updateRemoteMatchResultController(req: FastifyRequest, rep
                 if (nextRoundData.matches && nextRoundData.matches.length > 0) {
                     console.log(`[REMOTE] Creating REMOTE rooms for ${nextRoundData.matches.length} matches in round ${nextRoundData.tournament.current_round}`);
 
+                    // prepare a service-signed token so gateway/server accept private room creation
+                    const serviceToken = jwt.sign({ id: 'tournament-service', username: 'tournament-service' }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
+
                     for (const newMatch of nextRoundData.matches) {
                         try {
                             // Skip if repository already set a roomId (idempotent)
@@ -87,11 +91,11 @@ export async function updateRemoteMatchResultController(req: FastifyRequest, rep
                                 continue;
                             }
 
-                            console.log(`[REMOTE] Creating remote room for match ${newMatch.id} via ${GATEWAY_URL}/game/remote-rooms`);
+                            console.log(`[REMOTE] Creating remote room (private) for match ${newMatch.id} via ${GATEWAY_URL}/game/remote-rooms`);
                             const roomResponse = await fetch(`${GATEWAY_URL}/game/remote-rooms`, {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({}) // keep body if gateway expects payload
+                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceToken}` },
+                                body: JSON.stringify({ public: false }) // request private room for tournament matches
                             });
 
                             if (roomResponse.ok) {

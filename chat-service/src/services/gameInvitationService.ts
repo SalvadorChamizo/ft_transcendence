@@ -32,20 +32,26 @@ export async function sendGameInvitation(fromUserId: number, toUserId: number, g
             throw new Error('JWT token must be provided as argument to sendGameInvitation');
         }
         try {
+            // Request a PRIVATE room for the invitation so it won't appear in public lobby
             const res = await fetch(`${gatewayUrl}/game/remote-rooms`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${jwtToken}`
                 },
-                body: JSON.stringify({})
+                body: JSON.stringify({ public: false }) // <-- request private room
             });
-            if (!res.ok) throw new Error('No se pudo crear la sala remota');
-            const data = await res.json();
-            roomId = data.roomId;
+            if (res.ok) {
+                const data = await res.json();
+                roomId = data.roomId || data.id || data.room_id;
+            } else {
+                // do not block invitation creation if room creation fails
+                const text = await res.text();
+                console.warn("Failed to create private room for invitation:", res.status, text);
+            }
         } catch (err) {
-            console.error('Error creando sala remota:', err);
-            throw new Error('No se pudo crear la sala remota');
+            console.warn('Error creating private room for invitation:', err);
+            // don't throw; continue without roomId
         }
     }
 
@@ -56,7 +62,7 @@ export async function sendGameInvitation(fromUserId: number, toUserId: number, g
         conversation = await findConversation(fromUserId, toUserId);
     }
     if (roomId && conversation) {
-        const joinUrl = `#/pong/remote`;
+        const joinUrl = `#/remote-pong?room=${roomId}`; // link directly to the room
         const inviteHtml = `🎮 Invitación a Pong: <b>${roomId}</b> <a href='${joinUrl}' class='join-remote-pong-btn'>Unirse a la sala</a>`;
         await createMessage(conversation.id, fromUserId, inviteHtml, 'pong-invite');
     }
@@ -79,7 +85,7 @@ export async function sendGameInvitation(fromUserId: number, toUserId: number, g
             type: 'message' as 'message',
             userId: fromUserId,
             recipientId: toUserId,
-            content: `🎮 Invitación a Pong: <b>${roomId}</b>`,
+            content: `🎮 Invitación a Pong: <b>${roomId}</b> <a href="#/remote-pong?room=${roomId}">Unirse</a>`,
             timestamp: invitationData.timestamp,
             data: invitationData
         };

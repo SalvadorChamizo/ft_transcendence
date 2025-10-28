@@ -2,6 +2,7 @@ import type { FastifyRequest, FastifyReply } from "fastify"
 import * as TournamentService from "../services/tournamentService";
 import { PlayerRepository } from "../repositories/playerRepository";
 import { TournamentRepository } from "../repositories/tournamentRepository";
+import jwt from 'jsonwebtoken';
 
 export async function getTournamentsController(req: FastifyRequest, reply: FastifyReply) {
     try {
@@ -210,12 +211,13 @@ export async function updateMatchResultController(req: FastifyRequest, reply: Fa
                     try {
                         console.log(`Creating room for match ${match.id}...`);
                         // Make request to gateway to create room (local or remote based on tournament mode)
-                        const roomResponse = await fetch(`http://gateway:8080${roomEndpoint}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            }
-                        });
+                        // If remote tournament, create private remote rooms and sign a service token
+                        let fetchOptions: any = { method: 'POST', headers: { 'Content-Type': 'application/json' } };
+                        if (tournament.mode === 'remote') {
+                            const serviceToken = jwt.sign({ id: 'tournament-service', username: 'tournament-service' }, process.env.JWT_SECRET as string, { expiresIn: '1h' });
+                            fetchOptions = { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${serviceToken}` }, body: JSON.stringify({ public: false }) };
+                        }
+                        const roomResponse = await fetch(`http://gateway:8080${roomEndpoint}`, fetchOptions);
                         
                         if (roomResponse.ok) {
                             const { roomId } = await roomResponse.json();
