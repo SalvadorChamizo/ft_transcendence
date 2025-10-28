@@ -1,6 +1,6 @@
 import Database from "better-sqlite3"
 
-const db: any = new Database("chat.db");
+const db: any = new Database("/app/data/chat.db");
 
 // Table for conversations between users
 db.prepare(`

@@ -9,6 +9,7 @@ import userRoutes from "./routes/userRoutes";
 import chatRoutes from "./routes/chatRoutes";
 import pongRoutes from "./routes/pongRoutes";
 import tournamentRoutes from "./routes/tournamentRoutes.js";
+import gatewayRoutes from "./routes/gatewayRoutes";
 
 // Loads .env variables into process.env
 dotenv.config();
@@ -24,6 +25,7 @@ app.register(chatRoutes);
 app.register(pongRoutes);
 app.register(userRoutes);
 app.register(tournamentRoutes);
+app.register(gatewayRoutes);
 
 // CORS (puedes dejarlo donde estaba)
 const whitelist = ["http://localhost:5173"];
@@ -58,7 +60,6 @@ app.get("/protected", async (req, reply) => {
 
 // Endpoint to test the server
 app.get("/ping", async () => ({ pong: true }));
-app.get("/health", async () => ({ status: "ok", uptime: process.uptime() }));
 
 const PORT = process.env.PORT || 8080;
 

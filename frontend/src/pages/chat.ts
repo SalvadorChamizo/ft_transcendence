@@ -150,7 +150,7 @@ export function Chat(): string {
                         <div class="contact-avatar">👤</div>
                         <div class="contact-details">
                             <h3 id="contact-name">Select a conversation</h3>
-                            <span id="contact-status">Online</span>
+                            <span id="contact-status"></span>
                         </div>
                     </div>
                     <div class="chat-actions">
@@ -329,8 +329,13 @@ export function chatHandlers() {
             // Clear form
             messageContentInput.value = '';
         } catch (error) {
+            // console.error('Error sending message:', error); // Eliminado para evitar logs en consola
+            let errorMsg = '❌ Error sending message';
+            if (error instanceof Error && error.message.includes('400')) {
+                errorMsg = 'No puedes enviar mensajes a este usuario porque está bloqueado.';
+            }
             if (messageResult) {
-                messageResult.innerHTML = `<span class="error">❌ Error sending message: ${error}</span>`;
+                messageResult.innerHTML = `<span class=\"error\">${errorMsg}</span>`;
                 messageResult.className = 'message-result error';
             }
         }
@@ -571,34 +576,65 @@ export function chatHandlers() {
             await websocketClient.connect(userId);
             
             // Set up message handler for incoming messages
-            websocketClient.onMessage((message: ChatMessage) => {
 
+            websocketClient.onMessage((message: ChatMessage) => {
                 if (message.type === 'message') {
-                    //  Add all messages to UI (received message)
                     addMessageToUI({
                         ...message,
                         isSent: false
                     });
-                    // Auto-refresh conversations list to show new message/conversation
                     loadConversationsDebounced();
                 } else if (message.type === 'user_connected') {
-                    // Track user connection
                     if (message.userId) {
                         connectedUsersSet.add(message.userId);
+                        updateActiveContactStatus();
+                        updateUserSearchModalStatus();
                     }
                 } else if (message.type === 'user_disconnected') {
-                    // Track user disconnection
                     if (message.userId) {
                         connectedUsersSet.delete(message.userId);
+                        updateActiveContactStatus();
+                        updateUserSearchModalStatus();
                     }
                 } else if (message.type === 'connected_users_list') {
-                    // Inicializa el Set de usuarios conectados con la lista recibida
                     connectedUsersSet.clear();
                     if (Array.isArray(message.data)) {
                         message.data.forEach((userId: number) => connectedUsersSet.add(userId));
                     }
+                    updateActiveContactStatus();
+                    updateUserSearchModalStatus();
                 }
             });
+
+            // Actualiza el estado online/offline en el modal de búsqueda de usuarios si está abierto
+            async function updateUserSearchModalStatus() {
+                const modal = document.getElementById('new-chat-modal');
+                if (modal && modal.style.display !== 'none') {
+                    const searchInput = document.getElementById('user-search') as HTMLInputElement;
+                    const query = searchInput ? searchInput.value.trim() : '';
+                    if (query) {
+                        await handleUserSearch(query);
+                    } else {
+                        await loadAllUsers();
+                    }
+                }
+            }
+
+            // Función para actualizar el estado del contacto activo
+            function updateActiveContactStatus() {
+                if (activeConversationId != null) {
+                    const contactStatus = document.getElementById('contact-status');
+                    if (contactStatus) {
+                        if (connectedUsersSet.has(activeConversationId)) {
+                            contactStatus.textContent = 'Online';
+                            contactStatus.style.color = '#25D366';
+                        } else {
+                            contactStatus.textContent = 'Offline';
+                            contactStatus.style.color = '#ff4444';
+                        }
+                    }
+                }
+            }
             
             // Update connection status in UI
             updateConnectionStatus(true);
@@ -641,9 +677,67 @@ export function chatHandlers() {
         activeConversationId = otherUserId;
         activeConversationName = otherUserName;
 
+
         // Update the chat header
         const contactName = document.getElementById('contact-name');
         if (contactName) contactName.textContent = otherUserName;
+
+        // Botón añadir/quitar amigo
+        let friendsSet = (window as any).friendsSet;
+        if (!friendsSet) {
+            friendsSet = new Set();
+            (window as any).friendsSet = friendsSet;
+        }
+        let addFriendBtn = document.getElementById('add-friend-btn') as HTMLButtonElement;
+        if (!addFriendBtn) {
+            const chatHeader = document.querySelector('.chat-header .contact-details');
+            if (chatHeader) {
+                addFriendBtn = document.createElement('button');
+                addFriendBtn.id = 'add-friend-btn';
+                addFriendBtn.className = 'add-friend-btn';
+                addFriendBtn.style.marginLeft = '10px';
+                chatHeader.appendChild(addFriendBtn);
+            }
+        }
+        function updateFriendBtn() {
+            if (addFriendBtn) {
+                if (friendsSet.has(otherUserId)) {
+                    addFriendBtn.textContent = 'Remove friend';
+                    addFriendBtn.style.background = '#ff4444';
+                } else {
+                    addFriendBtn.textContent = 'Add friend';
+                    addFriendBtn.style.background = '#25D366';
+                }
+                addFriendBtn.style.color = 'white';
+                addFriendBtn.style.border = 'none';
+                addFriendBtn.style.borderRadius = '6px';
+                addFriendBtn.style.padding = '4px 12px';
+                addFriendBtn.style.cursor = 'pointer';
+            }
+        }
+        updateFriendBtn();
+        if (addFriendBtn) {
+            addFriendBtn.onclick = () => {
+                if (friendsSet.has(otherUserId)) {
+                    friendsSet.delete(otherUserId);
+                } else {
+                    friendsSet.add(otherUserId);
+                }
+                updateFriendBtn();
+            };
+        }
+
+        // Actualizar el estado online/offline dinámicamente
+        const contactStatus = document.getElementById('contact-status');
+        if (contactStatus) {
+            if (connectedUsersSet.has(otherUserId)) {
+                contactStatus.textContent = 'Online';
+                contactStatus.style.color = '#25D366';
+            } else {
+                contactStatus.textContent = 'Offline';
+                contactStatus.style.color = '#ff4444';
+            }
+        }
 
         // Show and update block button
         const blockButton = document.getElementById('block-user-btn') as HTMLButtonElement;
@@ -1163,7 +1257,7 @@ export function chatHandlers() {
                 }
                 
                 if (offlineUsers.length > 0) {
-                    html += '<div class="users-section"><h4>⚫ Offline Users</h4>';
+                    html += '<div class="users-section"><h4>🔴 Offline Users</h4>';
                     html += renderUserList(offlineUsers, false);
                     html += '</div>';
                 }
@@ -1190,9 +1284,9 @@ export function chatHandlers() {
                     ${user.username.charAt(0).toUpperCase()}
                     <div class="user-status ${isOnline ? 'online' : 'offline'}"></div>
                 </div>
-                <div class="user-info">
-                    <div class="user-name">${user.username}</div>
-                    <div class="user-email">${user.email}</div>
+                <div class="user-info" style="display:flex;flex-direction:column;align-items:flex-start;">
+                    <div class="user-name" style="width:auto;display:inline-block;">${user.username}</div>
+                    <div class="user-status-text" style="display:block;text-align:left;color:${isOnline ? '#25D366' : '#ff4444'};margin-top:4px;">${isOnline ? 'Online' : 'Offline'}</div>
                 </div>
                 <button class="start-conversation-btn" data-user-id="${user.id}" data-username="${user.username}">
                     Chat

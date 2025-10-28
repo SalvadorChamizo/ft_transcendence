@@ -126,6 +126,7 @@ export async function sendMessage(recipientId: number, content: string) {
         }
         return await res.json();
     } catch (err) {
+        // console.error("Failed to send message:", err); // Eliminado para evitar logs en consola
         throw err;
     }
 }

@@ -1,7 +1,17 @@
 import * as fs from "fs";
 import path from "path";
 
-import { createUser, usernameChanger, emailChanger , findUserByUsername, findUserById, findUserByEmail, findIDByUsername, findAllUsers } from "../repositories/usersRepository";
+import { 
+  createUser,
+  usernameChanger,
+  emailChanger,
+  passwordChanger,
+  findUserByUsername,
+  findUserById,
+  findUserByEmail,
+  findIDByUsername,
+  findAllUsers
+} from "../repositories/usersRepository";
 
 export async function registerUser(email: string, username: string, password: string) {
     createUser(username, password, email);
@@ -21,6 +31,11 @@ export async function changeUsername(id: number, newUsername: string) {
 export async function changeEmail(id: number, newEmail: string) {
     emailChanger(id, newEmail);
     return { message: "Email changed successfully" };
+}
+
+export async function changePassword(id: number, hashedNewPassword: string) {
+    passwordChanger(id, hashedNewPassword);
+    return { message: "Password changed successfully" };
 }
 
 export async function getUserByUsername(username: string ) {
@@ -44,7 +59,7 @@ export async function getIDbyUsername(username: string) {
 }
 
 export async function getUserAvatar(id: number): Promise<string> {
-  const extensions = [".jpg", ".jpeg", ".png", ".webp"];
+  const extensions = [".jpg", ".jpeg", ".png"];
   const basePath = "./avatars";
 
   for (const ext of extensions) {
@@ -57,10 +72,36 @@ export async function getUserAvatar(id: number): Promise<string> {
     }
   }
 
-  // 🔄 Si no existe ninguno, devolver imagen por defecto
   const defaultPath = path.join(basePath, "0.jpeg");
   return await fs.promises.readFile(defaultPath);
 }
+
+export async function avatarUploader(id: number, file: Express.Multer.File): Promise<{ message: string }> {
+  
+  const extension = path.extname(file.filename).toLowerCase();
+  const buffer = await file.toBuffer();
+
+  const uploadPath = path.join("./avatars", `${id}${extension}`);
+  console.log("Uploading avatar to:", uploadPath);
+  await fs.promises.writeFile(uploadPath, buffer);
+  return { message: "Avatar uploaded successfully" };
+}
+
+export async function avatarDeleter(id: number) {
+  const extensions = [".jpg", ".jpeg", ".png"];
+  const basePath = "./avatars";
+
+  for (const ext of extensions) {
+    const filePath = path.join(basePath, `${id}${ext}`);
+    try {
+      await fs.promises.access(filePath, fs.constants.F_OK);
+      await fs.promises.unlink(filePath);
+    } catch {
+      continue;
+    }
+  }
+}
+
 
 export async function getAllUsers() {
     const users = findAllUsers();

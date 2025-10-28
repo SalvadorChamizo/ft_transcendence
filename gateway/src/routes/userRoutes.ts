@@ -10,12 +10,8 @@ export default async function userRoutes(app: FastifyInstance) {
       rewritePrefix: "",
       async preHandler(req, reply) {
 
-        const publicPaths = [
-          "/users/getAvatar"
-        ];
-
-        const isPublic = publicPaths.some((path) => req.url.startsWith(path));
-
+        const publicPaths = ["/users/getAvatar"];
+        const isPublic = publicPaths.some(path => req.url.startsWith(path));
         console.log("path:", req.url, "isPublic:", isPublic);
 
         if (isPublic) {
@@ -28,11 +24,15 @@ export default async function userRoutes(app: FastifyInstance) {
           return;
         }
 
+        // Autenticación para rutas protegidas
         await authMiddleware(req, reply);
 
+        // Añadir headers personalizados de manera segura
         if (req.user) {
-          (req.headers as Record<string, string>)["x-user-id"] = req.user.id;
-          (req.headers as Record<string, string>)["x-username"] = req.user.username;
+          reply.headers({
+            "x-user-id": req.user.id,
+            "x-username": req.user.username,
+          });
         }
 
         console.log("Forwarding headers to user service:", {
