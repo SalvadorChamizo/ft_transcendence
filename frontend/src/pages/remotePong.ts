@@ -124,6 +124,7 @@ function cleanup() {
     isGameRunning = false;
     isRoomCreator = false;
     gameInitialized = false;
+    try { document.getElementById("scoreboard")?.classList.add("hidden"); } catch (e) {}
 }
 
 // Helper: POST with Authorization header and retry after refresh on 401
@@ -259,6 +260,8 @@ function prepareGameUI() {
     
     // For manual games, start button will be shown after init
     (document.getElementById("startGameBtn")!).classList.add("hidden");
+	try { document.getElementById("scoreboard")!.classList.remove("hidden"); } catch(e) {}
+
 }
 
 // New helper to fetch and render only public rooms
