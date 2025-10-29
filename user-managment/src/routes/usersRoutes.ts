@@ -20,7 +20,11 @@ import {
 } from "../controllers/matchResultController";
 
 import { 
-    getAllUsersController 
+    getAllUsersController,
+    addFriendController,
+    getFriendController,
+    removeFriendController,
+    checkFriendController
 } from "../controllers/friendsController";
 
 export default async (fastify: FastifyInstance) => {
@@ -40,4 +44,8 @@ export default async (fastify: FastifyInstance) => {
     fastify.get("/getResults", getResultsController);
     fastify.post("/addVictory", addVictoryController);
     fastify.post("/addDefeat", addDefeatController);
+    fastify.get("/getFriends", getFriendController);
+    fastify.post("/addFriend", addFriendController);
+    fastify.post("/removeFriend", removeFriendController);
+    fastify.get("/checkFriend", checkFriendController)
 };
