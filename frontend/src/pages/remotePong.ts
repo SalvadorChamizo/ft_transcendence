@@ -58,7 +58,6 @@ export function remotePongPage(): string {
     <div class="pong-container">
       <h1>Pong - Remote Game</h1>
             <div id="pong-lobby">
-                <h2>Pong Matchmaking Lobby</h2>
                 <div class="speed-controls">
                     <label>Difficulty:
                         <select id="difficultySelect">
@@ -90,8 +89,9 @@ export function remotePongPage(): string {
 
             <div class="scoreboard-container">
                 <button id="startGameBtn" class="pong-button hidden">Start Game</button>
-                <div id="scoreboard" class="scoreboard">0 : 0</div>
-                <button id="playAgainBtn" class="pong-button hidden">Play Again</button>
+                <!-- hide scoreboard while in lobby -->
+                <div id="scoreboard" class="scoreboard hidden">0 : 0</div>
+				<button id="playAgainBtn" class="pong-button hidden">Play Again</button>
             </div>
 
       <p id="winnerMessage" class="winner-message" style="display: none;"></p>
