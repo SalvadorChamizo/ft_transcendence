@@ -1,4 +1,7 @@
-import { getAccessToken } from "../state/authState";
+import { getAccessToken, isLoggedIn } from "../state/authState";
+import { Enable2FAHtml } from "./Login/loginTemplate";
+import { getElement } from "./Login/loginDOM";
+import { enable2FAHandlers } from "./Login/login";
 
 const apiHost = `${window.location.hostname}`;
 

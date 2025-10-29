@@ -10,6 +10,9 @@ import { handleTwoFA } from "./pages/Login/twofa";
 import { handleOAuthErrors, userLoggedIn } from "./pages/Login/loginHandlers";
 import { fetchCurrentUser } from "./pages/Login/loginService";
 import { tournamentHandlers } from "./pages/Tournament/tournamentHandles";
+import { aboutHandlers } from "./pages/About/about";
+import { forgotPassHandle } from "./pages/Login/forgotPass";
+
 export async function render() {
 
     await refreshAccessToken();
@@ -43,11 +46,6 @@ export async function render() {
         const header = document.getElementById("header")!;
         header.className = "header-home";
     }
-
-    if (location.hash === "#/register")
-    {
-        autoRegisterUser("t", "t", "t@gmail.com"); // auto register for testing purposes
-    }
     if (location.hash === "#/login")
         {
             const html = document.querySelector("html")!;
@@ -74,6 +72,12 @@ export async function render() {
     }
     if (location.hash === "#/tournament") {
         tournamentHandlers();
+    }
+    if (location.hash === "#/about") {
+        aboutHandlers();
+    }
+    if (location.hash === "#/forgot-pass") {
+        forgotPassHandle();
     }
     if (location.hash === "" || location.hash === "#/" || location.hash === "#/home") {
         import("./pages/home").then(mod => mod.handleStars());

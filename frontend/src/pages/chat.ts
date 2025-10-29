@@ -44,7 +44,6 @@ const UI_MESSAGES = {
     NO_CONVERSATIONS_FOUND: 'No conversations found. Send a message to start chatting!',
     LOADING_MESSAGES: 'Cargando mensajes...',
     ERROR_LOADING_MESSAGES: 'Error cargando mensajes',
-    NO_MESSAGES: 'No hay mensajes en esta conversación.',
     SEARCHING_USERS: 'Searching users...',
     LOADING_USERS: 'Loading users...',
     NO_USERS_FOUND: 'No users found',
@@ -151,7 +150,7 @@ export function Chat(): string {
                         <div class="contact-avatar">👤</div>
                         <div class="contact-details">
                             <h3 id="contact-name">Select a conversation</h3>
-                            <span id="contact-status">Online</span>
+                            <span id="contact-status"></span>
                         </div>
                     </div>
                     <div class="chat-actions">
@@ -261,7 +260,6 @@ export function chatHandlers() {
 
     // Check essential elements
     if (!conversationsList || !messagesContainer) {
-        console.error('Essential chat elements not found in DOM');
         return;
     }
 
@@ -277,37 +275,29 @@ export function chatHandlers() {
     // Initialize WebSocket connection
     initializeWebSocket();
 
-    // Handle message form submission
-    messageForm.addEventListener('submit', async (e: Event) => {
+    // Definir el handler fuera para poder eliminarlo antes de añadirlo
+    const handleMessageFormSubmit = async (e: Event) => {
         e.preventDefault();
-        
         if (!activeConversationId) {
             showErrorMessage(UI_MESSAGES.NO_CONVERSATION_SELECTED, messageResult);
             return;
         }
-        
         const messageContentInput = document.getElementById('message-content') as HTMLInputElement;
-        
         if (!messageContentInput) {
             showErrorMessage(UI_MESSAGES.MESSAGE_INPUT_NOT_FOUND, messageResult);
             return;
         }
-
-    const content = sanitizeText(messageContentInput.value.trim());
+        const content = sanitizeText(messageContentInput.value.trim());
         const currentUserId = getCurrentUserId();
         const recipientId = activeConversationId;
-
         if (!content) {
             showErrorMessage(UI_MESSAGES.ENTER_MESSAGE, messageResult);
             return;
         }
-
         try {
             showInfoMessage(UI_MESSAGES.SENDING_MESSAGE, messageResult);
-            
             // Send message via HTTP API (for persistence)
             const httpResult = await sendMessage(recipientId, content);
-            
             // Send message via WebSocket (for real-time delivery)
             const wsMessage: ChatMessage = {
                 type: 'message',
@@ -316,14 +306,11 @@ export function chatHandlers() {
                 content: content,
                 timestamp: new Date().toISOString()
             };
-            
             const wsSent = websocketClient.sendMessage(wsMessage);
-            
             if (wsSent) {
                 if (messageResult) {
                     messageResult.innerHTML = `<span class="success">${UI_MESSAGES.MESSAGE_SENT_SUCCESS}</span>`;
                 }
-                
                 // Add message to UI immediately (sent message)
                 addMessageToUI({
                     ...wsMessage,
@@ -334,27 +321,29 @@ export function chatHandlers() {
                     messageResult.innerHTML = `<span class="success">${UI_MESSAGES.MESSAGE_SENT_HTTP_ONLY}</span>`;
                 }
             }
-            
             if (messageResult) {
                 messageResult.className = 'message-result success';
             }
-            
             // Auto-refresh conversations list after sending message
             loadConversationsDebounced();
-            
             // Clear form
             messageContentInput.value = '';
-            
-            console.log('Message sent:', { http: httpResult, websocket: wsSent });
-            
         } catch (error) {
-            console.error('Error sending message:', error);
+            // console.error('Error sending message:', error); // Eliminado para evitar logs en consola
+            let errorMsg = '❌ Error sending message';
+            if (error instanceof Error && error.message.includes('400')) {
+                errorMsg = 'No puedes enviar mensajes a este usuario porque está bloqueado.';
+            }
             if (messageResult) {
-                messageResult.innerHTML = `<span class="error">❌ Error sending message: ${error}</span>`;
+                messageResult.innerHTML = `<span class=\"error\">${errorMsg}</span>`;
                 messageResult.className = 'message-result error';
             }
         }
-    });
+    };
+
+    // Eliminar el listener previo antes de añadirlo
+    messageForm.removeEventListener('submit', handleMessageFormSubmit);
+    messageForm.addEventListener('submit', handleMessageFormSubmit);
 
     /**
      * Debounced conversation loading to prevent excessive API calls
@@ -436,7 +425,6 @@ export function chatHandlers() {
                     });
                 }, CHAT_CONFIG.USERNAME_LOADING_DELAY);
                 
-                console.log('Conversations loaded:', result);
             } else {
                 conversationsList.innerHTML = `
                     <div class="no-conversations">
@@ -446,7 +434,6 @@ export function chatHandlers() {
             }
             
         } catch (error) {
-            console.error('Error loading conversations:', error);
             conversationsList.innerHTML = `
                 <div class="no-conversations">
                     <p style="color: red;">❌ Error loading conversations: ${error}</p>
@@ -553,9 +540,7 @@ export function chatHandlers() {
             }
             messageResult.className = 'message-result success';
             
-            console.log(`User ${activeConversationId} ${action}ed successfully`);
         } catch (error) {
-            console.error(`Error ${action}ing user:`, error);
             messageResult.innerHTML = `<span class="error">❌ Failed to ${action} user</span>`;
             messageResult.className = 'message-result error';
         }
@@ -575,7 +560,6 @@ export function chatHandlers() {
             // Navigate to profile page with username
             window.location.hash = `#/profile?username=${profile.username}`;
         } catch (error) {
-            console.error('Error loading profile:', error);
             alert('Failed to load user profile');
         }
     });
@@ -589,48 +573,73 @@ export function chatHandlers() {
         try {
             const userId = getCurrentUserId();
             
-            console.log(`Connecting to WebSocket with userId: ${userId}`);
             await websocketClient.connect(userId);
             
             // Set up message handler for incoming messages
-            websocketClient.onMessage((message: ChatMessage) => {
-                console.log('Received WebSocket message:', message);
 
+            websocketClient.onMessage((message: ChatMessage) => {
                 if (message.type === 'message') {
-                    //  Add all messages to UI (received message)
                     addMessageToUI({
                         ...message,
                         isSent: false
                     });
-                    // Auto-refresh conversations list to show new message/conversation
                     loadConversationsDebounced();
                 } else if (message.type === 'user_connected') {
-                    // Track user connection
                     if (message.userId) {
                         connectedUsersSet.add(message.userId);
-                        console.log(`User ${message.userId} connected. Online users:`, Array.from(connectedUsersSet));
+                        updateActiveContactStatus();
+                        updateUserSearchModalStatus();
                     }
                 } else if (message.type === 'user_disconnected') {
-                    // Track user disconnection
                     if (message.userId) {
                         connectedUsersSet.delete(message.userId);
-                        console.log(`User ${message.userId} disconnected. Online users:`, Array.from(connectedUsersSet));
+                        updateActiveContactStatus();
+                        updateUserSearchModalStatus();
                     }
                 } else if (message.type === 'connected_users_list') {
-                    // Inicializa el Set de usuarios conectados con la lista recibida
                     connectedUsersSet.clear();
                     if (Array.isArray(message.data)) {
                         message.data.forEach((userId: number) => connectedUsersSet.add(userId));
-                        console.log('Lista inicial de usuarios online:', Array.from(connectedUsersSet));
                     }
+                    updateActiveContactStatus();
+                    updateUserSearchModalStatus();
                 }
             });
+
+            // Actualiza el estado online/offline en el modal de búsqueda de usuarios si está abierto
+            async function updateUserSearchModalStatus() {
+                const modal = document.getElementById('new-chat-modal');
+                if (modal && modal.style.display !== 'none') {
+                    const searchInput = document.getElementById('user-search') as HTMLInputElement;
+                    const query = searchInput ? searchInput.value.trim() : '';
+                    if (query) {
+                        await handleUserSearch(query);
+                    } else {
+                        await loadAllUsers();
+                    }
+                }
+            }
+
+            // Función para actualizar el estado del contacto activo
+            function updateActiveContactStatus() {
+                if (activeConversationId != null) {
+                    const contactStatus = document.getElementById('contact-status');
+                    if (contactStatus) {
+                        if (connectedUsersSet.has(activeConversationId)) {
+                            contactStatus.textContent = 'Online';
+                            contactStatus.style.color = '#25D366';
+                        } else {
+                            contactStatus.textContent = 'Offline';
+                            contactStatus.style.color = '#ff4444';
+                        }
+                    }
+                }
+            }
             
             // Update connection status in UI
             updateConnectionStatus(true);
             
         } catch (error) {
-            console.error('Failed to connect to WebSocket:', error);
             updateConnectionStatus(false);
         }
     }
@@ -643,13 +652,10 @@ export function chatHandlers() {
         try {
             if (result && result.room_id) {
                 window.location.hash = `#/pong/remote?room=${result.room_id}`;
-                console.log('Redirected to remote pong room:', result.room_id);
             } else {
                 window.location.hash = '#/game';
-                console.log('Redirected to game selection. Opponent data:', result);
             }
         } catch (error) {
-            console.error('Error handling game redirection:', error);
             // Fallback: show error message
             if (messageResult) {
                 messageResult.innerHTML = '<span class="error">❌ Failed to redirect to game</span>';
@@ -671,9 +677,67 @@ export function chatHandlers() {
         activeConversationId = otherUserId;
         activeConversationName = otherUserName;
 
+
         // Update the chat header
         const contactName = document.getElementById('contact-name');
         if (contactName) contactName.textContent = otherUserName;
+
+        // Botón añadir/quitar amigo
+        let friendsSet = (window as any).friendsSet;
+        if (!friendsSet) {
+            friendsSet = new Set();
+            (window as any).friendsSet = friendsSet;
+        }
+        let addFriendBtn = document.getElementById('add-friend-btn') as HTMLButtonElement;
+        if (!addFriendBtn) {
+            const chatHeader = document.querySelector('.chat-header .contact-details');
+            if (chatHeader) {
+                addFriendBtn = document.createElement('button');
+                addFriendBtn.id = 'add-friend-btn';
+                addFriendBtn.className = 'add-friend-btn';
+                addFriendBtn.style.marginLeft = '10px';
+                chatHeader.appendChild(addFriendBtn);
+            }
+        }
+        function updateFriendBtn() {
+            if (addFriendBtn) {
+                if (friendsSet.has(otherUserId)) {
+                    addFriendBtn.textContent = 'Remove friend';
+                    addFriendBtn.style.background = '#ff4444';
+                } else {
+                    addFriendBtn.textContent = 'Add friend';
+                    addFriendBtn.style.background = '#25D366';
+                }
+                addFriendBtn.style.color = 'white';
+                addFriendBtn.style.border = 'none';
+                addFriendBtn.style.borderRadius = '6px';
+                addFriendBtn.style.padding = '4px 12px';
+                addFriendBtn.style.cursor = 'pointer';
+            }
+        }
+        updateFriendBtn();
+        if (addFriendBtn) {
+            addFriendBtn.onclick = () => {
+                if (friendsSet.has(otherUserId)) {
+                    friendsSet.delete(otherUserId);
+                } else {
+                    friendsSet.add(otherUserId);
+                }
+                updateFriendBtn();
+            };
+        }
+
+        // Actualizar el estado online/offline dinámicamente
+        const contactStatus = document.getElementById('contact-status');
+        if (contactStatus) {
+            if (connectedUsersSet.has(otherUserId)) {
+                contactStatus.textContent = 'Online';
+                contactStatus.style.color = '#25D366';
+            } else {
+                contactStatus.textContent = 'Offline';
+                contactStatus.style.color = '#ff4444';
+            }
+        }
 
         // Show and update block button
         const blockButton = document.getElementById('block-user-btn') as HTMLButtonElement;
@@ -713,12 +777,11 @@ export function chatHandlers() {
         const messagesContainer = document.getElementById('messages-container');
         if (!messagesContainer) return;
         if (messages.length === 0) {
-            messagesContainer.innerHTML = '<div class="no-messages">No hay mensajes en esta conversación.</div>';
+            messagesContainer.innerHTML = '';
             return;
         }
         
         const currentUserId = getCurrentUserId();
-        console.log('🔍 Display Messages - Current User ID:', currentUserId);
         
         messagesContainer.innerHTML = messages.map(msg => {
             // Show sent/received based on current user ID
@@ -858,11 +921,9 @@ export function chatHandlers() {
                 }
             }
         } catch (error) {
-            console.error('Error parsing user from localStorage:', error);
         }
 
         // If no authentication found, redirect to login
-        console.warn('No authentication found, redirecting to login');
         window.location.hash = '#/login';
         return 0; // Return 0 to indicate no user
     }
@@ -886,7 +947,6 @@ export function chatHandlers() {
             usernameCache.set(userId, username);
             return username;
         } catch (error) {
-            console.error(`Failed to get username for user ${userId}:`, error);
             // Fallback to User ID format
             const fallback = `User ${userId}`;
             usernameCache.set(userId, fallback);
@@ -951,7 +1011,6 @@ export function chatHandlers() {
                 invitationsSection.style.display = 'none';
             }
         } catch (error) {
-            console.error('Error loading game invitations:', error);
         }
     }
 
@@ -983,7 +1042,6 @@ export function chatHandlers() {
     async function handleRejectInvitation(invitationId: number) {
         try {
             await rejectGameInvitation(invitationId);
-            console.log('Invitation rejected');
             
             // Show rejection message
             messageResult.innerHTML = '<span class="success">❌ Invitation rejected</span>';
@@ -997,7 +1055,6 @@ export function chatHandlers() {
                 messageResult.innerHTML = '';
             }, 3000);
         } catch (error: any) {
-            console.error('Error rejecting invitation:', error);
             messageResult.innerHTML = `<span class="error">❌ Error rejecting invitation</span>`;
             messageResult.className = 'message-result error';
         }
@@ -1012,7 +1069,6 @@ export function chatHandlers() {
         const victories = document.getElementById('profile-victories');
         
         if (!modal || !username || !userId || !avatar || !victories) {
-            console.error('Profile modal elements not found');
             return;
         }
 
@@ -1089,13 +1145,7 @@ export function chatHandlers() {
                     localStorage.setItem('pendingRemoteRoomId', result.roomId);
                     // Automatically redirect to the remote room
                     window.location.hash = `#/pong/remote?room=${result.roomId}`;
-                } else {
-                    if (messageResult) {
-                        messageResult.innerHTML = '<span class="success">🎮 Game invitation sent! (No roomId)"</span>';
-                        messageResult.className = 'message-result success';
-                    }
                 }
-                console.log('Game invitation sent:', result);
             } catch (error) {
                 const errMsg = (error instanceof Error) ? error.message : String(error);
                 if (messageResult) {
@@ -1129,7 +1179,6 @@ export function chatHandlers() {
             try {
                 users = await searchUsersByUsername(query);
             } catch (error) {
-                console.warn('Search API not available, filtering from known users:', error);
                 // Fallback: filter from available users
                 const allUsers = await getAvailableUsers();
                 users = allUsers.filter((user: any) => 
@@ -1171,7 +1220,6 @@ export function chatHandlers() {
                 userSearchResults.innerHTML = '<div class="no-results">No users found</div>';
             }
         } catch (error) {
-            console.error('Error searching users:', error);
             userSearchResults.innerHTML = '<div class="error">Error searching users</div>';
         }
     }
@@ -1209,7 +1257,7 @@ export function chatHandlers() {
                 }
                 
                 if (offlineUsers.length > 0) {
-                    html += '<div class="users-section"><h4>⚫ Offline Users</h4>';
+                    html += '<div class="users-section"><h4>🔴 Offline Users</h4>';
                     html += renderUserList(offlineUsers, false);
                     html += '</div>';
                 }
@@ -1224,7 +1272,6 @@ export function chatHandlers() {
                 userSearchResults.innerHTML = '<div class="no-results">No users found</div>';
             }
         } catch (error) {
-            console.error('Error loading users:', error);
             userSearchResults.innerHTML = '<div class="error">Error loading users</div>';
         }
     }
@@ -1237,9 +1284,9 @@ export function chatHandlers() {
                     ${user.username.charAt(0).toUpperCase()}
                     <div class="user-status ${isOnline ? 'online' : 'offline'}"></div>
                 </div>
-                <div class="user-info">
-                    <div class="user-name">${user.username}</div>
-                    <div class="user-email">${user.email}</div>
+                <div class="user-info" style="display:flex;flex-direction:column;align-items:flex-start;">
+                    <div class="user-name" style="width:auto;display:inline-block;">${user.username}</div>
+                    <div class="user-status-text" style="display:block;text-align:left;color:${isOnline ? '#25D366' : '#ff4444'};margin-top:4px;">${isOnline ? 'Online' : 'Offline'}</div>
                 </div>
                 <button class="start-conversation-btn" data-user-id="${user.id}" data-username="${user.username}">
                     Chat
@@ -1291,7 +1338,6 @@ export function chatHandlers() {
             
             return [];
         } catch (error) {
-            console.error('Error getting available users:', error);
             // Return empty array instead of hardcoded fallback users
             return [];
         }

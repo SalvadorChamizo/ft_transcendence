@@ -1,9 +1,7 @@
 import { Home } from "./pages/home";
-import { About } from "./pages/about";
-import { Register } from "./pages/register";
+import { About } from "./pages/About/about";
 import { Login, TwoFALogin } from "./pages/Login/login";
-import { Health, healthHandlers } from "./pages/health";
-import { Ping } from "./pages/ping";
+import { Status, refreshStatus } from "./pages/status";
 import { Chat, chatHandlers } from "./pages/chat";
 // import { pongPage } from "./pages/pong"; // Eliminado
 import { Settings } from "./pages/settings";
@@ -13,29 +11,51 @@ import { remotePongPage, remotePongHandlers } from "./pages/remotePong"; // Impo
 import { Game } from "./pages/game"
 import { Profile, profileHandlers } from "./pages/profile";
 import { Tournament } from "./pages/Tournament/tournament";
+import { isLoggedIn } from "./state/authState";
+import { forgotPass } from "./pages/Login/forgotPass";
+import { ErrorPage } from "./pages/ErrorPage";
+import { TermsPage } from "./pages/TermsPage";
 
 export function router(route: string): string {
     const cleanRoute = route.split('?')[0];
     switch (cleanRoute) {
+        case "#/error":
+            return ErrorPage();
+        case "#/terms":
+            return TermsPage();
         case "#/profile":
-            setTimeout(profileHandlers, 0);
-            return Profile();
+            if (isLoggedIn()) {
+                setTimeout(profileHandlers, 0);
+                return Profile();
+            }
+            return Login();
         case "#/about":
             return About();
-        case "#/register":
-            return Register();
         case "#/login":
+            if (isLoggedIn()) {
+                window.location.hash = "#/profile";
+                return Profile();
+            }
             return Login();
         case "#/login/2fa":
-            return TwoFALogin();
-        case "#/health":
-            setTimeout(healthHandlers, 0);
-            return Health();
-        case "#/ping":
-            return Ping();
-        case "#/chat":
-            setTimeout(chatHandlers, 0);
-            return Chat();
+            if (isLoggedIn()) {
+                return TwoFALogin();
+            }
+            return Login();
+        case "#/forgot-pass":
+            return forgotPass();
+            case "#/status":
+                setTimeout(refreshStatus, 0);
+                return Status();
+            case "#/chat":
+                if (isLoggedIn()) {
+                    setTimeout(chatHandlers, 0);
+                    return Chat();
+                }
+                else {
+                    window.location.hash = "#/login";
+                    return Login();
+                }
         case "#/pong/local":
             setTimeout(localPongHandlers, 0);
             return localPongPage();
@@ -43,16 +63,26 @@ export function router(route: string): string {
             setTimeout(localPowerUpPongHandlers, 0);
             return localPowerUpPongPage();
         case "#/pong/remote":
-            setTimeout(remotePongHandlers, 0);
-            return remotePongPage();
+                if (isLoggedIn()) {
+                    setTimeout(remotePongHandlers, 0);
+                    return remotePongPage();
+                }
+                else {
+                    window.location.hash = "#/login";
+                    return Login();
+                }
         case "#/settings":
-            return Settings();
+            if (isLoggedIn()) {
+                return Settings();
+            }
+            return Login();
         case "#/game":
             return Game();
         case "#/tournament":
             return Tournament();
         case "#/":
-        default:
             return Home();
+        default:
+            return ErrorPage();
     }
 }

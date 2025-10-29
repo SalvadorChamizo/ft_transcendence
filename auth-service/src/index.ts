@@ -19,7 +19,19 @@ app.get("/ping", async () => {
     return { pong: true };
 });
 
-const PORT = process.env.PORT || 4242;
+app.get("/health", async (req, reply) => {
+  const uptime = process.uptime();
+
+  return reply.status(200).send({
+    service: "auth-service",
+    status: "ok",
+    uptime: Math.round(uptime),
+    timestamp: new Date().toISOString(),
+    version: "1.0.0",
+  });
+});
+
+const PORT = process.env.PORT || 8081;
 
 app.listen({ port: Number(PORT), host: "0.0.0.0" })
     .then(() => console.log(`Auth-service listening on port: ${PORT}`));

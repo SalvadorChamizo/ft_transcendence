@@ -1,6 +1,7 @@
 import { createUser, findUser } from "../repositories/userRepository";
 import { RefreshTokenRepository } from "../repositories/refreshTokenRepository";
 import { generateAccessToken, generateRefreshToken } from "./tokenService";
+import nodemailer from "nodemailer"
 
 const refreshTokenRepo = new RefreshTokenRepository();
 
@@ -118,4 +119,32 @@ export async function findOrCreateUserFromGoogle(googleUser: any) {
     const newUser = await register.json();
     createUser(newUser.user.username, "", newUser.user.email);
     return newUser.user;
+}
+
+export async function sendEmail(to: string, subject: string, html: string): Promise<void> {
+    try {
+        const transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS,
+            },
+        });
+    
+        const mailOptions = {
+            from: `"Ft-Transcendence" <${process.env.EMAIL_USER}>`,
+            to,
+            subject,
+            html,
+        };
+    
+        await transporter.sendMail(mailOptions);
+
+    } catch (err) {
+        console.log("Error:", err);
+    }
+}
+
+export function generateUniqueId(): string {
+  return Math.random().toString(36).substring(2, 9);
 }

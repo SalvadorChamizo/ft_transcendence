@@ -4,7 +4,7 @@ import { getAccessToken } from '../state/authState';
 const apiHost = window.location.hostname;
 
 export interface ChatMessage {
-    type: 'message' | 'user_connected' | 'user_disconnected' | 'typing' | 'stop_typing' | 'game_invitation';
+    type: 'message' | 'user_connected' | 'user_disconnected' | 'typing' | 'stop_typing' | 'game_invitation' | 'connected_users_list';
     userId: number;
     conversationId?: number;
     content?: string;
@@ -24,14 +24,12 @@ export class WebSocketClient {
     private reconnectDelay = 1000; // 1 second
 
     constructor() {
-        console.log('WebSocketClient initialized');
     }
 
     // Connect to WebSocket server
     connect(userId: number): Promise<void> {
         return new Promise((resolve, reject) => {
             if (this.ws?.readyState === WebSocket.OPEN) {
-                console.log('WebSocket already connected');
                 resolve();
                 return;
             }
@@ -44,18 +42,15 @@ export class WebSocketClient {
             // Get token from auth state
             const token = getAccessToken();
             if (!token) {
-                console.error('❌ No authentication token available for WebSocket');
                 reject(new Error('No authentication token'));
                 return;
             }
 
             const wsUrl = `ws://${apiHost}:8080/ws?userId=${userId}&token=${encodeURIComponent(token)}`;
             
-            console.log(`Connecting to WebSocket with authenticated token`);
             this.ws = new WebSocket(wsUrl);
 
             this.ws.onopen = () => {
-                console.log('✅ WebSocket connected successfully');
                 this.reconnectAttempts = 0;
                 resolve();
             };
@@ -63,17 +58,14 @@ export class WebSocketClient {
             this.ws.onmessage = (event) => {
                 try {
                     const message: ChatMessage = JSON.parse(event.data);
-                    console.log('📨 Received WebSocket message:', message);
                     
                     // Notify all message handlers
                     this.messageHandlers.forEach(handler => handler(message));
                 } catch (error) {
-                    console.error('Error parsing WebSocket message:', error);
                 }
             };
 
             this.ws.onclose = (event) => {
-                console.log('🔌 WebSocket connection closed:', event.code, event.reason);
                 this.ws = null;
                 
                 // Attempt to reconnect if it wasn't a manual close
@@ -83,7 +75,6 @@ export class WebSocketClient {
             };
 
             this.ws.onerror = (error) => {
-                console.error('❌ WebSocket error:', error);
                 reject(error);
             };
         });
@@ -92,7 +83,6 @@ export class WebSocketClient {
     // Send message through WebSocket
     sendMessage(message: ChatMessage): boolean {
         if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-            console.error('WebSocket not connected. Cannot send message:', message);
             return false;
         }
 
@@ -104,10 +94,8 @@ export class WebSocketClient {
                 payload: messageWithUserId
             };
             this.ws.send(JSON.stringify(wrappedMessage));
-            console.log('📤 Sent WebSocket message:', wrappedMessage);
             return true;
         } catch (error) {
-            console.error('Error sending WebSocket message:', error);
             return false;
         }
     }
@@ -128,7 +116,6 @@ export class WebSocketClient {
     // Disconnect WebSocket
     disconnect(): void {
         if (this.ws) {
-            console.log('🔌 Disconnecting WebSocket...');
             this.ws.close(1000, 'Manual disconnect');
             this.ws = null;
         }
@@ -152,12 +139,10 @@ export class WebSocketClient {
         this.reconnectAttempts++;
         const delay = this.reconnectDelay * this.reconnectAttempts;
         
-        console.log(`🔄 Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts}) in ${delay}ms...`);
-        
         setTimeout(() => {
             if (this.userId !== null) {
                 this.connect(this.userId).catch(error => {
-                    console.error('Reconnection failed:', error);
+
                 });
             }
         }, delay);

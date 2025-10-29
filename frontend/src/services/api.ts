@@ -90,7 +90,6 @@ export async function pingGateway(): Promise<string> {
         chat: ${data.chat}
         auth: ${data.auth}`;
     } catch (err) {
-        console.error("Failed to reach gateway:", err);
         return "Gateway is unreachable";
     }
 }
@@ -107,7 +106,6 @@ export async function getConversations() {
         }
         return await res.json();
     } catch (err) {
-        console.error("Failed to get conversations:", err);
         throw err;
     }
 }
@@ -128,7 +126,7 @@ export async function sendMessage(recipientId: number, content: string) {
         }
         return await res.json();
     } catch (err) {
-        console.error("Failed to send message:", err);
+        // console.error("Failed to send message:", err); // Eliminado para evitar logs en consola
         throw err;
     }
 }
@@ -144,7 +142,6 @@ export async function getMessages(otherUserId: number) {
         }
         return await res.json();
     } catch (err) {
-        console.error("Failed to get messages:", err);
         throw err;
     }
 }
@@ -152,8 +149,6 @@ export async function getMessages(otherUserId: number) {
 export async function blockUser(blockedUserId: number) {
     try {
         const token = getAccessToken();
-        console.log('🔒 Blocking user:', blockedUserId);
-        console.log('📝 Token:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
         
         const url = `http://${apiHost}:8080/conversations/${blockedUserId}/block`;
         const options = {
@@ -165,22 +160,14 @@ export async function blockUser(blockedUserId: number) {
             body: JSON.stringify({}) // Send empty JSON body
         };
         
-        console.log('🌐 Request URL:', url);
-        console.log('📤 Request options:', JSON.stringify(options, null, 2));
-        
         const res = await fetch(url, options);
-        
-        console.log('📥 Response status:', res.status);
-        console.log('📥 Response ok:', res.ok);
         
         if (!res.ok) {
             const errorText = await res.text();
-            console.error('❌ Error response:', errorText);
             throw new Error(`HTTP error! Status: ${res.status}`);
         }
         return await res.json();
     } catch (err) {
-        console.error("Failed to block user:", err);
         throw err;
     }
 }
@@ -199,7 +186,6 @@ export async function unblockUser(blockedUserId: number) {
         }
         return await res.json();
     } catch (err) {
-        console.error("Failed to unblock user:", err);
         throw err;
     }
 }
@@ -222,7 +208,6 @@ export async function sendGameInvitation(toUserId: number, gameType: string = 'p
         }
         return await res.json();
     } catch (err) {
-        console.error("Failed to send game invitation:", err);
         throw err;
     }
 }
@@ -238,7 +223,6 @@ export async function getGameInvitations() {
         }
         return await res.json();
     } catch (err) {
-        console.error("Failed to get game invitations:", err);
         throw err;
     }
 }
@@ -254,7 +238,6 @@ export async function getSentGameInvitations() {
         }
         return await res.json();
     } catch (err) {
-        console.error("Failed to get sent game invitations:", err);
         throw err;
     }
 }
@@ -279,7 +262,6 @@ export async function acceptGameInvitation(invitationId: number) {
         }
         return data;
     } catch (err) {
-        console.error("Failed to accept game invitation:", err);
         throw err;
     }
 }
@@ -299,7 +281,6 @@ export async function rejectGameInvitation(invitationId: number) {
         }
         return await res.json();
     } catch (err) {
-        console.error("Failed to reject game invitation:", err);
         throw err;
     }
 }
@@ -321,7 +302,6 @@ export async function getUserProfile(userId: number) {
         }
         return await res.json();
     } catch (err) {
-        console.error("Failed to get user profile:", err);
         throw err;
     }
 }
@@ -337,7 +317,6 @@ export async function searchUsersByUsername(query: string) {
         );
         return filteredUsers;
     } catch (err) {
-        console.error("Failed to search users:", err);
         throw err;
     }
 }
@@ -355,7 +334,6 @@ export async function getAllUsers() {
         }
         return await res.json();
     } catch (err) {
-        console.error("Failed to get all users:", err);
         throw err;
     }
 }

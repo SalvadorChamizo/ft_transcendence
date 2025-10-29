@@ -35,7 +35,6 @@ export function getUserIdFromToken(): number | null {
         const payload = JSON.parse(atob(accessToken.split('.')[1]));
         return payload.id || null;
     } catch (error) {
-        console.error('Error decoding token:', error);
         return null;
     }
 }
@@ -43,6 +42,11 @@ export function getUserIdFromToken(): number | null {
 export async function refreshAccessToken(): Promise<boolean> {
 
     try {
+        const userStr = localStorage.getItem("user");
+        const user = JSON.parse(userStr!);
+        if (!user)
+            return (false);
+
         const res = await fetch(`http://${apiHost}:8080/auth/refresh`, {
             method: "POST",
             credentials: "include",

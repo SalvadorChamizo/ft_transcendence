@@ -1,9 +1,10 @@
 import { FastifyReply, FastifyRequest } from "fastify";
-import { registerUser, loginUser, logoutUser, createTokensLogin, findOrCreateUserFrom42, findOrCreateUserFromGoogle } from "../services/authService";
+import { registerUser, loginUser, logoutUser, createTokensLogin, findOrCreateUserFrom42, findOrCreateUserFromGoogle, sendEmail, generateUniqueId } from "../services/authService";
 import { rotateTokens, generateAccessToken} from "../services/tokenService"
 import * as speakeasy from "speakeasy";
 import { findUserById, updateUser2FA, updateUserPending2FA, getUserPending2FA, activateUser2FA, debugUsers, createUser } from "../repositories/userRepository";
 import QRCode from "qrcode";
+import nodemailer from "nodemailer";
 
 
 export async function registerController(req: FastifyRequest, reply: FastifyReply) {
@@ -374,5 +375,33 @@ export async function callbackGoogleController(req: FastifyRequest, reply: Fasti
     } catch (err) {
         console.error("Google OAuth error:", err);
         return reply.code(500).send({ error: "Google login failed" });
+    }
+}
+
+export async function forgotPasswordController(req: FastifyRequest, reply: FastifyReply) {
+    try {
+        const { email } = req.body as { email: string };
+
+        const res = await fetch("http://user-management-service:8082/getUserByEmail", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email })
+        });
+
+        if (res.ok) {
+
+            const user = await res.json();
+
+            const password = generateUniqueId();
+
+            //call user service to really change the password.
+
+            await sendEmail(email,
+                "New Password Request for ft_transcendence",
+                `<h1>Hello ${user.username}!</h1><p>Here is your new password: ${password}</p><br><br>
+                <p>If you didn't ask for a new password, I'm sorry, you can change it again in your user settings.</p>`)
+        }
+    } catch (err) {
+        console.log("Error");
     }
 }

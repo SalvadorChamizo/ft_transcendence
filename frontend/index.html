@@ -10,6 +10,8 @@
     <link
         href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap"
         rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+    <link rel="icon" type="image/x-icon" href="./public/rocket_favicon.png">
 </head>
 
 <body>
@@ -21,25 +23,18 @@
                 <ul class="nav-links nav-center">
                     <li><a class="hoverMe" href="#/">Home</a></li>
                     <li><a class="hoverMe" href="#/about">About</a></li>
-                    <li><a class="hoverMe" href="#/health">Health</a></li>
-                    <li><a class="hoverMe" href="#/ping">Ping</a></li>
-                    <li><a class="hoverMe" href="#/chat">Chat</a></li>
-                    <li><a class="hoverMe" href="#/game">Pong</a></li>
-                    <li><a class="hoverMe" href="#/profile">Profile</a></li>
-                    <li class="dropdown">
-                        <a href="#" class="dropbtn">More</a>
-                        <ul class="dropdown-content">
-                            <li><a class="hoverMe" href="#/settings">Settings</a></li>
-                        </ul>
-                    </li>
+                    <li><a class="hoverMe" href="#/game">Game</a></li>
+                    <li><a id="chat-btn" class="hoverMe" href="#/chat">Chat</a></li>
+                    <li><a class="hoverMe" href="#/status">Status</a></li>
                 </ul>
-
+                
                 <!-- Right links -->
                 <ul class="nav-links nav-right">
                     <li class="dropdown">
-                        <a id="login-name" class="hoverMe" href="#/login">Sign in / Sign up</a>
+                        <a id="login-name" class="" href="#/login">Sign in / Sign up</a>
                         <ul id="login-dropdown" class="dropdown-content hidden">
-                            <li><a id="logout-btn" class="hoverMe">Logout</a></li>
+                            <li><a class="" href="#/settings">Settings</a></li>
+                            <li><a id="logout-btn" class="">Logout</a></li>
                         </ul>
                     </li>
                 </ul>

@@ -9,6 +9,7 @@ const publicUrls = [
     "/ping",
     "/health",
     "/auth/verify-2fa",
+    "/auth/forgot-password",
     "/auth/42/login",
     "/auth/42/callback",
     "/auth/google/login",
