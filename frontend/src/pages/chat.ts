@@ -650,12 +650,14 @@ export function chatHandlers() {
      */
     function handleGameRedirection(result: any) {
         try {
+            // Redirect invitations to the private-remote pong page (privateRemotePong.ts)
             if (result && result.room_id) {
-                window.location.hash = `#/pong/remote?room=${result.room_id}`;
+                window.location.hash = `#/private-remote-pong?room=${result.room_id}`;
             } else {
                 window.location.hash = '#/game';
             }
-        } catch (error) {
+
+		} catch (error) {
             // Fallback: show error message
             if (messageResult) {
                 messageResult.innerHTML = '<span class="error">❌ Failed to redirect to game</span>';
