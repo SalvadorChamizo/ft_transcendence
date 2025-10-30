@@ -1,4 +1,4 @@
-import { createUser, findUser } from "../repositories/userRepository";
+import { createUser, findUser, findUserById } from "../repositories/userRepository";
 import { RefreshTokenRepository } from "../repositories/refreshTokenRepository";
 import { generateAccessToken, generateRefreshToken } from "./tokenService";
 import nodemailer from "nodemailer"
@@ -39,7 +39,12 @@ export async function loginUser(username: string, password: string) {
     });
     if (!passwordControl.ok)
         throw new Error("Invalid username or password");
-    return user;
+
+    const authUser = findUserById(user.id);
+    if (!authUser.id)
+        throw new Error("Invalid username or password");
+
+    return ({ user, authUser });
 }
 
 export function createTokensLogin(user: any) {

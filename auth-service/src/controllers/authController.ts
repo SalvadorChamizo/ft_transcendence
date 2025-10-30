@@ -14,7 +14,7 @@ export async function registerController(req: FastifyRequest, reply: FastifyRepl
        const result = await registerUser(username, password, email);
        return reply.send(result);
    } catch (err: any) {
-        return reply.code(400).send(err.message);
+        return reply.code(200).send({ success: false, error: err.message });
    }
 }
 
@@ -22,9 +22,9 @@ export async function loginController(req: FastifyRequest, reply: FastifyReply) 
     const { username, password } = req.body as { username: string; password: string };
 
     try {
-        const user = await loginUser(username, password);
+        const { user, authUser } = await loginUser(username, password);
 
-        if (user.is_2fa_enabled) {
+        if (authUser.is_2fa_enabled) {
             const token = generateAccessToken(user);
             return reply.send({ requires2FA: true, userId: user.id, username: user.username, tempToken: token });
         }
@@ -39,11 +39,11 @@ export async function loginController(req: FastifyRequest, reply: FastifyReply) 
             maxAge: 7 * 24 * 60 * 60,
         });
 
-        return reply.send({ accessToken: token, user: { id: user.id, username: user.username },
+        return reply.send({ accessToken: token, user: { id: user.id, username: user.username, email: user.email, twofa: authUser.is_2fa_enabled },
         });
 
     } catch (err: any) {
-        return reply.code(401).send({ error: err.message });
+        return reply.code(200).send({ success: false, error: "Invalid username or password" });
     }
 }
 
@@ -51,7 +51,7 @@ export async function refreshController(req: FastifyRequest, reply: FastifyReply
     const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
-        return reply.code(400).send({ error: "Refresh token is required" });
+        return reply.code(200).send({ success: false, error: "Refresh token is required" });
     }
 
     try {
@@ -70,7 +70,7 @@ export async function refreshController(req: FastifyRequest, reply: FastifyReply
         });
 
     } catch (err: any) {
-        return reply.code(401).send({ error: err.message });
+        return reply.code(200).send({ success: false, error: err.message });
     }
 }
 
@@ -102,12 +102,24 @@ export async function logoutController(req: FastifyRequest, reply: FastifyReply)
 export async function verify2FAController(req: FastifyRequest, reply: FastifyReply) {
     const { userId, code } = req.body as { userId: number; code: string };
 
-    const user = findUserById(userId);
-    if (!user) {
+    const res = await fetch("http://user-management-service:8082/getUserById", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: userId }),
+    });
+
+    const user = await res.json();
+
+    if (!user.id) {
+        throw new Error("Invalid username or password");
+    }
+
+    const authUser = findUserById(userId);
+    if (!authUser) {
         return reply.code(400).send({ error: "User not found" });
     }
 
-    let secret = user.pending_2fa_secret || user.totp_secret;
+    let secret = authUser.pending_2fa_secret || authUser.totp_secret;
     if (!secret) {
         return reply.code(400).send({ error: "2FA not set up" });
     }
@@ -122,8 +134,8 @@ export async function verify2FAController(req: FastifyRequest, reply: FastifyRep
         return reply.code(401).send({ error: "Invalid 2FA code" });
     }
 
-    if (user.pending_2fa_secret) {
-        activateUser2FA(userId, user.pending_2fa_secret);
+    if (authUser.pending_2fa_secret) {
+        activateUser2FA(userId, authUser.pending_2fa_secret);
         return reply.send({ success: true, message: "2FA enabled successfully" });
     }
     const { token, refreshToken } = createTokensLogin(user);
@@ -136,7 +148,7 @@ export async function verify2FAController(req: FastifyRequest, reply: FastifyRep
         maxAge: 7 * 24 * 60 * 60,
     });
     
-    return reply.send({ accessToken: token});
+    return reply.send({ accessToken: token, user: { id: user.id, username: user.username, email: user.email, twofa: authUser.is_2fa_enabled }});
 }
 
 export async function enable2FAController(req: FastifyRequest, reply: FastifyReply) {
@@ -356,10 +368,8 @@ export async function callbackGoogleController(req: FastifyRequest, reply: Fasti
         }
 
         const googleUser = await userInfoRes.json();
-        console.log(`Google user: ${googleUser}`);
         const user = await findOrCreateUserFromGoogle(googleUser);
 
-        console.log(`User: ${user}`)
         const { token, refreshToken } = createTokensLogin(user);
 
         reply.setCookie("refreshToken", refreshToken, {
@@ -389,19 +399,72 @@ export async function forgotPasswordController(req: FastifyRequest, reply: Fasti
         });
 
         if (res.ok) {
-
             const user = await res.json();
 
             const password = generateUniqueId();
 
-            //call user service to really change the password.
+            const response = await fetch("http://user-management-service:8082/changePasswordBackend", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ newPassword: password, userId: user.id })
+            });
 
-            await sendEmail(email,
-                "New Password Request for ft_transcendence",
-                `<h1>Hello ${user.username}!</h1><p>Here is your new password: ${password}</p><br><br>
-                <p>If you didn't ask for a new password, I'm sorry, you can change it again in your user settings.</p>`)
+            if (response.ok) {
+                await sendEmail(email,
+                    "New Password Request for ft_transcendence",
+                    `<h1>Hello ${user.username}!</h1><p>Here is your new password: ${password}</p><br><br>
+                    <p>If you didn't ask for a new password, I'm sorry, you can change it again in your user settings.</p>`)
+            }
+
         }
     } catch (err) {
-        console.log("Error");
     }
+}
+
+export async function restoreUserController(req: FastifyRequest, reply: FastifyReply) {
+  try {
+    const userId = req.headers["x-user-id"];
+
+    if (!userId || typeof userId !== "string") {
+      return reply.status(400).send({ error: "Missing or invalid x-user-id header" });
+    }
+
+    const res = await fetch("http://user-management-service:8082/getUserById", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: userId }),
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      return reply.status(res.status).send({
+        error: `User service responded with status ${res.status}`,
+        details: errText || undefined,
+      });
+    }
+
+    const user = await res.json();
+
+    if (!user || !user.id) {
+      return reply.status(404).send({ error: "User not found or invalid user data" });
+    }
+
+    const authUser = findUserById(user.id);
+    if (!authUser) {
+      return reply.status(404).send({ error: "User not found in authentication system" });
+    }
+
+    return reply.send({
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        twofa: authUser.is_2fa_enabled ?? false,
+      },
+    });
+  } catch (err: any) {
+    console.error("⚠️ restoreUserController error:", err);
+    return reply.status(500).send({
+      error: "Internal server error" });
+  }
 }
