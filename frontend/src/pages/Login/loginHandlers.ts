@@ -6,16 +6,50 @@ import { Enable2FAHtml, forgotPassHTML, getLoginTabHTML } from "./loginTemplate"
 
 const apiHost = `${window.location.hostname}`;
 
-export function userLoggedIn() {
+export async function restoreSessionUser() {
     if (isLoggedIn()) {
       const userStr = localStorage.getItem("user");
-      const user = JSON.parse(userStr!);
-      const username = user.user ? user.user.username : user.username;
-      getElement("#login-name").textContent = `${username}`;
-      getElement("#login-dropdown").classList.remove("hidden");
-      const logoutBtn = document.querySelector<HTMLAnchorElement>("#logout-btn")!;
-      logoutBtn.onclick = logoutOutsideLoginPage;
+      if (!userStr) {
+        const token = getAccessToken();
+        const userSession = await fetch(`http://${apiHost}:8080/auth/restoreUserSession`, {
+          method: "GET",
+          headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+  
+        const restoredUserSession = await userSession.json();
+        localStorage.setItem("user", JSON.stringify(restoredUserSession.user));
+      }
+  }
+}
+
+export async function userLoggedIn() {
+    if (isLoggedIn()) {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr!);
+        const username = user.user ? user.user.username : user.username;
+        getElement("#login-name").textContent = `${username}`;
+        getElement("#login-dropdown").classList.remove("hidden");
+        const logoutBtn = document.querySelector<HTMLAnchorElement>("#logout-btn")!;
+        logoutBtn.onclick = logoutOutsideLoginPage;
+      } 
+      else {
+        const token = getAccessToken();
+        const userSession = await fetch(`http://${apiHost}:8080/auth/restoreUserSession`, {
+          method: "GET",
+          headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+
+        const restoredUserSession = await userSession.json();
+        localStorage.setItem("user", JSON.stringify(restoredUserSession.user));
     }
+}
 }
 
 export function setupLoginHandlers() {
@@ -52,11 +86,8 @@ export function setupLoginHandlers() {
       window.location.href = `http://${apiHost}:8080/auth/google/login`;
 
       await refreshAccessToken();
-      console.log("Entra aquí");
       const accessToken = getAccessToken();
-      console.log(`Access token = ${accessToken}`);
       if (accessToken) {
-        console.log("Pero aquí no entra");
         const user = await fetchCurrentUser(accessToken);
         localStorage.setItem("user", JSON.stringify(user));
       }
