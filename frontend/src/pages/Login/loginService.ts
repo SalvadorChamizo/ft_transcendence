@@ -2,6 +2,7 @@ import { getElement, setText, hideElement, showElement } from "./loginDOM";
 import { getAccessToken, setAccessToken, clearAuth, setTemp2FA } from "../../state/authState";
 import { handleTwoFA } from "./twofa";
 import { render } from "../../main";
+import { TwoFALogin } from "./login";
 
 const apiHost = `${window.location.hostname}`;
 
@@ -18,7 +19,12 @@ export async function login(username: string, password: string) {
         credentials: "include", // include cookies
       });
 
-        const data = await res.json();
+      let data: any = {};
+      try {
+        data = await res.json();
+      } catch {
+        data = {}; // prevent JSON parse errors for non-JSON responses
+      }
  
         if (res.ok && data.accessToken) {
             setAccessToken(data.accessToken);
@@ -31,8 +37,13 @@ export async function login(username: string, password: string) {
             window.location.hash = "#/";
         } else if (res.ok && data.requires2FA) {
             setTemp2FA(data.tempToken, data.username, data.userId);
-            location.hash = "#/login/2fa";
+            const app = document.getElementById("app")!;
+            app.innerHTML = TwoFALogin(1);
+            const html = document.querySelector("html")!;
+            html.style.background = "#111111";
+            await handleTwoFA(data.tempToken, data.tempUsername, data.tempUserId);
         } else {
+            showElement(result);
             setText(result, `${data.error || "Login failed"}`);
         }
     } catch {
@@ -118,6 +129,6 @@ export async function fetchCurrentUser(accessToken: string) {
   if (!res.ok)
     throw new Error("Failed to fetch user");
   
-  const data = res.json();
+  const data = await res.json();
   return data;
 }
