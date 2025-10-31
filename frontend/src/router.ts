@@ -2,7 +2,8 @@ import { Home } from "./pages/home";
 import { About } from "./pages/About/about";
 import { Login, TwoFALogin } from "./pages/Login/login";
 import { Status, refreshStatus } from "./pages/status";
-import { Chat, chatHandlers } from "./pages/chat";
+import { chatHandlers } from "./pages/Chat/chatHandlers";
+import { Chat } from "./pages/Chat/chat";
 // import { pongPage } from "./pages/pong"; // Eliminado
 import { Settings } from "./pages/settings";
 import { localPongPage, localPongHandlers } from "./pages/localPong"; // Importar handlers
