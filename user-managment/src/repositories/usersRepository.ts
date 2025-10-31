@@ -59,7 +59,7 @@ export function removeUser(id: number) {
 	const deleteFriends = db.prepare("DELETE FROM friends WHERE (user_id = ?) OR (friend_id = ?)");
 	
 	const result = deleteStats.run(id).changes +
-					deleteFriends.run(id, id).changes
+					deleteFriends.run(id, id).changes +
 					deleteUsers.run(id).changes;
 
 	return( result );
