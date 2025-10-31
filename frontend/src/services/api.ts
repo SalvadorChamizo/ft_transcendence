@@ -1,3 +1,48 @@
+export async function addFriend(friendId: number) {
+    const token = getAccessToken();
+    const userStr = localStorage.getItem('user');
+    let userId = null;
+    if (userStr) {
+        try {
+            const user = JSON.parse(userStr);
+            userId = user.id;
+        } catch {}
+    }
+    const res = await fetch(`http://${apiHost}:8080/users/addFriend`, {
+        method: 'POST',
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+            ...(userId ? { "x-user-id": userId.toString() } : {})
+        },
+        body: JSON.stringify({ friendId: friendId.toString() })
+    });
+    if (!res.ok) throw new Error('Error al añadir amigo');
+    return await res.json();
+}
+
+export async function removeFriend(friendId: number) {
+    const token = getAccessToken();
+    const userStr = localStorage.getItem('user');
+    let userId = null;
+    if (userStr) {
+        try {
+            const user = JSON.parse(userStr);
+            userId = user.id;
+        } catch {}
+    }
+    const res = await fetch(`http://${apiHost}:8080/users/removeFriend`, {
+        method: 'POST',
+        headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+            ...(userId ? { "x-user-id": userId.toString() } : {})
+        },
+        body: JSON.stringify({ friendId: friendId.toString() })
+    });
+    if (!res.ok) throw new Error('Error al eliminar amigo');
+    return await res.json();
+}
 // Get user stats by ID (calls backend endpoint)
 export async function getUserStatsById(id: number): Promise<{victories: number, defeats: number} | null> {
     try {
