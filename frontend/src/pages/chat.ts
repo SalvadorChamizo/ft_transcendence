@@ -20,6 +20,7 @@
  */
 
 import { getConversations, sendMessage, getMessages, blockUser, unblockUser, sendGameInvitation, getGameInvitations, acceptGameInvitation, rejectGameInvitation, getUserProfile, searchUsersByUsername, getAllUsers } from "../services/api";
+import { addFriend, removeFriend } from "../services/api";
 import { websocketClient, ChatMessage } from "../services/websocketClient";
 import { getUserIdFromToken } from "../state/authState";
 
@@ -677,10 +678,17 @@ export function chatHandlers() {
         activeConversationId = otherUserId;
         activeConversationName = otherUserName;
 
-
         // Update the chat header
         const contactName = document.getElementById('contact-name');
-        if (contactName) contactName.textContent = otherUserName;
+        if (contactName) {
+            contactName.textContent = otherUserName;
+            contactName.setAttribute('data-username', otherUserName);
+            contactName.style.cursor = 'pointer';
+            contactName.onclick = async () => {
+                // Navegar al perfil del usuario
+                window.location.hash = `#/profile?username=${otherUserName}`;
+            };
+        }
 
         // Botón añadir/quitar amigo
         let friendsSet = (window as any).friendsSet;
@@ -717,13 +725,28 @@ export function chatHandlers() {
         }
         updateFriendBtn();
         if (addFriendBtn) {
-            addFriendBtn.onclick = () => {
-                if (friendsSet.has(otherUserId)) {
-                    friendsSet.delete(otherUserId);
-                } else {
-                    friendsSet.add(otherUserId);
+            addFriendBtn.onclick = async () => {
+                addFriendBtn.disabled = true;
+                try {
+                    if (friendsSet.has(otherUserId)) {
+                        await removeFriend(otherUserId);
+                        friendsSet.delete(otherUserId);
+                        showSuccessMessage('Amigo eliminado correctamente', messageResult);
+                    } else {
+                        await addFriend(otherUserId);
+                        friendsSet.add(otherUserId);
+                        showSuccessMessage('Amigo añadido correctamente', messageResult);
+                    }
+                } catch (err: any) {
+                    let errorMsg = 'Error actualizando amistad';
+                    if (err && err.message) {
+                        errorMsg += ': ' + err.message;
+                    }
+                    showErrorMessage(errorMsg, messageResult);
+                } finally {
+                    updateFriendBtn();
+                    addFriendBtn.disabled = false;
                 }
-                updateFriendBtn();
             };
         }
 
