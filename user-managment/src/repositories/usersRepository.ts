@@ -54,8 +54,15 @@ export function findIDByUsername(username: string) {
 }
 
 export function removeUser(id: number) {
-	const stmt = db.prepare("DELETE FROM users WHERE if = ?");
-	return( stmt.run(id) );
+	const deleteUsers = db.prepare("DELETE FROM users WHERE id = ?");
+	const deleteStats = db.prepare("DELETE FROM stats WHERE id = ?");
+	const deleteFriends = db.prepare("DELETE FROM friends WHERE (user_id = ?) OR (friend_id = ?)");
+	
+	const result = deleteStats.run(id).changes +
+					deleteFriends.run(id, id).changes
+					deleteUsers.run(id).changes;
+
+	return( result );
 }
 
 export function findAllUsers() {
