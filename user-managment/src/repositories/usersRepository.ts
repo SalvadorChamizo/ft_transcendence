@@ -8,6 +8,11 @@ export function createUser(username: string, password: string, email: string) {
 	console.log("🔍 Usuario recién creado:", userCreated);
 }
 
+export function timeRegister(id: number) {
+	const stmt = db.prepare("UPDATE users SET last_login = (strftime('%s','now')) WHERE id = ?")
+	return stmt.run(id)
+}
+
 export function findUserByUsername(username: string) {
 	const stmt = db.prepare("SELECT * FROM users WHERE username = ?");
 	return stmt.get(username);
@@ -51,6 +56,18 @@ export function findIDByUsername(username: string) {
 	const stmt = db.prepare("SELECT id FROM users WHERE username = ?");
 	const result = stmt.get(username);
 	return result ? result.id : null;
+}
+
+export function removeUser(id: number) {
+	const deleteUsers = db.prepare("DELETE FROM users WHERE id = ?");
+	const deleteStats = db.prepare("DELETE FROM stats WHERE id = ?");
+	const deleteFriends = db.prepare("DELETE FROM friends WHERE (user_id = ?) OR (friend_id = ?)");
+	
+	const result = deleteStats.run(id).changes +
+					deleteFriends.run(id, id).changes +
+					deleteUsers.run(id).changes;
+
+	return( result );
 }
 
 export function findAllUsers() {
