@@ -1,66 +1,119 @@
 /* Terms Page Styles */
 .terms-page {
-  min-height: 70vh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  background: linear-gradient(135deg, #0f2027, #21225A, #2c5364);
-  font-family: 'DM Sans', Arial, sans-serif;
-  padding: 48px 24px;
+  padding: 3rem 1.5rem;
+  color: #cfd8ff;
+  font-family: 'DM Sans', 'Orbitron', sans-serif;
+  background: radial-gradient(circle at 20% 20%, #050517 0%, #010111 100%);
+  text-align: left;
 }
+
 .terms-title {
-  color: #42F3FA;
-  font-size: 2.7rem;
+  font-family: 'Orbitron', sans-serif;
   font-weight: 700;
-  margin-bottom: 32px;
-  text-align: center;
+  font-size: 1.6rem;
+  text-transform: uppercase;
   letter-spacing: 1px;
-  text-shadow: 0 2px 12px rgba(66,243,250,0.12);
+  margin-bottom: 2rem;
+  background: linear-gradient(90deg, #00eaff, #ff00c8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+  text-shadow: 0 0 25px rgba(0, 255, 255, 0.15);
 }
+
 .terms-content {
-  color: #fff;
-  font-size: 1.15rem;
-  max-width: 800px;
+  color: #a8b3e8;
+  font-size: 0.95rem;
   line-height: 1.7;
-  background: rgba(24,23,65,0.85);
-  border-radius: 16px;
-  padding: 40px 32px;
-  box-shadow: 0 4px 24px rgba(66,243,250,0.08);
-  margin-bottom: 32px;
 }
-.terms-content ol {
-  margin-left: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-.terms-content li {
-  margin-bottom: 0.7rem;
-  padding-left: 0.2rem;
-}
+
 .terms-content strong {
-  color: #42F3FA;
+  color: #ffffff;
+  font-weight: 600;
 }
-@media (max-width: 900px) {
-  .terms-page {
-    padding: 24px 4vw;
-  }
-  .terms-title {
-    font-size: 2rem;
-  }
-  .terms-content {
-    padding: 24px 8px;
-    font-size: 1rem;
-  }
+
+.terms-content em {
+  color: #9ba9ff;
+  font-style: italic;
 }
-@media (max-width: 600px) {
-  .terms-title {
-    font-size: 1.3rem;
-  }
-  .terms-content {
-    padding: 12px 2px;
-    font-size: 0.95rem;
-  }
+
+.terms-content a {
+  color: #00eaff;
+  text-decoration: none;
+  transition: color 0.3s ease, text-shadow 0.3s ease;
 }
+
+.terms-content a:hover {
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(0, 255, 255, 0.6);
+}
+
+.terms-content ol {
+  margin: 1.5rem 0;
+  padding-left: 1.2rem;
+  counter-reset: item;
+}
+
+.terms-content ol > li {
+  counter-increment: item;
+  margin-bottom: 1rem;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.terms-content ol > li::before {
+  content: counter(item) ".";
+  position: absolute;
+  left: 0;
+  color: #00eaff;
+  font-weight: bold;
+}
+
+.terms-content ul {
+  margin: 0.8rem 0 0.8rem 1.2rem;
+  list-style: none;
+}
+
+.terms-content ul li {
+  position: relative;
+  margin-bottom: 0.5rem;
+  padding-left: 1.2rem;
+}
+
+.terms-content ul li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: #ff00c8;
+  font-weight: bold;
+}
+
+.module-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(0, 204, 255, 0.15);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.05);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+}
+
+.module-card:hover {
+  box-shadow: 0 0 30px rgba(0, 255, 255, 0.2);
+  transform: translateY(-4px);
+}
+
+.terms-content p {
+  margin-bottom: 1rem;
+}
+
+.terms-content ol li strong {
+  color: #00eaff;
+}
+
 /* Error Page Styles */
 .error-page {
   min-height: 80vh;
@@ -1228,6 +1281,7 @@ header {
 
 .footer-logo {
   height: 4rem;
+  filter: invert(1);
 }
 
 .footer p {
