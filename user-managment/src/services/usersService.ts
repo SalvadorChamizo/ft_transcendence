@@ -3,6 +3,7 @@ import path from "path";
 
 import { 
 	createUser,
+	timeRegister,
 	usernameChanger,
 	emailChanger,
 	passwordChanger,
@@ -22,6 +23,16 @@ export async function registerUser(email: string, username: string, password: st
 export async function register42User(email: string, username: string) {
 	createUser(username, "", email);
 	return { message: "User registered successfully" };
+}
+
+export async function registerTime( userId: number ) {
+	const result = timeRegister(userId);
+	
+	if (result.changes === 0) {
+  		console.warn(`⚠️ No user found with id ${userId}`);
+	}
+
+	return { message: "User login time register successfully" };
 }
 
 export async function changeUsername(id: number, newUsername: string) {

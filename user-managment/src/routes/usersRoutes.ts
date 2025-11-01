@@ -1,6 +1,7 @@
 import {
   registerController,
   register42Controller,
+  loginTimeRegister,
   usernameChanger,
   emailChanger,
   userGetterByEmail,
@@ -32,6 +33,7 @@ import {
 export default async (fastify: FastifyInstance) => {
     fastify.post("/register", registerController);
     fastify.post("/register42", register42Controller);
+    fastify.post("/loginTime", loginTimeRegister)
     fastify.get("/me", getCurrentUserController);
     fastify.post("/changeUsername", usernameChanger);
     fastify.post("/changeEmail", emailChanger);

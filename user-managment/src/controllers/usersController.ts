@@ -2,7 +2,8 @@ import bcrypt from "bcrypt";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { 
 	registerUser, 
-	register42User, 
+	register42User,
+	registerTime, 
 	changeUsername, 
 	changeEmail,
 	changePassword,
@@ -55,6 +56,17 @@ export async function register42Controller(req: FastifyRequest, reply: FastifyRe
 	}
 }
 
+export async function loginTimeRegister(req: FastifyRequest, reply: FastifyReply){
+	const userId = req.headers["x-user-id"];
+
+	try {
+		registerTime(userId);
+	} catch (err: any) {
+		console.error("Error occurred during username change:", err);
+		return reply.code(400).send({ error: err.message });
+	}
+}
+
 export async function usernameChanger(req: FastifyRequest, reply: FastifyReply) {
 	const { newUsername } = req.body as { newUsername: string };
 	const userId = req.headers["x-user-id"];
@@ -68,8 +80,6 @@ export async function usernameChanger(req: FastifyRequest, reply: FastifyReply) 
 		if (existingUser) {
 			return reply.code(400).send({ error: "Username already exists" });
 		}
-		console.log("Controller -> Changing username for user ID:", userId);
-		console.log("Controller -> New username:", newUsername);
 		const result = await changeUsername(userId, newUsername);
 		return reply.send({ result });
 	} catch (err: any) {
