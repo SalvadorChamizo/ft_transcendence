@@ -1,6 +1,7 @@
 import {
   registerController,
   register42Controller,
+  loginTimeRegister,
   usernameChanger,
   emailChanger,
   userGetterByEmail,
@@ -11,6 +12,7 @@ import {
   avatarChanger,
   passwordControl,
   passwordChanger,
+  removeUser,
   passwordChangerController,
 } from "../controllers/usersController";
 
@@ -31,6 +33,7 @@ import {
 export default async (fastify: FastifyInstance) => {
     fastify.post("/register", registerController);
     fastify.post("/register42", register42Controller);
+    fastify.post("/loginTime", loginTimeRegister)
     fastify.get("/me", getCurrentUserController);
     fastify.post("/changeUsername", usernameChanger);
     fastify.post("/changeEmail", emailChanger);
@@ -49,5 +52,6 @@ export default async (fastify: FastifyInstance) => {
     fastify.get("/getFriends", getFriendController);
     fastify.post("/addFriend", addFriendController);
     fastify.post("/removeFriend", removeFriendController);
-    fastify.get("/checkFriend", checkFriendController)
+    fastify.get("/checkFriend", checkFriendController);
+    fastify.delete("/removeUsers", removeUser)
 };

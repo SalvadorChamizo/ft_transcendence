@@ -45,9 +45,12 @@ export async function userLoggedIn() {
         },
         credentials: "include",
       });
-
         const restoredUserSession = await userSession.json();
         localStorage.setItem("user", JSON.stringify(restoredUserSession.user));
+        getElement("#login-name").textContent = `${restoredUserSession.user.username}`;
+        getElement("#login-dropdown").classList.remove("hidden");
+        const logoutBtn = document.querySelector<HTMLAnchorElement>("#logout-btn")!;
+        logoutBtn.onclick = logoutOutsideLoginPage;
     }
 }
 }
@@ -75,12 +78,12 @@ export function setupLoginHandlers() {
       enable2FAHandlers(actualUser.id, actualUser.username);
       return ;
     }
-    
+
     const fortyTwoBtn = document.querySelector<HTMLButtonElement>("#fortyTwoLoginButton");
     fortyTwoBtn?.addEventListener("click", () => {
       window.location.href = `http://${apiHost}:8080/auth/42/login`;
     });
-    
+
     const googleBtn = document.querySelector<HTMLButtonElement>("#googleLoginButton");
     googleBtn?.addEventListener("click", async () => {
       window.location.href = `http://${apiHost}:8080/auth/google/login`;

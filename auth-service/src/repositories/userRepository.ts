@@ -1,8 +1,8 @@
 import db from "../db/sqlite"
 
-export function createUser(username: string, password: string, email: string) {
-    const stmt = db.prepare("INSERT INTO users (username, password, email) VALUES (?, ?, ?)");
-    stmt.run(username, password, email);
+export function createUser() {
+    const stmt = db.prepare("INSERT INTO users DEFAULT VALUES");
+    stmt.run();
 }
 
 export function findUser(username: string) {
@@ -21,7 +21,7 @@ export function updateUser2FA(secret: string, userId: number) {
 }
 
 export function debugUsers() {
-    const rows = db.prepare("SELECT id, username, totp_secret, pending_2fa_secret FROM users").all();
+    const rows = db.prepare("SELECT id, totp_secret, pending_2fa_secret FROM users").all();
     console.log(rows);
 }
 
@@ -44,4 +44,9 @@ export function getUserPending2FA(userId: number): string | null {
     }
 
     return row.pending_2fa_secret;
+}
+
+export function deleteUser(userId: number) {
+    const stmt = db.prepate("DELETE * FROM users WHERE id = ?");
+    stmt.run(userId);
 }

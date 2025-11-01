@@ -2,7 +2,8 @@ import bcrypt from "bcrypt";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { 
 	registerUser, 
-	register42User, 
+	register42User,
+	registerTime, 
 	changeUsername, 
 	changeEmail,
 	changePassword,
@@ -11,7 +12,8 @@ import {
 	getUserByEmail, 
 	getUserAvatar,
 	avatarUploader,
-	avatarDeleter
+	avatarDeleter,
+	userRemover
 } from "../services/usersService";
 
 export async function registerController(req: FastifyRequest, reply: FastifyReply) {
@@ -54,6 +56,17 @@ export async function register42Controller(req: FastifyRequest, reply: FastifyRe
 	}
 }
 
+export async function loginTimeRegister(req: FastifyRequest, reply: FastifyReply){
+	const userId = req.headers["x-user-id"];
+
+	try {
+		registerTime(userId);
+	} catch (err: any) {
+		console.error("Error occurred during username change:", err);
+		return reply.code(400).send({ error: err.message });
+	}
+}
+
 export async function usernameChanger(req: FastifyRequest, reply: FastifyReply) {
 	const { newUsername } = req.body as { newUsername: string };
 	const userId = req.headers["x-user-id"];
@@ -67,8 +80,6 @@ export async function usernameChanger(req: FastifyRequest, reply: FastifyReply) 
 		if (existingUser) {
 			return reply.code(400).send({ error: "Username already exists" });
 		}
-		console.log("Controller -> Changing username for user ID:", userId);
-		console.log("Controller -> New username:", newUsername);
 		const result = await changeUsername(userId, newUsername);
 		return reply.send({ result });
 	} catch (err: any) {
@@ -172,19 +183,10 @@ export async function avatarChanger(req: FastifyRequest, reply: FastifyReply) {
 		return reply.code(400).send({ error: "No file uploaded" });
 	}
 	try {
-		console.log("File info:", {
-			mimetype: data.mimetype,
-			filename: data.filename,
-			encoding: data.encoding,
-			fieldname: data.fieldname
-		});
-		console.log("Completed Controller 1");
 		const avatar = await getUserAvatar(userId);
-		console.log("Completed Controller 2");
 		if (avatar) {
 			await avatarDeleter(userId);
 		}
-		console.log("Completed Controller 3");
 		await avatarUploader(userId, data);
 		return reply.send({ message: "Avatar changed successfully" });
 	} catch (err: any) {
@@ -259,4 +261,20 @@ export async function getCurrentUserController(req: FastifyRequest, reply: Fasti
 
 	const user = await getUserById(Number(userId));
 	return { user };
+}
+
+export async function removeUser(req: FastifyRequest, reply: FastifyReply) {
+	const userId = req.headers["x-user-id"];
+
+	try {
+		const avatar = await getUserAvatar(userId);
+		if (avatar) {
+			await avatarDeleter(userId);
+		}
+		userRemover(userId);
+		return reply.send({ message: "User removed successfully" });
+	}
+	catch (err: any) {
+		return reply.code(400).send({ error: err.message });
+	}
 }

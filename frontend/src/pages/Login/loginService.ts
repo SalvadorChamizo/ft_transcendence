@@ -41,7 +41,7 @@ export async function login(username: string, password: string) {
             app.innerHTML = TwoFALogin(1);
             const html = document.querySelector("html")!;
             html.style.background = "#111111";
-            await handleTwoFA(data.tempToken, data.tempUsername, data.tempUserId);
+            await handleTwoFA(data.tempToken, data.username, data.userId);
         } else {
             showElement(result);
             setText(result, `${data.error || "Login failed"}`);

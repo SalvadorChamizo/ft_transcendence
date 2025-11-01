@@ -8,7 +8,7 @@ db.prepare(`
 	username TEXT UNIQUE,
 	password TEXT,
 	email TEXT UNIQUE,
-	avatar INTEGER DEFAULT 0
+	last_login INTEGER DEFAULT (strftime('%s','now'))
 	)
 `).run();
 

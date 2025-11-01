@@ -9,7 +9,7 @@ export async function handleTwoFA(tempToken: string, username: string, userId: n
     //app.innerHTML = TwoFAFormHtml();
 
   if (isLoggedIn()) {
-    location.hash = "#/login";
+    location.hash = "#/";
   }
 
     setTimeout(async () => {
@@ -21,10 +21,9 @@ export async function handleTwoFA(tempToken: string, username: string, userId: n
         cancelBtn.onclick = (e) => {
             e.preventDefault();
     
-            location.hash = "#/login";
+            location.hash = "#/";
         };
-    
-        
+
         try {
             const res = await fetch(`http://${apiHost}:8080/auth/generate-qr`, {
                 method: "POST",

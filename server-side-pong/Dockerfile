@@ -1,5 +1,5 @@
 
-FROM node:20-slim
+FROM ft_transcendence-node-base:latest
 
 WORKDIR /app
 

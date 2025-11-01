@@ -2,7 +2,7 @@ import { getAccessToken, isLoggedIn } from "../state/authState";
 import { Enable2FAHtml } from "./Login/loginTemplate";
 import { getElement } from "./Login/loginDOM";
 import { enable2FAHandlers } from "./Login/login";
-import { logoutOutsideLoginPage } from "./Login/loginService";
+import { logoutOutsideLoginPage, logout } from "./Login/loginService";
 
 const apiHost = `${window.location.hostname}`;
 
@@ -102,6 +102,7 @@ export function settingsHandlers(accessToken: string) {
   const avatarField = document.querySelector<HTMLParagraphElement>("#avatar")!;
   const avatarInput = document.querySelector<HTMLInputElement>("#newAvatar")!;
   const changeAvatarBtn = document.querySelector<HTMLButtonElement>("#changeAvatarBTN")!;
+  const deleteUserBtn = document.querySelector<HTMLButtonElement>("#delete-account-btn")!;
 
   if (isLoggedIn()) {
     const userStr = localStorage.getItem("user");
@@ -282,11 +283,36 @@ export function settingsHandlers(accessToken: string) {
       const data = await res.json();
       if (res.ok) {
         console.log("Avatar changed successfully");
-        location.reload();
       } else {
         console.error("Error changing avatar:", data.error);
       }
     } 
+    catch (err) {
+      console.error("⚠️ Failed to reach server", err);
+    }
+  });
+
+  deleteUserBtn.addEventListener("click", async (e) => {  
+    e.preventDefault();
+    try {
+      const res = await fetch (`http://${apiHost}:8080/users/removeUsers`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ newPassword: newPassword.value }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        console.log("User delete successfully");
+        logoutOutsideLoginPage();
+        location.hash = "/#login";
+      }
+      else {
+        console.log("Error deleting user:", data.error)
+      }
+    }
     catch (err) {
       console.error("⚠️ Failed to reach server", err);
     }
