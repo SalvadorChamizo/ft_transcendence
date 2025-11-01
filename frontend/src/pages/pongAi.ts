@@ -170,7 +170,22 @@ function startGameVsAI() {
             username = 'guest_' + Math.random().toString(36).substring(2, 8);
             clientUsername = username;
         }
-        socket.emit("joinRoom", { roomId, username });
+        // Prefer sending user id if available instead of username
+        const userId = (() => {
+            try {
+                // try token-based helper if present
+                // (pongAi.ts does not import getUserIdFromToken by default to avoid larger changes)
+                const userStr = localStorage.getItem('user');
+                if (!userStr) return undefined;
+                const u = JSON.parse(userStr);
+                return u?.id ?? u?.userId ?? undefined;
+            } catch {
+                return undefined;
+            }
+        })();
+        const payload: any = { roomId };
+        if (userId) payload.userId = userId; else payload.username = username;
+        socket.emit("joinRoom", payload);
 
     // Do not display username in the UI (we still send it to the server for mapping)
 

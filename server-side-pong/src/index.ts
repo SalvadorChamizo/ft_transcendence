@@ -24,6 +24,8 @@ import { WINNING_SCORE } from "./utils/pong-constants";
 
 const app = fastify({ logger: true });
 const io = new Server(app.server, { cors: { origin: "*" } });
+// map socket.id -> user id (if client provides one on join)
+const socketToUserId = new Map<string, string | number>();
 
 /**
  * ROOMS
@@ -62,7 +64,7 @@ pongAiController(app, io);
 io.on("connection", (socket) => {
   console.log("Player connected:", socket.id);
 
-  socket.on("joinRoom", (payload?: { roomId?: string }) => {
+  socket.on("joinRoom", (payload?: { roomId?: string, userId?: string | number }) => {
     const roomId = payload?.roomId;
     if (!roomId) {
       socket.emit("error", { message: "Room ID is required" });
@@ -95,11 +97,17 @@ io.on("connection", (socket) => {
     socket.join(roomId);
 
     // Manage players in the room (DB for non-local, memory for local_)
+    const joinPlayerId = typeof payload?.userId !== 'undefined' ? payload!.userId : socket.id;
     if (roomId.startsWith("local_")) {
       // no persistence for local rooms
     } else {
       // Use a more robust approach to add players to avoid race conditions
-      addPlayerToRoom(roomId, socket.id);
+      addPlayerToRoom(roomId, String(joinPlayerId));
+    }
+
+    // remember mapping socket -> user id when provided so we can clean up on disconnect
+    if (typeof payload?.userId !== 'undefined') {
+      socketToUserId.set(socket.id, payload!.userId!);
     }
 
     let role: "left" | "right" = "left";
@@ -110,7 +118,8 @@ io.on("connection", (socket) => {
     } else {
       const dbRoom = getRoom(roomId);
       if (dbRoom) {
-        const idx = dbRoom.players.indexOf(socket.id);
+        const searchId = typeof payload?.userId !== 'undefined' ? String(payload!.userId) : socket.id;
+        const idx = dbRoom.players.indexOf(searchId);
         role = idx === 0 ? "left" : "right";
       }
     }
@@ -158,9 +167,12 @@ io.on("connection", (socket) => {
       }
       const dbRoom = getRoom(roomId);
       if (dbRoom) {
-        const playerIndex = dbRoom.players.indexOf(socket.id);
+  const playerId = socketToUserId.get(socket.id) ?? socket.id;
+  const playerIndex = dbRoom.players.indexOf(String(playerId));
         if (playerIndex !== -1) {
           dbRoom.players.splice(playerIndex, 1);
+          // clean socket->user mapping for this socket
+          socketToUserId.delete(socket.id);
           const remainingPlayerId = dbRoom.players[0];
           // Game state
             const state = getGameState(roomId);

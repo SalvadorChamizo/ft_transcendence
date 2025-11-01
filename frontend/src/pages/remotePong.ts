@@ -310,7 +310,15 @@ function startGame(roomIdToJoin: string) {
     document.getElementById("roleInfo")!.textContent = `Joining room ${roomIdToJoin}...`;
     
     socket.on('connect', () => {
-        socket.emit("joinRoom", { roomId: roomIdToJoin });
+        // Prefer sending authenticated user id when available so server can persist user_ids
+        const userId = getUserIdFromToken() || (() => {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) return undefined;
+            try { const u = JSON.parse(userStr); return u?.id ?? u?.userId; } catch { return undefined; }
+        })();
+        const payload: any = { roomId: roomIdToJoin };
+        if (typeof userId !== 'undefined' && userId !== null) payload.userId = userId;
+        socket.emit("joinRoom", payload);
     });
 
     socket.on("roomJoined", (data: { roomId: string, role: "left" | "right" }) => {
