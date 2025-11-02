@@ -1,5 +1,6 @@
 import type { FastifyRequest, FastifyReply } from "fastify"
 import * as TournamentService from "../services/tournamentService";
+import { sendNotification } from "../services/notificationService";
 import { PlayerRepository } from "../repositories/playerRepository";
 import { TournamentRepository } from "../repositories/tournamentRepository";
 import jwt from 'jsonwebtoken';
@@ -119,7 +120,9 @@ export async function joinTournamentController(req: FastifyRequest, reply: Fasti
         }
     
         const joined = await TournamentService.joinTournament(Number(id), Number(userId), username);
-            
+
+        sendNotification(Number(userId), "Tournament joined", "You've joined a tournament");
+
         return reply.code(200).send({ message: "Tournament joined" });
     } catch (err: any) {
         return reply.code(400).send({ error: "Failed to join tournament" });
