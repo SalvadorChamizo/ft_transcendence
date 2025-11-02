@@ -18,6 +18,7 @@ import { forgotPass } from "./pages/Login/forgotPass";
 import { ErrorPage } from "./pages/ErrorPage";
 import { TermsPage } from "./pages/TermsPage";
 import { privateRemotePongPage, privateRemotePongHandlers } from "./pages/privateRemotePong";
+import { setupSidebarTabs } from "./pages/Chat/chatNotifications";
 
 export function router(route: string): string {
     // for the roomid to be visible
@@ -71,6 +72,7 @@ export function router(route: string): string {
             case "#/chat":
                 if (isLoggedIn()) {
                     setTimeout(chatHandlers, 0);
+                    setTimeout(setupSidebarTabs, 0);
                     return Chat();
                 }
                 else {

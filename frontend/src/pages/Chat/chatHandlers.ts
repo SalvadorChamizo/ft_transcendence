@@ -9,8 +9,7 @@ import { blockHandler } from "./chatBlockUsers";
 import { sendGameInvitation } from "../../services/api";
 import { openNewChatModal, closeProfileModal } from "./chatModal";
 import { getAccessToken } from "../../state/authState";
-
-const apiHost = window.location.hostname;
+import { loadNotificationsAuto, getNotifications } from "./chatNotifications";
 
 export async function chatHandlers() {
     // Get essential DOM elements with proper error handling
@@ -43,7 +42,22 @@ export async function chatHandlers() {
 
     // Load conversations automatically on page load
     loadConversationsAuto();
+    loadNotificationsAuto();
 
+    const result = await getNotifications();
+
+    if (result.notifications && result.notifications.length > 0) {
+      // Render notifications
+
+    const unreadCount = result.notifications.filter((not: any) => not.read_at === null).length;
+
+    if (unreadCount !== 0) {
+        const notificationsTabBtn = document.querySelector('.sidebar-nav-link.notification-btr') as HTMLElement;
+            if (notificationsTabBtn) {
+            notificationsTabBtn.textContent = `Notifications (${unreadCount})`;
+            }
+        }
+    }
     // Handle new chat functionality
     const sidebarNewChatBtn = document.getElementById('sidebar-new-chat') as HTMLButtonElement;
     const newChatModal = document.getElementById('new-chat-modal') as HTMLDivElement;
@@ -51,31 +65,6 @@ export async function chatHandlers() {
     const userSearchInput = document.getElementById('user-search') as HTMLInputElement;
     const userSearchResults = document.getElementById('user-search-results') as HTMLDivElement;
 
-    const notifications = document.getElementById("notifications");
-
-    if (notifications) {
-        const token = getAccessToken();
-        try {
-            const res = await fetch(`http://${apiHost}:8080/conversations/notifications`, {
-                method: "GET",
-                headers: {  
-                    "Authorization": `Bearer ${token}`,
-                    "Content-Type": "application/json"
-                }
-            });
-
-            if (!res.ok) {
-                console.error('Failed to fetch notifications:', res.status, res.statusText);
-                notifications.innerHTML = '';
-            } else {
-                const data = await res.json();
-                notifications.innerHTML = data.notifications ?? '';
-            }
-        } catch (err) {
-            console.error('Error fetching notifications:', err);
-            notifications.innerHTML = '';
-        }
-    }
     // Add event listener for sidebar new chat button
     if (sidebarNewChatBtn) {
         sidebarNewChatBtn.addEventListener('click', openNewChatModal);

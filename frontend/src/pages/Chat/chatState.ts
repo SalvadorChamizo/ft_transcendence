@@ -2,7 +2,8 @@
 let activeConversationId: number | null = null;
 let activeConversationName: string = '';
 let blockedUsers: Set<number> = new Set(); // Track blocked users
-
+let activeNotificationId: number | null = null;
+let activeNotificationName: string = '';
 // Caching and performance
 const usernameCache: Map<number, string> = new Map();
 
@@ -10,6 +11,24 @@ const usernameCache: Map<number, string> = new Map();
 const connectedUsersSet: Set<number> = new Set();
 
 let loadConversationsTimeout: ReturnType<typeof setTimeout> | null = null;
+let loadNotificationsTimeout: ReturnType<typeof setTimeout> | null = null;
+
+export function getActiveNotificationId(): number | null {
+    return activeNotificationId;
+}
+
+export function setActiveNotificationId(newId: number) {
+    activeNotificationId = newId;
+}
+
+export function getActiveNotificationName(): string | null {
+    return activeNotificationName;
+}
+
+export function setActiveNotificationName(newName: string) {
+    activeNotificationName = newName;
+}
+
 
 export function getActiveConversationId(): number | null {
     return activeConversationId;
@@ -41,6 +60,14 @@ export function getLoadConversationsTimeout(): ReturnType<typeof setTimeout> | n
 
 export function setLoadConversationsTimeout(newLoadConversationsTimeout: ReturnType<typeof setTimeout>) {
     loadConversationsTimeout = newLoadConversationsTimeout;
+}
+
+export function getLoadNotificationsTimeout(): ReturnType<typeof setTimeout> | null {
+    return loadNotificationsTimeout;
+}
+
+export function setLoadNotificationsTimeout(newLoadNotificationsTimeout: ReturnType<typeof setTimeout>) {
+    loadNotificationsTimeout = newLoadNotificationsTimeout;
 }
 
 export function getConnectedUsersSet(): Set<number> {

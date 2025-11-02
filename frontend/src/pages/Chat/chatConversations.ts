@@ -59,6 +59,7 @@ export async function selectConversation(otherUserId: number, otherUserName: str
     }
     updateFriendBtn(otherUserId);
     if (addFriendBtn) {
+        addFriendBtn.style.display = 'block';
         addFriendBtn.onclick = () => {
             if (friendsSet.has(otherUserId)) {
                 friendsSet.delete(otherUserId);
@@ -72,6 +73,7 @@ export async function selectConversation(otherUserId: number, otherUserName: str
     // Actualizar el estado online/offline dinámicamente
     const contactStatus = document.getElementById('contact-status');
     if (contactStatus) {
+        contactStatus.style.display = 'block';
         if (getConnectedUsersSet().has(otherUserId)) {
             contactStatus.textContent = 'Online';
             contactStatus.style.color = '#25D366';
@@ -87,6 +89,10 @@ export async function selectConversation(otherUserId: number, otherUserName: str
     const profileBtn = document.getElementById('view-profile-btn') as HTMLButtonElement;
     if (profileBtn) {
         profileBtn.style.display = 'block';
+    }
+
+    if (blockButton) {
+        blockButton.style.display = 'block';
     }
 
     // Show invite to game button
@@ -194,6 +200,10 @@ export async function loadConversationsAuto() {
             `;
         }
     }
+    setTimeout(() => {
+    conversationsList.scrollTop = conversationsList.scrollHeight;
+    }, 0);
+
 }
 
 export function loadConversationsDebounced() {
