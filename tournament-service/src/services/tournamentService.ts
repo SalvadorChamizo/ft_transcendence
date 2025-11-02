@@ -229,7 +229,7 @@ export async function joinTournament(tournamentId: number, userId: number | null
     tournament_id: tournamentId,
   });
 
-  TournamentRepository.updateCurrentTournamentPlayers(tournamentId, playerCount);
+  TournamentRepository.updateCurrentTournamentPlayers(tournamentId, playerCount + 1);
 
   return TournamentRepository.getById(tournamentId);
 }
@@ -240,6 +240,8 @@ export async function leaveTournament(tournamentId: number, userId: number | nul
 
   if (userId) {
     PlayerRepository.removeByUserAndTournament(Number(userId), tournamentId);
+    const playerCount = PlayerRepository.countByTournamentId(tournamentId);
+    TournamentRepository.updateCurrentTournamentPlayers(tournamentId, playerCount);
   } else {
     // fallback: remove by username if provided repository supports it
     const fn = (PlayerRepository as any).removeByUsernameAndTournament;
