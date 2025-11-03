@@ -50,7 +50,8 @@ export async function websocketRoutes(fastify: FastifyInstance) {
                     console.log(`Received message from user ${userId}:`, message.type);
 
                     // Process the message through WebSocket service
-                    websocketService.handleWebSocketMessage(connection, message);
+                    // Pass the payload (which is already a parsed object) instead of the whole message
+                    websocketService.handleWebSocketMessage(connection, JSON.stringify(message.payload));
 
                 } catch (error) {
                     console.error(`Error processing message from user ${userId}:`, error);
