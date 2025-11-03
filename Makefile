@@ -32,3 +32,6 @@ erase:
 	@sudo docker system prune -a --volumes -f
 
 re: down clean up
+
+volume-rm:
+	docker volume rm $$(docker volume ls -q)
