@@ -172,7 +172,7 @@ export async function loadConversationsAuto() {
 
                         if (target.classList.contains('conversation-name')) {
                             // Navigate to profile
-                            window.location.hash = `#/profile?username=${username}`;
+                            window.location.hash = `#/profile/${username}`;
                         } else {
                             // Select conversation
                             document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
@@ -203,7 +203,6 @@ export async function loadConversationsAuto() {
     setTimeout(() => {
     conversationsList.scrollTop = conversationsList.scrollHeight;
     }, 0);
-
 }
 
 export function loadConversationsDebounced() {

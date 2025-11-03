@@ -135,7 +135,7 @@ export async function chatHandlers() {
             if (activeConversationId) {
                 // Navigate to profile page with username
                 const profile = await getUserProfile(activeConversationId);
-                window.location.hash = `#/profile?username=${profile.username}`;
+                window.location.hash = `#/profile/${profile.username}`;
             }
         } catch (error) {
             alert('Failed to load user profile');
