@@ -116,6 +116,7 @@ export async function gameController(fastify: FastifyInstance, io: Server)
 	fastify.post("/:roomId/powerup", async (req, reply) => {
 		const { roomId } = req.params as { roomId: string };
 		const enabledQuery = (req.query as any)?.enabled;
+		const randomQuery = (req.query as any)?.random;
 		let enabled: boolean | undefined;
 		if (typeof enabledQuery !== 'undefined') {
 			enabled = enabledQuery === 'true' || enabledQuery === true;
@@ -126,6 +127,11 @@ export async function gameController(fastify: FastifyInstance, io: Server)
 		const state = getGameState(roomId);
 		if (!state) return reply.code(404).send({ message: 'Room not found' });
 		state.powerUpMultiplier = enabled ? POWERUP_SPEED_MULTIPLIER : 1;
+		// If a random flag is provided, store it on the room so collision logic can
+		// choose between deterministic (linear) increases or random multipliers.
+		if (typeof randomQuery !== 'undefined') {
+			state.powerUpRandom = randomQuery === 'true' || randomQuery === true;
+		}
 		// persist change for non-local rooms
 		if (!roomId.startsWith('local_')) {
 			const dbRoom = getRoom(roomId);
@@ -172,9 +178,8 @@ export async function gameController(fastify: FastifyInstance, io: Server)
 			const muls: Record<string, number> = { easy: 0.9, medium: 1, hard: 1.25 };
 			const mul = muls[difficulty] ?? 1;
 			// Only set values if they weren't explicitly provided above
+			// Only change paddle speed for difficulty; leave ball speeds untouched unless explicitly provided
 			if (typeof paddleSpeed !== 'number') state.paddleSpeed = DEFAULT_PADDLE_SPEED * mul;
-			if (typeof ballSpeedX !== 'number') state.ballSpeedX = DEFAULT_BALL_SPEED_X * mul;
-			if (typeof ballSpeedY !== 'number') state.ballSpeedY = DEFAULT_BALL_SPEED_Y * mul;
 		}
 
 		// Apply game length (winning score) if provided. Values: short, long

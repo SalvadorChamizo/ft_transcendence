@@ -35,10 +35,15 @@ export interface GameState
 	gameEndedTimestamp?: number; // Add this line
 	// Multiplier applied to ball speed on every paddle hit (default 1 = no change)
 	powerUpMultiplier?: number;
+	// If true, pick a random multiplier per paddle hit within POWERUP_RANDOM_MIN/MAX
+	// When false (default) the multiplier is deterministic (POWERUP_SPEED_MULTIPLIER)
+	powerUpRandom?: boolean;
 	// Optional per-room speed overrides. If undefined, server constants are used.
 	paddleSpeed?: number;
 	ballSpeedX?: number;
 	ballSpeedY?: number;
 	// Optional per-room winning score override. If undefined, server default is used.
 	winningScore?: number;
+	// Last multiplier applied on the most recent paddle collision (for debugging/UI)
+	lastPowerUpMultiplier?: number;
 }

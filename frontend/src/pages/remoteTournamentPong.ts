@@ -95,6 +95,10 @@ function cleanup() {
     window.removeEventListener("keyup", handleKeyUp);
     isGameRunning = false;
     gameInitialized = false;
+    // Ensure powerup disabled when cleaning up tournament room
+    try {
+        if (roomId) postApi(`/game/${roomId}/powerup?enabled=false`).catch(() => {});
+    } catch (e) { /* ignore */ }
 }
 
 // Helper: POST with Authorization header and retry after refresh on 401
@@ -250,6 +254,12 @@ function startGame(roomIdToJoin: string) {
             postApi(`/game/${data.roomId}/init`).then(async () => {
                 // Apply default settings or none for tournament
                 isGameRunning = false;
+                try {
+                    // Enable powerup for this tournament room
+                    await postApi(`/game/${data.roomId}/powerup?enabled=true`);
+                } catch (e) {
+                    console.warn('[RemoteTournamentPong] Failed to enable powerup for room', data.roomId, e);
+                }
                 setTimeout(() => {
                     postApi(`/game/${data.roomId}/resume`);
                 }, 500);

@@ -18,11 +18,7 @@ export async function sendGameInvitation(fromUserId: number, toUserId: number, g
         throw new Error("Cannot send invitation: users are blocked");
     }
 
-    // 3. Check if there's already an active invitation between these users
-    const existingInvitation = gameInvitationRepo.getActiveInvitationBetweenUsers(fromUserId, toUserId);
-    if (existingInvitation) {
-        throw new Error("There is already a pending invitation to this user");
-    }
+    // 3. (allow multiple invitations) Removed single-invitation restriction so multiple pending invites are allowed
 
     // 4. creates room via HTTP if gameType requires it
     let roomId: string | undefined = undefined;
@@ -62,7 +58,7 @@ export async function sendGameInvitation(fromUserId: number, toUserId: number, g
         conversation = await findConversation(fromUserId, toUserId);
     }
     if (roomId && conversation) {
-        const joinUrl = `#/remote-pong?room=${roomId}`; // link directly to the room
+        const joinUrl = `#/private-remote-pong?room=${roomId}`; // link directly to the private room
         const inviteHtml = `🎮 Invitación a Pong: <b>${roomId}</b> <a href='${joinUrl}' class='join-remote-pong-btn'>Unirse a la sala</a>`;
         await createMessage(conversation.id, fromUserId, inviteHtml, 'pong-invite');
     }
@@ -85,7 +81,7 @@ export async function sendGameInvitation(fromUserId: number, toUserId: number, g
             type: 'message' as 'message',
             userId: fromUserId,
             recipientId: toUserId,
-            content: `🎮 Invitación a Pong: <b>${roomId}</b> <a href="#/remote-pong?room=${roomId}">Unirse</a>`,
+            content: `🎮 Invitación a Pong: <b>${roomId}</b> <a href="#/private-remote-pong?room=${roomId}">Unirse</a>`,
             timestamp: invitationData.timestamp,
             data: invitationData
         };

@@ -2,6 +2,7 @@ export interface RemoteTournamentCreateDTO {
     id: number,
     name: string;
     mode: "remote";
+    current_players: number,
     creator_id?: number | null;
     max_players: number;
 }
@@ -53,7 +54,7 @@ export function renderTournamentCard(t: RemoteTournamentCreateDTO): string {
         <div class="tournament-list-card" data-tournament-id="${t.id}">
             <div class="tournament-info">
                 <span class="tournament-name">${t.name}</span>
-                <span class="tournament-players">Players: 0 / ${t.max_players}</span>
+                <span class="tournament-players">Players: ${t.current_players} / ${t.max_players}</span>
             </div>
             <button class="tournament-btn">Join</button>
         </div>

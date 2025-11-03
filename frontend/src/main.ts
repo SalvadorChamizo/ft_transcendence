@@ -24,7 +24,7 @@ export async function render() {
             const user = JSON.parse(userStr);
         const profileLink = document.querySelector('a[href="#/profile"]') as HTMLAnchorElement;
         if (profileLink && user?.username)
-            profileLink.href = `#/profile?username=${user?.username}`;
+            profileLink.href = `#/profile/${user?.username}`;
         }
     }
     userLoggedIn();

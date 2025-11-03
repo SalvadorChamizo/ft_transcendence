@@ -4,25 +4,40 @@ export function getChatHtml(): string {
             <!-- Left sidebar: Conversations list -->
             <div class="conversations-sidebar">
                 <div class="sidebar-header">
-                    <h2>Chats</h2>
-                    <div id="connection-status" class="connection-status">
-                        <span class="status-indicator">●</span>
-                        <span class="status-text">Connecting...</span>
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-nav-item">
+                        <button type="button" class="sidebar-nav-link active chat-btl" data-tab="chats-tab">Chats
+                        </button>
+                        </li>
+                        <li class="sidebar-nav-item">
+                        <button type="button" class="sidebar-nav-link notification-btr" data-tab="notifications-tab">Notifications</button>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div id="chats-tab" class="sidebar-tab-panel active">
+                    <!-- New Chat Button - Always visible -->
+                    <div class="new-chat-section">
+                        <button id="sidebar-new-chat" class="sidebar-new-chat-btn">
+                            <span>+</span> New Chat
+                        </button>
+                    </div>
+                    
+                    
+                    <div class="conversations-list" id="conversations-list">
+                        <!-- Conversations will be loaded here dynamically -->
+                        <div class="no-conversations">
+                            <p>Click ↻ to load conversations</p>
+                        </div>
                     </div>
                 </div>
-                
-                <!-- New Chat Button - Always visible -->
-                <div class="new-chat-section">
-                    <button id="sidebar-new-chat" class="sidebar-new-chat-btn">
-                        <span>+</span> New Chat
-                    </button>
-                </div>
-                
-                
-                <div class="conversations-list" id="conversations-list">
-                    <!-- Conversations will be loaded here dynamically -->
-                    <div class="no-conversations">
-                        <p>Click ↻ to load conversations</p>
+            
+                <div id="notifications-tab" class="sidebar-tab-panel">
+                    <div class="notifications-list" id="notifications-list">
+                        <!-- notifications will be loaded here dynamically -->
+                        <div class="no-notifications">
+                            <p>Click ↻ to load notifications</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -32,7 +47,7 @@ export function getChatHtml(): string {
                 <!-- Chat header -->
                 <div class="chat-header">
                     <div class="contact-info">
-                        <div class="contact-avatar">👤</div>
+                        <div id="contact-avatar" class="contact-avatar">👤</div>
                         <div class="contact-details">
                             <h3 id="contact-name">Select a conversation</h3>
                             <span id="contact-status"></span>

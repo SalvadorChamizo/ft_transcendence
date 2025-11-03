@@ -21,10 +21,6 @@ export default async function tournamentRoutes(app: FastifyInstance) {
         console.log("path:", req.url, "isPublic:", isPublic);
 
         if (isPublic) {
-          const userId = req.headers["x-user-id"];
-          if (!userId) {
-            console.warn(`Public route accessed without x-user-id header: ${req.url}`);
-          }
           console.log("Public route allowed. Skipping auth.");
           return;
         }

@@ -106,10 +106,10 @@ export async function avatarDeleter(id: number) {
 	for (const ext of extensions) {
 		const filePath = path.join(basePath, `${id}${ext}`);
 		try {
-		await fs.promises.access(filePath, fs.constants.F_OK);
-		await fs.promises.unlink(filePath);
+			await fs.promises.access(filePath, fs.constants.F_OK);
+			await fs.promises.unlink(filePath);
 		} catch {
-		continue;
+			continue;
 		}
 	}
 }

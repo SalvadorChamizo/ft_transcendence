@@ -16,6 +16,20 @@ export default async function chatRoutes(app: FastifyInstance) {
         }
     });
 
+    // Proxy para obtener usuarios bloqueados
+    app.register(fastifyHttpProxy, {
+        upstream: "http://chat-service:8083",
+        prefix: "/blocked",
+        rewritePrefix: "/blocked",
+        replyOptions: {
+            rewriteRequestHeaders: (originalReq, headers) => ({
+                ...headers,
+                'x-user-id': originalReq.user?.id?.toString() || '',
+                'x-username': originalReq.user?.username || '',
+            })
+        }
+    });
+
     // Proxy para invitaciones de juego
     app.register(fastifyHttpProxy, {
         upstream: "http://chat-service:8083",

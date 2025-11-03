@@ -1,7 +1,44 @@
 import { getAccessToken } from "../../state/authState";
-import { getActiveConversationId, getActiveConversationName, getBlockedUsers } from "./chatState";
+import { getActiveConversationId, getActiveConversationName, getBlockedUsers, setBlockedUsers } from "./chatState";
 
 const apiHost = `${window.location.hostname}`
+
+export async function fetchBlockedUsers() {
+    try {
+        const token = getAccessToken();
+        const res = await fetch(`http://${apiHost}:8080/blocked`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!res.ok) {
+            throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+        const data = await res.json();
+        // Update the blocked users set with data from backend
+        const blockedUsersSet = new Set<number>(data.blockedUsers || []);
+        setBlockedUsers(blockedUsersSet);
+        return blockedUsersSet;
+    } catch (err) {
+        console.error("Failed to fetch blocked users:", err);
+        throw err;
+    }
+}
+
+export function updateBlockButtonUI() {
+    const blockButton = document.getElementById('block-user-btn') as HTMLButtonElement;
+    const activeConversationId = getActiveConversationId();
+    
+    if (blockButton && activeConversationId) {
+        const blockedUsers = getBlockedUsers();
+        const isBlocked = blockedUsers.has(activeConversationId);
+        if (isBlocked) {
+            blockButton.textContent = '✅';
+            blockButton.title = 'Unblock user';
+        } else {
+            blockButton.textContent = '🚫';
+            blockButton.title = 'Block user';
+        }
+    }
+}
 
 export async function blockHandler() {
     
@@ -31,14 +68,12 @@ export async function blockHandler() {
         if (isBlocked) {
             await unblockUser(activeConversationId);
             blockedUsers.delete(activeConversationId);
-            blockButton.textContent = '🚫';
-            blockButton.title = 'Block user';
+            updateBlockButtonUI();
             messageResult.innerHTML = '<span class="success">✅ User unblocked successfully!</span>';
         } else {
             await blockUser(activeConversationId);
             blockedUsers.add(activeConversationId);
-            blockButton.textContent = '✅';
-            blockButton.title = 'Unblock user';
+            updateBlockButtonUI();
             messageResult.innerHTML = '<span class="success">✅ User blocked successfully!</span>';
         }
         messageResult.className = 'message-result success';

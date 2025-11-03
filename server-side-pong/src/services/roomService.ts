@@ -11,6 +11,7 @@ export function createInitialState(): GameState {
     scores: { left: 0, right: 0 },
     gameEnded: false,
     powerUpMultiplier: 1,
+  powerUpRandom: false,
     // speeds left undefined so server uses default constants
     paddleSpeed: undefined,
     ballSpeedX: undefined,

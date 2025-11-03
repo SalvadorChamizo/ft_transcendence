@@ -103,6 +103,10 @@ function cleanup() {
     isRoomCreator = false;
     gameInitialized = false;
     try { document.getElementById("scoreboard")?.classList.add("hidden"); } catch (e) {}
+    // Ensure powerup disabled when cleaning up private remote room
+    try {
+        if (roomId) postApi(`/game/${roomId}/powerup?enabled=false`).catch(() => {});
+    } catch (e) { /* ignore */ }
 }
 
 const handleKeyDown = (e: KeyboardEvent) => {
@@ -136,6 +140,21 @@ export async function privateRemotePongHandlers() {
             prepareGameUI();
             startGame(inviteRoom);
             return;
+        }
+        // If no room query param, check pending room in localStorage (set by chat invite flow)
+        try {
+            const pending = localStorage.getItem('pendingRemoteRoomId');
+            if (pending) {
+                // consume the pending id so it won't be reused accidentally
+                localStorage.removeItem('pendingRemoteRoomId');
+                roomId = pending;
+                isRoomCreator = false;
+                prepareGameUI();
+                startGame(pending);
+                return;
+            }
+        } catch (e) {
+            // ignore localStorage errors (e.g., privacy modes)
         }
     } catch (err) {
         console.warn('Failed parsing invite room param', err);
@@ -214,9 +233,15 @@ function startGame(roomIdToJoin: string) {
         if (!gameInitialized) {
             gameInitialized = true;
             postApi(`/game/${data.roomId}/init`).then(async () => {
-                if (isRoomCreator) {
-                    try { await postApi(`/game/${data.roomId}/resume`); } catch (e) { /* ignore */ }
-                }
+                    if (isRoomCreator) {
+                        try {
+                            // Enable powerup for this private remote room
+                            await postApi(`/game/${data.roomId}/powerup?enabled=true`);
+                        } catch (e) {
+                            console.warn('[PrivateRemotePong] Failed to enable powerup for room', data.roomId, e);
+                        }
+                        try { await postApi(`/game/${data.roomId}/resume`); } catch (e) { /* ignore */ }
+                    }
             });
             isGameRunning = false;
         } else {

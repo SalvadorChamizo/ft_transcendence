@@ -1,5 +1,5 @@
 import { getAccessToken } from "../../state/authState";
-import { getUsername } from "./chatUtils";
+import { getUsername, getUserAvatar } from "./chatUtils";
 import { UI_MESSAGES, CHAT_CONFIG } from "./chatConstants";
 import {
     getActiveConversationId,
@@ -9,9 +9,10 @@ import {
     setActiveConversationName,
     setLoadConversationsTimeout,
     getConnectedUsersSet,
+    getBlockedUsers,
 } from "./chatState";
 import { getMessages, displayMessages, updateMessageInputVisibility } from "./chatMessages";
-import { updateFriendBtn } from "./chatFriends";
+import { updateBlockButtonUI } from "./chatBlockUsers";
 
 const apiHost = `${window.location.hostname}`;
 
@@ -32,6 +33,8 @@ export async function getConversations() {
 
 // Function to select a conversation and load messages
 export async function selectConversation(otherUserId: number, otherUserName: string) {
+    console.log(`[Chat] Selecting conversation with user ID: ${otherUserId}, name: ${otherUserName}`);
+    
     setActiveConversationId(otherUserId);
     setActiveConversationName(otherUserName);
 
@@ -40,38 +43,27 @@ export async function selectConversation(otherUserId: number, otherUserName: str
     const contactName = document.getElementById('contact-name');
     if (contactName) contactName.textContent = otherUserName;
 
-    // Botón añadir/quitar amigo
-    let friendsSet = (window as any).friendsSet;
-    if (!friendsSet) {
-        friendsSet = new Set();
-        (window as any).friendsSet = friendsSet;
-    }
-    let addFriendBtn = document.getElementById('add-friend-btn') as HTMLButtonElement;
-    if (!addFriendBtn) {
-        const chatHeader = document.querySelector('.chat-header .contact-details');
-        if (chatHeader) {
-            addFriendBtn = document.createElement('button');
-            addFriendBtn.id = 'add-friend-btn';
-            addFriendBtn.className = 'add-friend-btn';
-            addFriendBtn.style.marginLeft = '10px';
-            chatHeader.appendChild(addFriendBtn);
+    // Update contact avatar with real image or first letter
+    const contactAvatar = document.querySelector('.contact-avatar') as HTMLElement;
+    if (contactAvatar) {
+        // First clear the avatar to avoid showing wrong avatar during loading
+        contactAvatar.innerHTML = '';
+        contactAvatar.textContent = otherUserName.charAt(0).toUpperCase();
+        
+        // Then try to load the real avatar
+        const avatarUrl = await getUserAvatar(otherUserId);
+        console.log(`[Chat] Avatar URL for user ${otherUserId}:`, avatarUrl);
+        
+        if (avatarUrl) {
+            contactAvatar.innerHTML = `<img src="${avatarUrl}" alt="${otherUserName}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`;
         }
-    }
-    updateFriendBtn(otherUserId);
-    if (addFriendBtn) {
-        addFriendBtn.onclick = () => {
-            if (friendsSet.has(otherUserId)) {
-                friendsSet.delete(otherUserId);
-            } else {
-                friendsSet.add(otherUserId);
-            }
-            updateFriendBtn(otherUserId);
-        };
+        // If no avatar, keep the text initial that was already set
     }
 
     // Actualizar el estado online/offline dinámicamente
     const contactStatus = document.getElementById('contact-status');
     if (contactStatus) {
+        contactStatus.style.display = 'block';
         if (getConnectedUsersSet().has(otherUserId)) {
             contactStatus.textContent = 'Online';
             contactStatus.style.color = '#25D366';
@@ -88,6 +80,13 @@ export async function selectConversation(otherUserId: number, otherUserName: str
     if (profileBtn) {
         profileBtn.style.display = 'block';
     }
+
+    if (blockButton) {
+        blockButton.style.display = 'block';
+    }
+
+    // Update block button state based on current blocked users
+    updateBlockButtonUI();
 
     // Show invite to game button
     const inviteBtn = document.getElementById('invite-game-btn') as HTMLButtonElement;
@@ -134,7 +133,7 @@ export async function loadConversationsAuto() {
                     </div>
                 `).join('');
 
-            // Then load usernames asynchronously
+            // Then load usernames and avatars asynchronously
             result.conversations.forEach(async (conv: any) => {
                 const username = await getUsername(conv.otherUserId);
                 const conversationItem = document.querySelector(`[data-user-id="${conv.otherUserId}"] .conversation-name`);
@@ -143,10 +142,15 @@ export async function loadConversationsAuto() {
                     conversationItem.setAttribute('data-username', username);
                 }
 
-                // Update avatar with first letter of username
-                const avatarElement = document.querySelector(`[data-user-id="${conv.otherUserId}"] .conversation-avatar`);
+                // Update avatar with real image or first letter of username
+                const avatarElement = document.querySelector(`[data-user-id="${conv.otherUserId}"] .conversation-avatar`) as HTMLElement;
                 if (avatarElement && username !== `User ${conv.otherUserId}`) {
-                    avatarElement.textContent = username.charAt(0).toUpperCase();
+                    const avatarUrl = await getUserAvatar(conv.otherUserId);
+                    if (avatarUrl) {
+                        avatarElement.innerHTML = `<img src="${avatarUrl}" alt="${username}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`;
+                    } else {
+                        avatarElement.textContent = username.charAt(0).toUpperCase();
+                    }
                 }
             });
 
@@ -166,7 +170,7 @@ export async function loadConversationsAuto() {
 
                         if (target.classList.contains('conversation-name')) {
                             // Navigate to profile
-                            window.location.hash = `#/profile?username=${username}`;
+                            window.location.hash = `#/profile/${username}`;
                         } else {
                             // Select conversation
                             document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
@@ -194,6 +198,9 @@ export async function loadConversationsAuto() {
             `;
         }
     }
+    setTimeout(() => {
+    conversationsList.scrollTop = conversationsList.scrollHeight;
+    }, 0);
 }
 
 export function loadConversationsDebounced() {

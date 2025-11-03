@@ -62,8 +62,14 @@ export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
             console.log(`[Auth Middleware WS] Token validated for user: ${decoded.username}`);
 
             req.user = decoded;
-            req.headers["x-user-id"] = decoded.id;
-            req.headers["x-username"] = decoded.username;
+            
+            // Only set x-user-id if it's not already set by the client
+            if (!req.headers["x-user-id"]) {
+                req.headers["x-user-id"] = decoded.id;
+            }
+            if (!req.headers["x-username"]) {
+                req.headers["x-username"] = decoded.username;
+            }
             return;
         } catch (err) {
             return reply.code(401).send({ error: "Unauthorized: Invalid or expired token in WebSocket" });
@@ -92,8 +98,14 @@ export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
 
         req.user = decoded;
 
-        req.headers["x-user-id"] = decoded.id;
-        req.headers["x-username"] = decoded.username;
+        // Only set x-user-id if it's not already set by the client
+        // This allows endpoints to request data for other users (e.g., getting another user's avatar)
+        if (!req.headers["x-user-id"]) {
+            req.headers["x-user-id"] = decoded.id;
+        }
+        if (!req.headers["x-username"]) {
+            req.headers["x-username"] = decoded.username;
+        }
 
     }   catch (err) {
             return reply.code(401).send({ error: "Unauthorized: Invalid or expired token" });

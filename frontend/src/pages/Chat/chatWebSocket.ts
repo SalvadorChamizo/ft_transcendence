@@ -14,6 +14,22 @@ export async function initializeWebSocket() {
         // Set up message handler for incoming messages
 
         websocketClient.onMessage((message: ChatMessage) => {
+            // Handle special server-sent events embedded in message.data
+            try {
+                if (message.type === 'message' && message.data && message.data.event_type === 'game_invitation_accepted') {
+                    // If acceptance contains a room_id, redirect to private remote pong
+                    const room = message.data.room_id || message.data.roomId || null;
+                    if (room) {
+                        try {
+                            // Store pending id (optional) and navigate
+                            localStorage.setItem('pendingRemoteRoomId', String(room));
+                        } catch (e) {}
+                        window.location.hash = `#/private-remote-pong?room=${room}`;
+                        return;
+                    }
+                }
+            } catch (e) {}
+
             if (message.type === 'message') {
                 addMessageToUI({
                     ...message,

@@ -848,8 +848,8 @@ export function chatHandlers() {
                 newBtn.addEventListener('click', (e) => {
                     const roomId = (e.currentTarget as HTMLElement).getAttribute('data-room');
                     if (roomId) {
-                        // Navigate to remote pong with room query param
-                        window.location.hash = `#/pong/remote?room=${roomId}`;
+                        // Navigate to private remote pong with room query param
+                        window.location.hash = `#/private-remote-pong?room=${roomId}`;
                     }
                 });
             });
@@ -894,7 +894,7 @@ export function chatHandlers() {
             if (btn) {
                 btn.addEventListener('click', (e) => {
                     const roomId = (e.currentTarget as HTMLElement).getAttribute('data-room');
-                    if (roomId) window.location.hash = `#/pong/remote`;
+                    if (roomId) window.location.hash = `#/private-remote-pong?room=${roomId}`;
                 });
             }
         } else {
@@ -1100,9 +1100,20 @@ export function chatHandlers() {
         // Populate modal with profile data
         username.textContent = profile.username || 'Unknown';
         userId.textContent = profile.id?.toString() || '-';
-        avatar.textContent = profile.username?.charAt(0).toUpperCase() || '?';
         victories.textContent = profile.victories?.toString() || '0';
-        
+
+        // Load avatar asynchronously
+        const loadAvatar = async () => {
+            const { getUserAvatar } = await import('./Chat/chatUtils');
+            const avatarUrl = await getUserAvatar(profile.id);
+            if (avatarUrl) {
+                avatar.innerHTML = `<img src="${avatarUrl}" alt="${profile.username}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;"/>`;
+            } else {
+                avatar.textContent = profile.username?.charAt(0).toUpperCase() || '?';
+            }
+        };
+        loadAvatar();
+
         // Show modal
         modal.style.display = 'flex';
     }
@@ -1168,8 +1179,8 @@ export function chatHandlers() {
                 if (result && result.roomId) {
                     // Save roomId to localStorage for pending redirection
                     localStorage.setItem('pendingRemoteRoomId', result.roomId);
-                    // Automatically redirect to the remote room
-                    window.location.hash = `#/pong/remote?room=${result.roomId}`;
+                    // Automatically redirect to the private remote room
+                    window.location.hash = `#/private-remote-pong?room=${result.roomId}`;
                 }
             } catch (error) {
                 const errMsg = (error instanceof Error) ? error.message : String(error);

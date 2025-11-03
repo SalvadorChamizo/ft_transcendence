@@ -6,7 +6,7 @@ import { FastifyInstance } from "fastify";
 import { Server } from "socket.io";
 import fetch from "node-fetch";
 import { getGameState, moveUp, moveDown, isGameEnded } from "../services/gameServices";
-import { PADDLE_SPEED as DEFAULT_PADDLE_SPEED } from "../utils/pong-constants";
+import { PADDLE_SPEED as DEFAULT_PADDLE_SPEED, PADDLE_HEIGHT } from "../utils/pong-constants";
 import { getIsPaused } from "./gameControllers";
 
 const aiIntervals = new Map<string, NodeJS.Timeout>();
@@ -65,7 +65,8 @@ export async function pongAiController(fastify: FastifyInstance, io: Server)
             try {
                 // game state velocities are in px per tick (game runs at ~60fps).
                 // The AI microservice expects velocities in px per second, so convert them.
-                const aiServiceUrl = process.env.AI_SERVICE_URL || "http://ai-service:7010";
+                // Default to the ai-opponent container name used in docker-compose
+                const aiServiceUrl = process.env.AI_SERVICE_URL || "http://ai-opponent:7010";
                 console.log(`[AI] Requesting plan from ${aiServiceUrl} for room ${roomId}`);
 
                 // Create a shallow clone of the state and convert velocities to px/sec
@@ -87,7 +88,11 @@ export async function pongAiController(fastify: FastifyInstance, io: Server)
                     body: JSON.stringify({ state: stateForAI, side: "right", dt: 1.0, paddleSpeed: paddleSpeedPxSec }), // dt is 1 second
                 });
 
-                if (!response.ok) throw new Error(`AI service error: ${response.statusText}`);
+                if (!response.ok) {
+                    const txt = await response.text().catch(() => '<no-body>');
+                    console.error(`[AI] Non-OK response from AI service: ${response.status} ${response.statusText} body=${txt}`);
+                    throw new Error(`AI service error: ${response.status} ${response.statusText}`);
+                }
 
                 const { events } = await response.json() as { events: { type: string, key: string, atMs: number }[] };
                 console.log(`[AI] Received plan for room ${roomId}:`, events);
@@ -117,7 +122,72 @@ export async function pongAiController(fastify: FastifyInstance, io: Server)
             }
             catch (error) {
                 console.error("[AI] Failed to get plan from AI service:", error);
-                stopAi(roomId);
+                // Do not stop the AI entirely; instead use a minimal local fallback so the AI continues
+                // to move the paddle toward the ball. This keeps the match playable when the external
+                // AI service is down or unreachable.
+                try {
+                    const currentState = getGameState(roomId);
+                    if (currentState && currentState.ball) {
+                        // Clear any previously scheduled fallback movement timers
+                        // to avoid overlapping timers leaving the AI key state stuck.
+                        aiMovementTimers.get(roomId)?.forEach(clearTimeout);
+                        aiMovementTimers.set(roomId, []);
+                        const paddleY = currentState.paddles.right.y;
+                        const paddleCenter = paddleY + (PADDLE_HEIGHT / 2);
+                        const ballY = currentState.ball.y;
+                        let keys = aiKeyState.get(roomId);
+                        if (!keys) {
+                            keys = { up: false, down: false };
+                        }
+                        // If ball is significantly above/below paddle center, move toward it
+                        const delta = ballY - paddleCenter;
+                        const threshold = 10;
+                        if (Math.abs(delta) <= threshold) {
+                            // close enough
+                            keys.up = false;
+                            keys.down = false;
+                            aiKeyState.set(roomId, keys);
+                        } else {
+                            // compute time to move the required distance using current paddle speed
+                            const paddleFrameSpeed = typeof currentState.paddleSpeed === 'number' ? currentState.paddleSpeed : DEFAULT_PADDLE_SPEED;
+                            const paddleSpeedPxSec = paddleFrameSpeed * 60; // convert from px/frame to px/sec
+                            // ensure positive
+                            const absDelta = Math.abs(delta);
+                            // avoid division by zero
+                            const timeSeconds = paddleSpeedPxSec > 0 ? (absDelta / paddleSpeedPxSec) : 0;
+                            const timeMs = Math.max(50, Math.min(2000, Math.round(timeSeconds * 1000))); // clamp 50ms..2s
+
+                            if (delta < 0) {
+                                // ball is above -> move up
+                                keys.up = true;
+                                keys.down = false;
+                                aiKeyState.set(roomId, keys);
+                                const t = setTimeout(() => {
+                                    const k = aiKeyState.get(roomId);
+                                    if (k) { k.up = false; k.down = false; aiKeyState.set(roomId, k); }
+                                }, timeMs);
+                                // track the fallback timer so it can be cleared when new plan arrives
+                                const arr = aiMovementTimers.get(roomId) ?? [];
+                                arr.push(t);
+                                aiMovementTimers.set(roomId, arr);
+                            } else {
+                                // ball is below -> move down
+                                keys.up = false;
+                                keys.down = true;
+                                aiKeyState.set(roomId, keys);
+                                const t = setTimeout(() => {
+                                    const k = aiKeyState.get(roomId);
+                                    if (k) { k.up = false; k.down = false; aiKeyState.set(roomId, k); }
+                                }, timeMs);
+                                const arr = aiMovementTimers.get(roomId) ?? [];
+                                arr.push(t);
+                                aiMovementTimers.set(roomId, arr);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('[AI] Fallback planning failed:', e);
+                }
             }
         }, 1000); // <-- RESTRICTIOM: 1 CALL PER SECOND
 
@@ -136,7 +206,7 @@ export async function pongAiController(fastify: FastifyInstance, io: Server)
         }
     }, 1000 / 60);
 
-    fastify.post("/:roomId/stop-ai", async (req, reply) => {
+    fastify.post("/:roomId/stop-ai", async (req: any, reply: any) => {
         const { roomId } = req.params as { roomId: string };
         stopAi(roomId);
         reply.send({ message: "AI stopped" });

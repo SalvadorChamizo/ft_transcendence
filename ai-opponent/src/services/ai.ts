@@ -52,8 +52,10 @@ export function computeAIKeyEvents(
     // 1. Predicts the ball and movement target
     console.log('[AI] Predicting ball position...');
     const predictedY = predictBallY(ball, fieldHeight, targetX);
-    // If we can't predict, aim for the center
-    const targetY = (predictedY === null ? fieldHeight / 2 : predictedY) + aimBias;
+    // If we can't predict (ball moving away or stationary), choose a defensive target.
+    // Previously we aimed at the center; change to track the ball's Y so the paddle repositions
+    // defensively (preparing for return) even when the ball is not heading towards the paddle.
+    const targetY = (predictedY === null ? ball.y : predictedY) + aimBias;
     console.log(`[AI] Predicted Y: ${predictedY}, Target Y: ${targetY}`);
 
     // 2. Calculate the necessary movement

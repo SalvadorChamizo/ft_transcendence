@@ -11,13 +11,17 @@ import { localPowerUpPongPage, localPowerUpPongHandlers } from "./pages/localPow
 import { remotePongPage, remotePongHandlers } from "./pages/remotePong"; // Importar handlers
 import { remoteTournamentPongPage, remoteTournamentPongHandlers } from "./pages/remoteTournamentPong"; // Importar handlers
 import { Game } from "./pages/game"
-import { Profile, profileHandlers } from "./pages/profile";
+import { Profile as ProfileSettings, profileHandlers as profileSettingsHandlers } from "./pages/profile";
+import { ProfileView, profileViewHandlers } from "./pages/profileView";
+import { ProfileStats, profileStatsHandlers } from "./pages/profileStats";
+import { GameStats, gameStatsHandlers } from "./pages/gameStats";
 import { Tournament } from "./pages/Tournament/tournament";
 import { isLoggedIn } from "./state/authState";
 import { forgotPass } from "./pages/Login/forgotPass";
 import { ErrorPage } from "./pages/ErrorPage";
 import { TermsPage } from "./pages/TermsPage";
 import { privateRemotePongPage, privateRemotePongHandlers } from "./pages/privateRemotePong";
+import { setupSidebarTabs } from "./pages/Chat/chatNotifications";
 
 export function router(route: string): string {
     // for the roomid to be visible
@@ -34,6 +38,13 @@ export function router(route: string): string {
         setTimeout(remoteTournamentPongHandlers, 0);
         return remoteTournamentPongPage();
     }
+    if (route.startsWith("#/profile")) {
+        if (isLoggedIn()) {
+            setTimeout(profileSettingsHandlers, 0);
+            return ProfileSettings();
+        }
+        return Login();
+    }
     switch (route) {
         case "#/error":
             return ErrorPage();
@@ -45,24 +56,25 @@ export function router(route: string): string {
                 return Profile();
             }
             return Login();
-		case "#/profile/":
-        case route.match(/^#\/profile\/.+/)?.input || "":
-            setTimeout(profileHandlers, 0);
-            return Profile();
-
+        case route.match(/^#\/profile\/.+/)?.input:
+            if (isLoggedIn()) {
+                setTimeout(profileHandlers, 0);
+                return Profile();
+            }
+            return Login();
         case "#/about":
             return About();
         case "#/login":
             if (isLoggedIn()) {
                 window.location.hash = "#/profile";
-                return Profile();
+                return ProfileSettings();
             }
             return Login();
         case "#/login/2fa":
             if (!isLoggedIn())
                 return TwoFALogin(0);
             else
-                return (Profile());
+                return (ProfileSettings());
         case "#/forgot-pass":
             return forgotPass();
             case "#/status":
@@ -71,6 +83,7 @@ export function router(route: string): string {
             case "#/chat":
                 if (isLoggedIn()) {
                     setTimeout(chatHandlers, 0);
+                    setTimeout(setupSidebarTabs, 0);
                     return Chat();
                 }
                 else {
@@ -99,9 +112,15 @@ export function router(route: string): string {
             return Login();
         case "#/game":
             return Game();
-        case "#/tournament":
-            return Tournament();
+        case "#/game-stats":
+            if (isLoggedIn()) {
+                setTimeout(gameStatsHandlers, 0);
+                return GameStats();
+            }
+            return Login();
         case "#/":
+            return Home();
+        case "":
             return Home();
         default:
             return ErrorPage();

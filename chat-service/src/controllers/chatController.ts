@@ -88,3 +88,17 @@ export async function unblockUserController(req: FastifyRequest, reply: FastifyR
         return reply.code(400).send({ error: err.message });
     }
 }
+
+export async function getBlockedUsersController(req: FastifyRequest, reply: FastifyReply) {
+    try {
+        const userId = extractUserId(req.headers);
+        
+        const result = chatService.getBlockedUsers(userId);
+        return reply.send({ blockedUsers: result });
+    } catch (err: any) {
+        if (err.message === 'User not authenticated') {
+            return reply.code(401).send({ error: 'Unauthorized' });
+        }
+        return reply.code(500).send({ error: err.message });
+    }
+}

@@ -13,6 +13,7 @@ let playerRole: "left" | "right" | null = null;
 let roomId: string | null = null;
 let isRoomCreator = false;
 let gameInitialized = false;
+let beforeUnloadHandler: () => void = () => {};
 
 const apiHost = `http://${window.location.hostname}:8080`;
 
@@ -125,6 +126,11 @@ function cleanup() {
     isRoomCreator = false;
     gameInitialized = false;
     try { document.getElementById("scoreboard")?.classList.add("hidden"); } catch (e) {}
+    // Ensure powerup disabled for this room when cleaning up
+    try {
+        if (roomId) postApi(`/game/${roomId}/powerup?enabled=false`).catch(() => {});
+    } catch (e) { /* ignore */ }
+    window.removeEventListener('beforeunload', beforeUnloadHandler as EventListener);
 }
 
 // Helper: POST with Authorization header and retry after refresh on 401
@@ -328,6 +334,14 @@ function startGame(roomIdToJoin: string) {
         const roleInfo = document.getElementById("roleInfo")!;
         roleInfo.textContent = `You are: ${playerRole} in room ${roomId}. Waiting for opponent...`;
         window.history.replaceState(null, '', `#/remote-pong?room=${data.roomId}`);
+        // Ensure we disable powerup when leaving the page and disconnect cleanly
+        beforeUnloadHandler = () => {
+            try {
+                if (roomId) navigator.sendBeacon(`${apiHost}/game/${roomId}/powerup?enabled=false`);
+            } catch (e) {}
+            if (socket) socket.disconnect();
+        };
+        window.addEventListener('beforeunload', beforeUnloadHandler);
     });
 
     socket.on('roomFull', (payload: { roomId:string }) => {
@@ -369,6 +383,12 @@ function startGame(roomIdToJoin: string) {
                         }
                     } catch (e) {
                         console.warn('Failed to apply room options for', data.roomId, e);
+                    }
+                    // Enable powerup for this remote room (speed increases on paddle hit)
+                    try {
+                        await postApi(`/game/${data.roomId}/powerup?enabled=true`);
+                    } catch (e) {
+                        console.warn('[RemotePong] Failed to enable powerup for room', data.roomId, e);
                     }
                     // After initializing and applying options, the room creator will automatically resume the game
                     // so the match actually starts when both players are present.
@@ -415,6 +435,15 @@ function startGame(roomIdToJoin: string) {
         winnerMsg.textContent = "Opponent disconnected. You win!";
         winnerMsg.style.display = "block";
         endGame();
+    });
+
+    socket.on("disconnect", (reason: string) => {
+        console.log("[RemotePong] Socket disconnected.", reason);
+        isGameRunning = false;
+        const roleInfo = document.getElementById("roleInfo");
+        if (roleInfo) roleInfo.textContent = 'Conexión perdida con el servidor. La partida se reiniciará.';
+        cleanup();
+        setTimeout(() => window.location.reload(), 2000);
     });
 
     window.addEventListener("keydown", handleKeyDown);
@@ -493,6 +522,11 @@ function endGame() {
     isGameRunning = false;
     document.getElementById("playAgainBtn")!.classList.remove("hidden");
     (document.getElementById("startGameBtn")!).classList.add("hidden");
+    // After a short delay, leave the room and reload to return to the lobby
+    setTimeout(() => {
+        cleanup();
+        try { window.location.reload(); } catch (e) {}
+    }, 3000);
 }
 
 function draw() {

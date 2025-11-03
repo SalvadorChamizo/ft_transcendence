@@ -97,6 +97,11 @@ export class TournamentRepository {
         stmt.run(status, tournamentId);
     }
 
+    static updateCurrentTournamentPlayers(tournamentId: number, currentPlayers: number) {
+        const stmt = db.prepare(`UPDATE tournaments SET current_players = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`);
+        stmt.run(currentPlayers, tournamentId);
+    }
+
     static addMatch(tournamentId: number, round: number, player1_id: number, player2_id: number) {
         const stmt = db.prepare(`INSERT INTO matches (tournament_id, round, player1_id, player2_id) 
             VALUES (?, ?, ?, ?)`

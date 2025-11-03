@@ -15,8 +15,9 @@ import {
 	PADDLE_WIDTH,
 	BALL_SPEED_X,
 	BALL_SPEED_Y,
-    POWERUP_ENABLED,
     POWERUP_SPEED_MULTIPLIER,
+    POWERUP_RANDOM_MIN,
+    POWERUP_RANDOM_MAX,
 } from "../utils/pong-constants";
 
 // Map to keep pending serve timers per room (including 'local') so we can clear them
@@ -133,7 +134,10 @@ function handlePaddleCollision(ball: Ball, paddle: Paddle, side: 'left' | 'right
 	const normalizedImpact = impactPoint / (PADDLE_HEIGHT / 2);
 	const bounceAngle = normalizedImpact * (Math.PI / 4); // Max bounce angle: 45 degrees
 
-	let speed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy) * multiplier;
+	// Log previous speed magnitude for debugging slow-down issues
+	const prevSpeed = Math.sqrt(ball.dx * ball.dx + ball.dy * ball.dy);
+	let speed = prevSpeed * multiplier;
+	console.log(`[GameServices] Paddle collision on ${side}: prevSpeed=${prevSpeed.toFixed(3)}, multiplier=${multiplier}, newSpeed=${speed.toFixed(3)}, impact=${impactPoint.toFixed(1)}, angle=${(bounceAngle).toFixed(3)}`);
 	
 	ball.dx = speed * Math.cos(bounceAngle);
 	if (side === 'right')
@@ -198,7 +202,33 @@ export function updateGame(roomId?: string): GameState | undefined {
 
 				// Simple check: if ball is not near the top/bottom edges, treat as front collision
 				if (distY < PADDLE_HEIGHT / 2) {
-					handlePaddleCollision(ball, paddle, side, state.powerUpMultiplier ?? 1);
+					// If powerup is enabled (multiplier > 1) choose how to compute
+					// the multiplier. For local games we want a deterministic,
+					// linear increase (no randomness). For remote games keep the
+					// random variation between configured min/max.
+					let multiplier = state.powerUpMultiplier ?? 1;
+					if (multiplier > 1) {
+						// If room explicitly requests random behavior, use a random
+						// multiplier in the configured range. Otherwise use the
+						// deterministic POWERUP_SPEED_MULTIPLIER so speed increases
+						// linearly per hit (applies to most modes including local,
+						// remote rooms and 1vAI unless random=true).
+						if (state.powerUpRandom) {
+							const min = POWERUP_RANDOM_MIN;
+							const max = POWERUP_RANDOM_MAX;
+							multiplier = Math.random() * (max - min) + min;
+						} else {
+							multiplier = POWERUP_SPEED_MULTIPLIER;
+						}
+					}
+					// Store the last multiplier on the state so clients can
+					// display/debug it without changing core logic.
+					try {
+						(state as any).lastPowerUpMultiplier = multiplier;
+					} catch (err) {
+						// harmless if state isn't mutable in some contexts
+					}
+					handlePaddleCollision(ball, paddle, side, multiplier);
 				} else {
 					// It's a corner/edge case, treat as vertical collision
 					ball.dy *= -1;
@@ -308,6 +338,7 @@ export function startBallMovement(roomId?: string) {
 		const serveDirection = (state.ball as any).serveDirection || (Math.random() > 0.5 ? "left" : "right");
 		const ballSpeedX = typeof state.ballSpeedX === 'number' ? state.ballSpeedX : BALL_SPEED_X;
 		const ballSpeedY = typeof state.ballSpeedY === 'number' ? state.ballSpeedY : BALL_SPEED_Y;
+		console.log(`[GameServices] startBallMovement for ${roomId ?? 'local'}: ballSpeedX=${ballSpeedX}, ballSpeedY=${ballSpeedY}`);
 		state.ball.dx = serveDirection === "left" ? -ballSpeedX : ballSpeedX;
 		// Ensure dy respects ball radius and is not zero
 		state.ball.dy = (Math.random() > 0.5 ? ballSpeedY : -ballSpeedY) || ballSpeedY;

@@ -11,6 +11,7 @@ db.prepare(`
     status TEXT DEFAULT 'pending',
     winner_id INTEGER,
     max_players INTEGER,
+    current_players INTEGER DEFAULT 0,
     current_round INTEGER DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME,

@@ -1,11 +1,18 @@
 import { createUser, deleteUser, findUser, findUserById } from "../repositories/userRepository";
 import { RefreshTokenRepository } from "../repositories/refreshTokenRepository";
 import { generateAccessToken, generateRefreshToken } from "./tokenService";
+import { sendNotification } from "./notification";
+import { validateEmail, validatePassword, validateUsername } from "../utils/utils";
 import nodemailer from "nodemailer"
 
 const refreshTokenRepo = new RefreshTokenRepository();
 
 export async function registerUser(username: string, password: string, email: string) {
+      /*if (!validateEmail(email) || !validateUsername(username) || !validatePassword(password)) {
+            throw new Error("Invalid registration data");
+      }
+      }*/
+    
     const register = await fetch("http://user-management-service:8082/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -13,7 +20,8 @@ export async function registerUser(username: string, password: string, email: st
     });
     if (register.ok)
     {
-        createUser();
+        const id = createUser();
+        await sendNotification(Number(id), "Welcome to Ft_Transcendence", `Hello ${username}! Thank you for registering in our project!`);
         return { message: "User registered successfully" };
     }
     else

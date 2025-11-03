@@ -92,3 +92,11 @@ export function unblockUser(blockerId: number, blockedId: number) {
     
     return { success: true, message: "User unblocked successfully" };
 }
+
+export function getBlockedUsers(userId: number) {
+    // Get all blocked users for this user
+    const blockedUsers = blockRepo.getBlockedUsers(userId);
+    
+    // Return array of blocked user IDs
+    return blockedUsers.map((row: any) => row.blocked_id);
+}

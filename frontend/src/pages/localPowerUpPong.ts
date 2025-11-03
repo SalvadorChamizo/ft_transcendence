@@ -77,6 +77,7 @@ interface GameState {
     ball: Ball;
     scores: Scores;
     gameEnded: boolean;
+    lastPowerUpMultiplier?: number;
 }
 
 let gameState: GameState = {
@@ -85,6 +86,12 @@ let gameState: GameState = {
     scores: { left: 0, right: 0 },
     gameEnded: false,
 };
+
+// Desired power-up state selected by the user in the UI. We store this locally
+// so changing the selector before the room exists doesn't attempt a POST that
+// will 404. The selection will be applied after the room is initialized.
+let desiredPowerUpEnabled = false;
+let desiredPowerUpRandom = false;
 
 /**
  * HTML for the router
@@ -181,6 +188,21 @@ function cleanup() {
 
 // Helper: POST with Authorization header and one retry after token refresh
 async function postGame(path: string): Promise<Response> {
+    const makeReq = async () => {
+        const token = getAccessToken();
+        const headers: Record<string, string> = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+        return fetch(`${apiHost}${path}`, { method: "POST", headers });
+    };
+    let res = await makeReq();
+    if (res.status === 401) {
+        const refreshed = await refreshAccessToken();
+        if (refreshed) {
+            res = await makeReq();
+        }
+    }
+    return res;
+}
 
 // POST JSON body helper
 async function postGameJson(path: string, data: any): Promise<Response> {
@@ -225,21 +247,6 @@ async function applySpeedsToRoom(roomIdToSet: string) {
     } catch (e) {
         console.warn('Failed to set speeds for room', roomIdToSet, e);
     }
-}
-    const makeReq = async () => {
-        const token = getAccessToken();
-        const headers: Record<string, string> = {};
-        if (token) headers["Authorization"] = `Bearer ${token}`;
-        return fetch(`${apiHost}${path}`, { method: "POST", headers });
-    };
-    let res = await makeReq();
-    if (res.status === 401) {
-        const refreshed = await refreshAccessToken();
-        if (refreshed) {
-            res = await makeReq();
-        }
-    }
-    return res;
 }
 
 // (helpers already defined above)
@@ -300,15 +307,24 @@ export function localPowerUpPongHandlers() {
       };
       reflectBtnLabel();
 
-      powerupSelect.addEventListener("change", async () => {
-        reflectBtnLabel();
-        // intenta informar al backend (si existe la partida local ya creada)
-        try {
-          await postGame(`/game/${roomId}/powerup?enabled=${powerupSelect.value}`);
-        } catch (err) {
-          console.warn("[LocalPowerUpPong] No se pudo cambiar powerup:", err);
-        }
-      });
+              powerupSelect.addEventListener("change", async () => {
+                        reflectBtnLabel();
+                        // Update the locally-stored desired state. If the socket/room is
+                        // already active, send an immediate update to the server. If not,
+                        // the change will be applied when the game is started (after
+                        // init), avoiding 404s for non-existent rooms.
+                        desiredPowerUpEnabled = powerupSelect.value === "true";
+                        desiredPowerUpRandom = desiredPowerUpEnabled; // default: random when enabled
+                        if (socket && socket.connected) {
+                            try {
+                                await postGame(`/game/${roomId}/powerup?enabled=${desiredPowerUpEnabled}&random=${desiredPowerUpRandom}`);
+                            } catch (err) {
+                                console.warn("[LocalPowerUpPong] No se pudo cambiar powerup:", err);
+                            }
+                        } else {
+                            console.log('[LocalPowerUpPong] Powerup selection saved locally; will apply on game start.');
+                        }
+                    });
 
       // el botón hace toggle en el desplegable para UX rápida
       if (activateBtn) {
@@ -367,9 +383,12 @@ async function startGame(isAiMode: boolean) {
                 throw new Error(`init failed (${initResponse.status})`);
             }
 
-            // Enable the powerup for this local room
+            // Enable the powerup for this local room according to the user's
+            // selection. If the user toggled the selector before starting the
+            // room we stored the desired state in `desiredPowerUpEnabled` and
+            // `desiredPowerUpRandom` and will apply it now (avoids 404s).
             try {
-                await postGame(`/game/${roomId}/powerup?enabled=true`);
+                await postGame(`/game/${roomId}/powerup?enabled=${desiredPowerUpEnabled}&random=${desiredPowerUpRandom}`);
             } catch (e) {
                 console.warn('Failed to enable powerup for room', roomId, e);
             }
@@ -548,5 +567,33 @@ function draw() {
     const scoreboard = document.getElementById("scoreboard");
     if (scoreboard) {
         scoreboard.textContent = `${gameState.scores.left} : ${gameState.scores.right}`;
+    }
+
+    // Show last power-up multiplier (if present) as a small overlay for debugging/visibility
+    if (typeof gameState.lastPowerUpMultiplier === 'number') {
+        const m = gameState.lastPowerUpMultiplier;
+        ctx.save();
+        ctx.fillStyle = 'rgba(0,0,0,0.6)';
+        ctx.fillRect(8, 8, 160, 28);
+        ctx.fillStyle = '#fff';
+        ctx.font = '14px monospace';
+        ctx.fillText(`multiplier: ${m.toFixed(2)}`, 16, 28);
+        ctx.restore();
+    }
+}
+
+function prepareGameUI(isAiMode: boolean) {
+    (document.getElementById("winnerMessage")!).style.display = "none";
+    (document.getElementById("modeSelection")!).style.display = "none";
+    (document.getElementById("gameInfo")!).style.display = "flex";
+    (document.getElementById("scoreboard")!).classList.remove("hidden");
+    (document.getElementById("extraInfo")!).classList.remove("hidden");
+
+    if (isAiMode) {
+        (document.querySelector(".right-controls p") as HTMLElement).textContent = "Right Player: AI";
+        document.getElementById("roleInfo")!.textContent = "Local mode: Player vs. AI";
+    } else {
+        (document.querySelector(".right-controls p") as HTMLElement).textContent = "Right Player: ↑ / ↓";
+        document.getElementById("roleInfo")!.textContent = "Local mode: Two players, one keyboard";
     }
 }

@@ -55,7 +55,7 @@ function showInfoMessage(message: string, messageResultElement: HTMLElement | nu
 export async function sendMessage(recipientId: number, content: string) {
     try {
         const token = getAccessToken();
-        const res = await fetch(`http://${apiHost}:8080/conversations/1/messages`, {
+        const res = await fetch(`http://${apiHost}:8080/conversations/${recipientId}/messages`, {
             method: 'POST',
             headers: { 
                 "Authorization": `Bearer ${token}`,
@@ -113,32 +113,25 @@ export const handleMessageFormSubmit = async (e: Event) => {
     }
     try {
         showInfoMessage(UI_MESSAGES.SENDING_MESSAGE, messageResult);
-        // Send message via HTTP API (for persistence)
+        // Send message via HTTP API (for persistence and WebSocket notification)
         const httpResult = await sendMessage(recipientId, content);
-        // Send message via WebSocket (for real-time delivery)
-        const wsMessage: ChatMessage = {
+        
+        // Add message to UI immediately (sent message)
+        const messageToDisplay: ChatMessage = {
             type: 'message',
             userId: getCurrentUserId(),
             recipientId: recipientId,
             content: content,
             timestamp: new Date().toISOString()
         };
-        const wsSent = websocketClient.sendMessage(wsMessage);
-        if (wsSent) {
-            if (messageResult) {
-                messageResult.innerHTML = `<span class="success">${UI_MESSAGES.MESSAGE_SENT_SUCCESS}</span>`;
-            }
-            // Add message to UI immediately (sent message)
-            addMessageToUI({
-                ...wsMessage,
-                isSent: true
-            });
-        } else {
-            if (messageResult) {
-                messageResult.innerHTML = `<span class="success">${UI_MESSAGES.MESSAGE_SENT_HTTP_ONLY}</span>`;
-            }
-        }
+        
+        addMessageToUI({
+            ...messageToDisplay,
+            isSent: true
+        });
+        
         if (messageResult) {
+            messageResult.innerHTML = `<span class="success">${UI_MESSAGES.MESSAGE_SENT_SUCCESS}</span>`;
             messageResult.className = 'message-result success';
         }
         // Auto-refresh conversations list after sending message
@@ -194,7 +187,7 @@ export function addMessageToUI(message: ChatMessage & { isSent: boolean }) {
         if (btn) {
             btn.addEventListener('click', (e) => {
                 const roomId = (e.currentTarget as HTMLElement).getAttribute('data-room');
-                if (roomId) window.location.hash = `#/pong/remote`;
+                if (roomId) window.location.hash = `#/private-remote-pong?room=${roomId}`;
             });
         }
     } else {
@@ -262,8 +255,8 @@ export function displayMessages(messages: any[]) {
             newBtn.addEventListener('click', (e) => {
                 const roomId = (e.currentTarget as HTMLElement).getAttribute('data-room');
                 if (roomId) {
-                    // Navigate to remote pong with room query param
-                    window.location.hash = `#/pong/remote?room=${roomId}`;
+                    // Navigate to private remote pong with room query param
+                    window.location.hash = `#/private-remote-pong?room=${roomId}`;
                 }
             });
         });

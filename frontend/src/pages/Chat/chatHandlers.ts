@@ -4,17 +4,29 @@ import { handleMessageFormSubmit, updateMessageInputVisibility } from "./chatMes
 import { loadConversationsAuto } from "./chatConversations";
 import { loadAllUsers, getUserProfile } from "./chatUtils";
 import { handleUserSearch } from "./chatUserSearch";
-import { getActiveConversationId } from "./chatState";
-import { blockHandler } from "./chatBlockUsers";
+import { getActiveConversationId, 
+         setActiveConversationId,
+         setActiveConversationName,
+         setActiveNotificationId,
+         setActiveNotificationName,
+         } from "./chatState";
+import { blockHandler, fetchBlockedUsers } from "./chatBlockUsers";
 import { sendGameInvitation } from "../../services/api";
 import { openNewChatModal, closeProfileModal } from "./chatModal";
+import { getAccessToken } from "../../state/authState";
+import { loadNotificationsAuto, getNotifications } from "./chatNotifications";
 
-export function chatHandlers() {
+export async function chatHandlers() {
     // Get essential DOM elements with proper error handling
     const messageForm = document.getElementById('message-form') as HTMLFormElement;
     const messageResult = document.getElementById('message-result') as HTMLDivElement;
     const conversationsList = document.getElementById('conversations-list') as HTMLDivElement;
     const messagesContainer = document.getElementById('messages-container') as HTMLDivElement;
+
+    setActiveConversationId(0);
+    setActiveConversationName("");
+    setActiveNotificationId(0);
+    setActiveNotificationName("");
 
     // Check essential elements
     if (!conversationsList || !messagesContainer) {
@@ -29,6 +41,18 @@ export function chatHandlers() {
     // Initialize WebSocket connection
     initializeWebSocket();
 
+    // Load blocked users from backend first, then load conversations
+    fetchBlockedUsers()
+        .then(() => {
+            // Load conversations after blocked users are loaded
+            loadConversationsAuto();
+        })
+        .catch(err => {
+            console.error("Failed to load blocked users on page load:", err);
+            // Load conversations anyway even if blocked users fail
+            loadConversationsAuto();
+        });
+
     // Eliminar el listener previo antes de añadirlo
     messageForm.removeEventListener('submit', handleMessageFormSubmit);
     messageForm.addEventListener('submit', handleMessageFormSubmit);
@@ -40,7 +64,22 @@ export function chatHandlers() {
 
     // Load conversations automatically on page load
     loadConversationsAuto();
+    loadNotificationsAuto();
 
+    const result = await getNotifications();
+
+    if (result.notifications && result.notifications.length > 0) {
+      // Render notifications
+
+    const unreadCount = result.notifications.filter((not: any) => not.read_at === null).length;
+
+    if (unreadCount !== 0) {
+        const notificationsTabBtn = document.querySelector('.sidebar-nav-link.notification-btr') as HTMLElement;
+            if (notificationsTabBtn) {
+            notificationsTabBtn.textContent = `Notifications (${unreadCount})`;
+            }
+        }
+    }
     // Handle new chat functionality
     const sidebarNewChatBtn = document.getElementById('sidebar-new-chat') as HTMLButtonElement;
     const newChatModal = document.getElementById('new-chat-modal') as HTMLDivElement;
@@ -118,7 +157,7 @@ export function chatHandlers() {
             if (activeConversationId) {
                 // Navigate to profile page with username
                 const profile = await getUserProfile(activeConversationId);
-                window.location.hash = `#/profile?username=${profile.username}`;
+                window.location.hash = `#/profile/${profile.username}`;
             }
         } catch (error) {
             alert('Failed to load user profile');
@@ -185,8 +224,8 @@ export function chatHandlers() {
                     if (result && result.roomId) {
                         // Save roomId to localStorage for pending redirection
                         localStorage.setItem('pendingRemoteRoomId', result.roomId);
-                        // Automatically redirect to the remote room
-                        window.location.hash = `#/pong/remote?room=${result.roomId}`;
+                        // Automatically redirect to the private remote room
+                        window.location.hash = `#/private-remote-pong?room=${result.roomId}`;
                     }
                 }
             } catch (error) {

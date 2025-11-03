@@ -1,4 +1,5 @@
 import { createUser } from "../repositories/userRepository";
+import { sendNotification } from "./notification";
 
 export async function findOrCreateUserFrom42(intraUser: any) {
     const username = intraUser.login;
@@ -27,7 +28,8 @@ export async function findOrCreateUserFrom42(intraUser: any) {
     }
     
     const newUser = await register.json();
-    createUser();
+    const  id = createUser();
+    await sendNotification(Number(id), "Welcome to Ft_Transcendence", `Hello ${username}! Thank you for registering in our project!`);
     return newUser.user;
 }
 
@@ -58,6 +60,7 @@ export async function findOrCreateUserFromGoogle(googleUser: any) {
     }
     
     const newUser = await register.json();
-    createUser();
+    const  id = createUser();
+    await sendNotification(Number(id), "Welcome to Ft_Transcendence", `Hello ${username}! Thank you for registering in our project!`);
     return newUser.user;
 }

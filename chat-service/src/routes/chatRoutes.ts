@@ -16,4 +16,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     
     // DELETE /conversations/:userId/block - Unlock user
     fastify.delete('/conversations/:userId/block', chatController.unblockUserController);
+    
+    // GET /blocked - Get list of blocked users
+    fastify.get('/blocked', chatController.getBlockedUsersController);
 }

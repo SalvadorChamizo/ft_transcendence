@@ -161,7 +161,7 @@ function startGameVsAI() {
     socket = io(wsHost);
     roomId = "ai-room-" + Math.random().toString(36).substring(2, 8);
 
-    socket.on('connect', () => {
+    socket.on('connect', async () => {
         // Join the dedicated AI room on the Pong server
         // Send username so server can map socket.id -> username
         let username = clientUsername || (document.querySelector('#username') as HTMLElement)?.textContent?.replace('Username: ', '') || '';
@@ -188,6 +188,13 @@ function startGameVsAI() {
         socket.emit("joinRoom", payload);
 
     // Do not display username in the UI (we still send it to the server for mapping)
+
+        // Enable powerup for this AI room (speed increases on paddle hit)
+        try {
+            await postGame(`/game/${roomId}/powerup?enabled=true`);
+        } catch (e) {
+            console.warn('[PongAi] Failed to enable powerup for room', roomId, e);
+        }
 
         // Start AI on the backend game controller (guard against double start)
         if (!aiStarted) {
@@ -246,6 +253,8 @@ function startGameVsAI() {
             // Best-effort notify server to stop AI
             try {
                 navigator.sendBeacon(`${apiHost}/game/${roomId}/stop-ai`);
+                // Also disable powerup when leaving
+                navigator.sendBeacon(`${apiHost}/game/${roomId}/powerup?enabled=false`);
             } catch (e) {
                 // ignore
             }

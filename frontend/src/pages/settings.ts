@@ -290,6 +290,7 @@ export function settingsHandlers(accessToken: string) {
     catch (err) {
       console.error("⚠️ Failed to reach server", err);
     }
+    location.reload();
   });
 
   deleteUserBtn.addEventListener("click", async (e) => {  

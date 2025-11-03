@@ -57,7 +57,7 @@ export async function register42Controller(req: FastifyRequest, reply: FastifyRe
 }
 
 export async function loginTimeRegister(req: FastifyRequest, reply: FastifyReply){
-	const userId = req.headers["x-user-id"];
+	const { userId } = req.body as { userId: number };
 
 	try {
 		registerTime(userId);
@@ -155,11 +155,18 @@ export async function userGetterById(req: FastifyRequest, reply: FastifyReply) {
 }
 
 export async function avatarGetterController(req: FastifyRequest, reply: FastifyReply) {
-	const userId = req.headers["x-user-id"];
+	const userIdHeader = req.headers["x-user-id"];
 
-	console.log("Fetching avatar for user ID:", userId);
-	if (!userId) {
+	console.log("Fetching avatar for user ID:", userIdHeader);
+	if (!userIdHeader) {
 		return reply.code(401).send({ error: "No ID" });
+	}
+
+	// Convert header string to number
+	const userId = typeof userIdHeader === 'string' ? parseInt(userIdHeader, 10) : Number(userIdHeader);
+	
+	if (isNaN(userId)) {
+		return reply.code(400).send({ error: "Invalid user ID" });
 	}
 
 	try {
@@ -170,7 +177,7 @@ export async function avatarGetterController(req: FastifyRequest, reply: Fastify
 				.send( avatar )
 		);
 	} catch (err: any) {
-		console.error("Error occurred during avatar retrieval");
+		console.error("Error occurred during avatar retrieval for user:", userId, err);
 		return reply.code(400).send({ error: err.message });
 	}
 }

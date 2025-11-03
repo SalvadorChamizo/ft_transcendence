@@ -1,71 +1,102 @@
-// Página para mostrar estadísticas de una partida concreta: #/match/{id}
+// Página para mostrar estadísticas de una partida concreta: #/game-stats?id={matchId}
 import * as api from "../services/api";
+import { getAccessToken } from "../state/authState";
 
-export function MatchStatsPage(): string {
+const apiHost = `${window.location.hostname}`;
+
+export function GameStats(): string {
+  const accessToken = getAccessToken();
+  if (!accessToken) {
+    return `
+      <div class="game-stats-actions">
+        <h1>Game Statistics</h1>
+        <p>Please log in to view game statistics.</p>
+      </div>
+    `;
+  }
+  setTimeout(() => gameStatsHandlers(accessToken), 0);
   return `
-    <div class="match-stats-page">
-      <button id="match-back-btn">← Volver</button>
-      <div id="match-stats">Cargando partida...</div>
+    <div class="game-stats-container">
+      <h2>Game Statistics</h2>
+      <div id="game-stats-content">
+        <p>Loading game statistics...</p>
+      </div>
     </div>
   `;
 }
 
-function parseMatchIdFromHash(): string | null {
-  const hash = window.location.hash || '';
-  const m = hash.match(/^#\/match\/(.+)$/);
-  return m ? decodeURIComponent(m[1]) : null;
+function getMatchIdFromUrl(): string | null {
+  const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+  return urlParams.get('id');
 }
 
-export function matchStatsHandlers() {
+export function gameStatsHandlers(accessToken: string) {
   (async () => {
-    const container = document.getElementById('match-stats');
-    const backBtn = document.getElementById('match-back-btn');
-    if (backBtn) backBtn.addEventListener('click', () => window.history.back());
+    const container = document.getElementById('game-stats-content');
     if (!container) return;
     container.innerHTML = 'Cargando partida...';
 
-    const matchId = parseMatchIdFromHash();
+    const matchId = getMatchIdFromUrl();
     if (!matchId) {
       container.innerHTML = `<span style="color:red">Match id inválido en la URL</span>`;
       return;
     }
 
     try {
-      // Try using api helper if available
-      let matchData: any = null;
-      if ((api as any).getMatchById) {
-        matchData = await (api as any).getMatchById(matchId);
-      } else {
-        // Fallback: plain fetch to /matches/:id (gateway should proxy)
-        const resp = await fetch(`/matches/${encodeURIComponent(matchId)}`);
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        matchData = await resp.json();
+      // For now, we'll fetch all matches for the current user and find the specific match
+      // In a real implementation, you'd have an endpoint like /matches/${matchId}
+      const userRes = await fetch(`http://${apiHost}:8080/users/me`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const userData = await userRes.json();
+      if (!userRes.ok) {
+        throw new Error('Failed to get user data');
       }
 
-      // Render basic stats (adjust according to the server fields)
-      const leftName = matchData.leftName ?? matchData.left ?? matchData.playerLeft ?? 'Left';
-      const rightName = matchData.rightName ?? matchData.right ?? matchData.playerRight ?? 'Right';
-      const scoreLeft = matchData.score_left ?? matchData.leftScore ?? 0;
-      const scoreRight = matchData.score_right ?? matchData.rightScore ?? 0;
-      const duration = matchData.duration ?? matchData.playTime ?? 'N/A';
-      const created = matchData.timestamp ? new Date(matchData.timestamp).toLocaleString() : (matchData.createdAt ? new Date(matchData.createdAt).toLocaleString() : 'N/A');
+      const historyRes = await fetch(`http://${apiHost}:8080/matches/player/${userData.user.id}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      const history = await historyRes.json();
+
+      // Find the specific match
+      const match = history.find((m: any) => m.id === matchId || m._id === matchId || m.uuid === matchId);
+      if (!match) {
+        container.innerHTML = '<p>Match not found.</p>';
+        return;
+      }
+
+      // Display match details
+      const players = match.players || [];
+      const score = match.score || { left: 0, right: 0 };
+      const winner = match.winner || 'N/A';
+      const endedAt = match.endedAt ? new Date(match.endedAt).toLocaleString() : 'N/A';
+      const roomId = match.roomId || 'N/A';
 
       container.innerHTML = `
-        <h2>Match ${matchId}</h2>
-        <div class="match-summary">
-          <div><strong>${leftName}</strong> — ${scoreLeft}</div>
-          <div><strong>${rightName}</strong> — ${scoreRight}</div>
-        </div>
-        <div class="match-meta">
-          <div>Duración: ${duration}</div>
-          <div>Fecha: ${created}</div>
-          <div>Winner: ${matchData.winner ?? (scoreLeft > scoreRight ? leftName : (scoreRight > scoreLeft ? rightName : 'Draw'))}</div>
-        </div>
-        <div class="match-events">
-          <h3>Eventos</h3>
-          <ul>
-            ${(Array.isArray(matchData.events) ? matchData.events : []).map((e: any) => `<li>${e.timestamp ? new Date(e.timestamp).toLocaleTimeString() : ''} - ${e.type}: ${e.detail ?? JSON.stringify(e)}</li>`).join('')}
-          </ul>
+        <div class="game-stats-card">
+          <h3>Match Details</h3>
+          <div class="stats-detail">
+            <strong>Room ID:</strong> ${roomId}
+          </div>
+          <div class="stats-detail">
+            <strong>Players:</strong> ${players.join(' vs ')}
+          </div>
+          <div class="stats-detail">
+            <strong>Score:</strong> ${score.left} - ${score.right}
+          </div>
+          <div class="stats-detail">
+            <strong>Winner:</strong> ${winner}
+          </div>
+          <div class="stats-detail">
+            <strong>Date Played:</strong> ${endedAt}
+          </div>
+          <button onclick="window.location.hash='#/profile'" class="back-btn">Back to Profile</button>
         </div>
       `;
     } catch (err: any) {
