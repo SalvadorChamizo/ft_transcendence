@@ -75,8 +75,18 @@ export function profileHandlers(accessToken: string) {
   const historyContainer = document.querySelector<HTMLDivElement>("#history-container")!;
   const statsChart = document.querySelector<HTMLCanvasElement>("#stats-chart")!;
 
-  // Parse username from URL query params
+  // Parse username from URL - supports both /profile/username and /profile?username=...
   function getUsernameFromUrl(): string | null {
+    const hash = window.location.hash || '';
+    
+    // Check for /profile/username format first
+    if (hash.startsWith('#/profile/')) {
+      const rest = hash.substring('#/profile/'.length);
+      const username = rest.split('?')[0].split('/')[0];
+      return username ? decodeURIComponent(username) : null;
+    }
+    
+    // Fallback to query param format: /profile?username=...
     const urlParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
     return urlParams.get('username');
   }
@@ -92,12 +102,16 @@ export function profileHandlers(accessToken: string) {
         // Fetch data for specific user
         const fetchedUserId = await getUserIdByUsername(urlUsername);
         if (!fetchedUserId) {
-          throw new Error('User not found');
+          // User not found - redirect to error page
+          window.location.hash = '#/error';
+          return;
         }
         userId = fetchedUserId;
         userData = await getUserById(userId);
         if (!userData) {
-          throw new Error('User data not found');
+          // User data not found - redirect to error page
+          window.location.hash = '#/error';
+          return;
         }
       } else {
         // Fetch data for current user

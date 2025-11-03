@@ -166,12 +166,13 @@ export async function loadConversationsAuto() {
 
                     item.addEventListener('click', async (e) => {
                         const target = e.target as HTMLElement;
-                        const username = target.getAttribute('data-username') || await getUsername(userId);
-
+                        
                         if (target.classList.contains('conversation-name')) {
-                            // Navigate to profile
+                            // Navigate to profile of the other user (the conversation partner)
+                            const username = await getUsername(userId);
                             window.location.hash = `#/profile/${username}`;
                         } else {
+                            const username = await getUsername(userId);
                             // Select conversation
                             document.querySelectorAll('.conversation-item').forEach(i => i.classList.remove('active'));
                             item.classList.add('active');

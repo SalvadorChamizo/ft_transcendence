@@ -38,6 +38,15 @@ export function router(route: string): string {
         setTimeout(remoteTournamentPongHandlers, 0);
         return remoteTournamentPongPage();
     }
+    // Handle profile routes with username parameter first
+    if (route.match(/^#\/profile\/.+/)) {
+        if (isLoggedIn()) {
+            setTimeout(profileSettingsHandlers, 0);
+            return ProfileSettings();
+        }
+        return Login();
+    }
+    // Handle profile settings (own profile)
     if (route.startsWith("#/profile")) {
         if (isLoggedIn()) {
             setTimeout(profileSettingsHandlers, 0);
@@ -50,18 +59,6 @@ export function router(route: string): string {
             return ErrorPage();
         case "#/terms":
             return TermsPage();
-        case "#/profile":
-            if (isLoggedIn()) {
-                setTimeout(profileHandlers, 0);
-                return Profile();
-            }
-            return Login();
-        case route.match(/^#\/profile\/.+/)?.input:
-            if (isLoggedIn()) {
-                setTimeout(profileHandlers, 0);
-                return Profile();
-            }
-            return Login();
         case "#/about":
             return About();
         case "#/login":
