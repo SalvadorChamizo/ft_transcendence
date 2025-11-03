@@ -4,7 +4,12 @@ import { handleMessageFormSubmit, updateMessageInputVisibility } from "./chatMes
 import { loadConversationsAuto } from "./chatConversations";
 import { loadAllUsers, getUserProfile } from "./chatUtils";
 import { handleUserSearch } from "./chatUserSearch";
-import { getActiveConversationId } from "./chatState";
+import { getActiveConversationId, 
+         setActiveConversationId,
+         setActiveConversationName,
+         setActiveNotificationId,
+         setActiveNotificationName,
+         } from "./chatState";
 import { blockHandler } from "./chatBlockUsers";
 import { sendGameInvitation } from "../../services/api";
 import { openNewChatModal, closeProfileModal } from "./chatModal";
@@ -17,6 +22,11 @@ export async function chatHandlers() {
     const messageResult = document.getElementById('message-result') as HTMLDivElement;
     const conversationsList = document.getElementById('conversations-list') as HTMLDivElement;
     const messagesContainer = document.getElementById('messages-container') as HTMLDivElement;
+
+    setActiveConversationId(0);
+    setActiveConversationName("");
+    setActiveNotificationId(0);
+    setActiveNotificationName("");
 
     // Check essential elements
     if (!conversationsList || !messagesContainer) {
