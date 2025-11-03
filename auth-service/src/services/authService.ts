@@ -1,6 +1,7 @@
 import { createUser, deleteUser, findUser, findUserById } from "../repositories/userRepository";
 import { RefreshTokenRepository } from "../repositories/refreshTokenRepository";
 import { generateAccessToken, generateRefreshToken } from "./tokenService";
+import { sendNotification } from "./notification";
 import nodemailer from "nodemailer"
 
 const refreshTokenRepo = new RefreshTokenRepository();
@@ -13,7 +14,8 @@ export async function registerUser(username: string, password: string, email: st
     });
     if (register.ok)
     {
-        createUser();
+        const id = createUser();
+        await sendNotification(Number(id), "Welcome to Ft_Transcendence", `Hello ${username}! Thank you for registering in our project!`);
         return { message: "User registered successfully" };
     }
     else

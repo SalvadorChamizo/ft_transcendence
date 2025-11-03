@@ -2,7 +2,9 @@ import db from "../db/sqlite"
 
 export function createUser() {
     const stmt = db.prepare("INSERT INTO users DEFAULT VALUES");
-    stmt.run();
+    const result = stmt.run();
+
+    return result.lastInsertRowid
 }
 
 export function findUser(username: string) {
