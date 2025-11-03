@@ -46,11 +46,12 @@ export function router(route: string): string {
                 return Profile();
             }
             return Login();
-		case "#/profile/":
-        case route.match(/^#\/profile\/.+/)?.input || "":
-            setTimeout(profileHandlers, 0);
-            return Profile();
-
+        case route.match(/^#\/profile\/.+/)?.input:
+            if (isLoggedIn()) {
+                setTimeout(profileHandlers, 0);
+                return Profile();
+            }
+            return Login();
         case "#/about":
             return About();
         case "#/login":
@@ -104,6 +105,8 @@ export function router(route: string): string {
         case "#/tournament":
             return Tournament();
         case "#/":
+            return Home();
+        case "":
             return Home();
         default:
             return ErrorPage();
