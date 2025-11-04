@@ -5,6 +5,37 @@ import { loadConversationsDebounced } from "./chatConversations";
 import { getConnectedUsersSet, getActiveConversationId } from "./chatState";
 import { handleUserSearch } from "./chatUserSearch";
 
+/**
+ * Show or hide typing indicator in the chat UI
+ */
+function showTypingIndicator(show: boolean) {
+    const messagesContainer = document.getElementById('messages-container');
+    if (!messagesContainer) return;
+
+    // Remove existing typing indicator if present
+    const existingIndicator = messagesContainer.querySelector('.typing-indicator');
+    if (existingIndicator) {
+        existingIndicator.remove();
+    }
+
+    if (show) {
+        // Create and add typing indicator
+        const typingDiv = document.createElement('div');
+        typingDiv.className = 'typing-indicator';
+        typingDiv.innerHTML = `
+            <div class="typing-bubble">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        `;
+        messagesContainer.appendChild(typingDiv);
+        
+        // Auto-scroll to bottom
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+}
+
 export async function initializeWebSocket() {
     try {
         const userId = getCurrentUserId();
@@ -36,6 +67,18 @@ export async function initializeWebSocket() {
                     isSent: false
                 });
                 loadConversationsDebounced();
+            } else if (message.type === 'typing') {
+                // Show typing indicator
+                const activeConversationId = getActiveConversationId();
+                if (message.userId === activeConversationId) {
+                    showTypingIndicator(true);
+                }
+            } else if (message.type === 'stop_typing') {
+                // Hide typing indicator
+                const activeConversationId = getActiveConversationId();
+                if (message.userId === activeConversationId) {
+                    showTypingIndicator(false);
+                }
             } else if (message.type === 'user_deleted') {
                 // A user was deleted - refresh conversations automatically
                 console.log(`User ${message.userId} was deleted - refreshing conversations`);

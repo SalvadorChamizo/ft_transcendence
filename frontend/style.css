@@ -1912,6 +1912,62 @@ header {
   margin-top: 4px;
 }
 
+/* Typing indicator */
+.typing-indicator {
+  max-width: 65%;
+  margin: 8px 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-left: 0;
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+}
+
+.typing-bubble {
+  background: rgba(66, 243, 250, 0.1);
+  border: 1px solid #42F3FA;
+  border-radius: 8px;
+  padding: 10px 15px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-shadow: 0 0 10px rgba(66, 243, 250, 0.2);
+}
+
+.typing-bubble span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #42F3FA;
+  display: inline-block;
+  animation: typing-animation 1.4s infinite;
+  opacity: 0.6;
+}
+
+.typing-bubble span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.typing-bubble span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-bubble span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typing-animation {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  30% {
+    transform: translateY(-10px);
+    opacity: 1;
+  }
+}
+
 /* Input area */
 .message-input-area {
   background: rgba(24, 23, 65, 0.9);

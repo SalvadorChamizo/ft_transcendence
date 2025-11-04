@@ -7,6 +7,10 @@ import { loadConversationsDebounced } from "./chatConversations";
 
 const apiHost = `${window.location.hostname}`;
 
+// Typing indicator state
+let typingTimeout: ReturnType<typeof setTimeout> | null = null;
+let isTyping = false;
+
 /**
  * Sanitiza el texto para evitar inyección de HTML
  */
@@ -273,5 +277,56 @@ export function updateMessageInputVisibility() {
         if (messageForm) messageForm.style.display = 'flex';
     } else {
         if (messageForm) messageForm.style.display = 'none';
+    }
+}
+
+/**
+ * Handle typing indicator - send typing event when user starts typing
+ */
+function handleTyping() {
+    const activeConversationId = getActiveConversationId();
+    if (!activeConversationId || !websocketClient.isConnected()) {
+        return;
+    }
+
+    // Send "typing" event if not already typing
+    if (!isTyping) {
+        isTyping = true;
+        websocketClient.sendMessage({
+            type: 'typing',
+            userId: getCurrentUserId(),
+            recipientId: activeConversationId,
+            conversationId: activeConversationId
+        });
+    }
+
+    // Clear existing timeout
+    if (typingTimeout) {
+        clearTimeout(typingTimeout);
+    }
+
+    // Set timeout to send "stop_typing" after 1 second of no typing
+    typingTimeout = setTimeout(() => {
+        isTyping = false;
+        websocketClient.sendMessage({
+            type: 'stop_typing',
+            userId: getCurrentUserId(),
+            recipientId: activeConversationId,
+            conversationId: activeConversationId
+        });
+    }, 1000);
+}
+
+/**
+ * Setup typing indicator on message input
+ */
+export function setupTypingIndicator() {
+    const messageContentInput = document.getElementById('message-content') as HTMLInputElement;
+    
+    if (messageContentInput) {
+        // Remove existing listener to avoid duplicates
+        messageContentInput.removeEventListener('input', handleTyping);
+        // Add typing event listener
+        messageContentInput.addEventListener('input', handleTyping);
     }
 }

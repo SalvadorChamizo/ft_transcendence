@@ -1,6 +1,6 @@
 import { UI_MESSAGES, CHAT_CONFIG } from "./chatConstants";
 import { initializeWebSocket } from "./chatWebSocket";
-import { handleMessageFormSubmit, updateMessageInputVisibility } from "./chatMessages";
+import { handleMessageFormSubmit, updateMessageInputVisibility, setupTypingIndicator } from "./chatMessages";
 import { loadConversationsAuto } from "./chatConversations";
 import { loadAllUsers, getUserProfile } from "./chatUtils";
 import { handleUserSearch } from "./chatUserSearch";
@@ -40,6 +40,9 @@ export async function chatHandlers() {
 
     // Initialize WebSocket connection
     initializeWebSocket();
+
+    // Setup typing indicator on message input
+    setupTypingIndicator();
 
     // Load blocked users from backend first, then load conversations
     fetchBlockedUsers()
