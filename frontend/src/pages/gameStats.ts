@@ -56,7 +56,7 @@ export function gameStatsHandlers(accessToken: string) {
         throw new Error('Failed to get user data');
       }
 
-      const historyRes = await fetch(`http://${apiHost}:8080/matches/player/${userData.user.id}`, {
+  const historyRes = await fetch(`http://${apiHost}:8080/game/matches/player/${userData.user.id}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${accessToken}`,

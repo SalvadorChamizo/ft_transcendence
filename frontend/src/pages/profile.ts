@@ -2,6 +2,7 @@ import { getAccessToken, isLoggedIn } from "../state/authState";
 import { getElement } from "./Login/loginDOM";
 import { getUserIdByUsername, getUserById, getUserStatsById } from "../services/api";
 import { fetchCurrentUser } from "./Login/loginService";
+import { getMatchesByPlayerId } from "../services/api";
 
 const apiHost = `${window.location.hostname}`;
 
@@ -211,14 +212,9 @@ export function profileHandlers() {
       if (userData && userData.matchHistory) {
         history = userData.matchHistory;
       } else {
-        const historyRes = await fetch(`http://${apiHost}:8080/matches/player/${userId}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        history = await historyRes.json();
+                history = await getMatchesByPlayerId(userId);
       }
+
 
       // Display stats
       const games = victories + defeats;
