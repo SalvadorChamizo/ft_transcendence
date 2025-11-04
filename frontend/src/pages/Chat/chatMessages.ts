@@ -7,7 +7,7 @@ import { loadConversationsDebounced } from "./chatConversations";
 
 const apiHost = `${window.location.hostname}`;
 
-const MAX_MESSAGE_LENGTH = 40;
+const MAX_MESSAGE_LENGTH = 200;
 
 // Typing indicator state
 let typingTimeout: ReturnType<typeof setTimeout> | null = null;
