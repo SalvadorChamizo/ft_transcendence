@@ -2,7 +2,7 @@ import { UI_MESSAGES, CHAT_CONFIG } from "./chatConstants";
 import { initializeWebSocket } from "./chatWebSocket";
 import { handleMessageFormSubmit, updateMessageInputVisibility, setupTypingIndicator } from "./chatMessages";
 import { loadConversationsAuto } from "./chatConversations";
-import { loadAllUsers, getUserProfile, sendFriendInvitation } from "./chatUtils";
+import { loadAllUsers, getUserProfile } from "./chatUtils";
 import { handleUserSearch } from "./chatUserSearch";
 import { getActiveConversationId, 
          setActiveConversationId,
@@ -15,8 +15,7 @@ import { sendGameInvitation } from "../../services/api";
 import { openNewChatModal, closeProfileModal } from "./chatModal";
 import { getAccessToken } from "../../state/authState";
 import { loadNotificationsAuto, getNotifications } from "./chatNotifications";
-import { checkAlreadyFriend } from "./chatUtils";
-import { acceptFriendInvitation } from "./chatInvitations";
+import { acceptFriendInvitation, sendFriendInvitation, checkAlreadyFriend } from "./chatInvitations";
 
 export async function chatHandlers() {
     // Get essential DOM elements with proper error handling
