@@ -6,7 +6,7 @@ import * as websocketService from "./websocketService";
 
 export async function sendMessage(senderId: number, recipientId: number, content: string, messageType: string = 'text') {
     // 1. Validate message length
-    const MAX_MESSAGE_LENGTH = 40;
+    const MAX_MESSAGE_LENGTH = 200;
     if (content.length > MAX_MESSAGE_LENGTH) {
         throw new Error(`Message exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters`);
     }
