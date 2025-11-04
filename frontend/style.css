@@ -1588,6 +1588,38 @@ header {
   transition: all 0.3s ease;
 }
 
+.invite-friend-btn {
+  display: flex;
+  justify-content: center;
+  background: rgba(66, 243, 250, 0.2);
+  border: 1px solid #42F3FA;
+  color: #42F3FA;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 18px;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.invite-friend-btn #person-emoji {
+  font-size: 18px;
+  color: #00FF00;
+}
+
+.invite-friend-btn #plus-emoji {
+  font-size: 13px;
+  font-weight: bold;
+  color: #00FF00;
+}
+
+.invite-friend-btn:hover {
+  background: rgba(66, 243, 250, 0.4);
+  box-shadow: 0 0 15px rgba(66, 243, 250, 0.8);
+  transform: scale(1.1);
+}
+
 .view-profile-btn:hover {
   background: rgba(66, 243, 250, 0.4);
   box-shadow: 0 0 15px rgba(66, 243, 250, 0.8);
