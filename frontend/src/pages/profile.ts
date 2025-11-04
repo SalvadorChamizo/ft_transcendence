@@ -1,6 +1,8 @@
 import { getAccessToken, isLoggedIn } from "../state/authState";
 import { getElement } from "./Login/loginDOM";
 import { getUserIdByUsername, getUserById, getUserStatsById } from "../services/api";
+import { fetchCurrentUser } from "./Login/loginService";
+import { getMatchesByPlayerId } from "../services/api";
 
 const apiHost = `${window.location.hostname}`;
 
@@ -14,12 +16,12 @@ export function Profile() {
       </div>
     `;
   }
-  setTimeout(() => profileHandlers(accessToken), 0);
+  setTimeout(() => profileHandlers(), 0);
   setTimeout(() => setupProfileTabs(), 0);
   return `
     <div class="profile-container">
       <h2>Profile</h2>
-      <div class="profile-card">
+      <div class="profile-card expanded">
         <ul class="profile-nav">
           <li class="profile-nav-item">
             <button type="button" class="profile-nav-link active" data-tab="profile-tab">Profile</button>
@@ -44,6 +46,10 @@ export function Profile() {
             <div class="profile-form-section">
               <p id="useremail">Email</p>
             </div>
+            <div class="profile-form-section">
+              <h3>Friends</h3>
+              <div id="friends-list">Loading friends...</div>
+            </div>
           </div>
 
           <div id="dashboard-tab" class="profile-tab-panel">
@@ -67,7 +73,8 @@ export function Profile() {
   `;
 }
 
-export function profileHandlers(accessToken: string) {
+export function profileHandlers() {
+  const accessToken = getAccessToken();
   const usernameField = document.querySelector<HTMLParagraphElement>("#username")!;
   const emailField = document.querySelector<HTMLParagraphElement>("#useremail")!;
   const avatarField = document.querySelector<HTMLParagraphElement>("#avatar")!;
@@ -113,20 +120,19 @@ export function profileHandlers(accessToken: string) {
           window.location.hash = '#/error';
           return;
         }
-      } else {
+      } 
+      else {
         // Fetch data for current user
-        const res = await fetch(`http://${apiHost}:8080/users/me`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || 'Failed to fetch user data');
+         const cached = localStorage.getItem("user");
+        if (cached) {
+          userData = JSON.parse(cached);
+        } else {
+          const data = await fetchCurrentUser(accessToken);
+          userData = data.user;
+          if (userData) localStorage.setItem("user", JSON.stringify(userData));
         }
-        userData = data.user;
         userId = userData.id;
+
       }
 
       if (usernameField) {
@@ -148,7 +154,32 @@ export function profileHandlers(accessToken: string) {
       }
 
       // Fetch stats and history for dashboard
-      fetchStatsAndHistory(userId);
+      fetchStatsAndHistory(userId, urlUsername ? null : userData);
+
+      // Fetch friends and render (call user-management endpoint directly)
+      try {
+        const friendsDiv = document.getElementById('friends-list');
+        const res = await fetch(`http://${apiHost}:8080/users/getFriends`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'x-user-id': String(userId)
+          }
+        });
+        if (!res.ok) {
+          if (friendsDiv) friendsDiv.innerHTML = '<p>No friends found or error.</p>';
+        } else {
+          const data = await res.json();
+          const friends = data.friends || [];
+          if (friendsDiv) {
+            if (friends.length === 0) friendsDiv.innerHTML = '<p>No friends yet.</p>';
+            else friendsDiv.innerHTML = `<ul class="friends-list">${friends.map((f: any) => `<li class="friend-item" data-id="${f.id}"><a href="#/profile/${encodeURIComponent(f.username)}">${f.username}</a></li>`).join('')}</ul>`;
+          }
+        }
+      } catch (e) {
+        const friendsDiv = document.getElementById('friends-list');
+        if (friendsDiv) friendsDiv.innerHTML = '<p>Error loading friends.</p>';
+      }
     } catch (err: any) {
       console.error("Error fetching user data:", err);
       if (usernameField) {
@@ -157,26 +188,35 @@ export function profileHandlers(accessToken: string) {
     }
   }
 
-  async function fetchStatsAndHistory(userId: number) {
+  async function fetchStatsAndHistory(userId: number, userData?: any) {
     try {
-      // Fetch stats
-      const stats = await getUserStatsById(userId);
-      if (!stats) {
-        throw new Error('Stats not found');
+      let victories: number;
+      let defeats: number;
+
+      if (userData && userData.victories !== undefined && userData.defeats !== undefined) {
+        // Use stats from userData
+        victories = userData.victories;
+        defeats = userData.defeats;
+      } else {
+        // Fetch stats
+        const stats = await getUserStatsById(userId);
+        if (!stats) {
+          throw new Error('Stats not found');
+        }
+        victories = stats.victories || 0;
+        defeats = stats.defeats || 0;
       }
 
       // Fetch match history
-      const historyRes = await fetch(`http://${apiHost}:8080/matches/player/${userId}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      const history = await historyRes.json();
+      let history: any[];
+      if (userData && userData.matchHistory) {
+        history = userData.matchHistory;
+      } else {
+                history = await getMatchesByPlayerId(userId);
+      }
+
 
       // Display stats
-      const victories = stats.victories || 0;
-      const defeats = stats.defeats || 0;
       const games = victories + defeats;
       const winRate = games > 0 ? Math.round((victories / games) * 100) : 0;
 

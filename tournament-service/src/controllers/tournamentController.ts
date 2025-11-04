@@ -78,6 +78,9 @@ export async function advanceTournamentController(req: FastifyRequest, reply: Fa
         }
         return reply.code(200).send(data);
     } catch (err: any) {
+        console.log("id:", req.params.id, "winners:", req.body.winners);
+        console.log("tournament:", TournamentRepository.getById(Number(req.params.id)));
+        console.error(err);
         return reply.code(400).send({ error: "Failed to advance tournament" });
     }
 }

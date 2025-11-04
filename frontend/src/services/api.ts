@@ -1,3 +1,5 @@
+import { refreshAccessToken } from "../state/authState";
+
 // Get user stats by ID (calls backend endpoint)
 export async function getUserStatsById(id: number): Promise<{victories: number, defeats: number} | null> {
     try {
@@ -306,5 +308,38 @@ export async function getAllUsers() {
         return await res.json();
     } catch (err) {
         throw err;
+    }
+}
+
+export async function getMatchesByPlayerId(playerId: number): Promise<any[]> {
+    try {
+        let token = getAccessToken();
+    let res = await fetch(`http://${apiHost}:8080/game/matches/player/${playerId}`, {
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        // If unauthorized, try refresh once and retry
+        if (res.status === 401) {
+            await refreshAccessToken();
+            token = getAccessToken();
+            res = await fetch(`http://${apiHost}:8080/game/matches/player/${playerId}`, {
+                method: 'GET',
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            });
+        }
+
+        if (!res.ok) {
+            if (res.status === 404) return [];
+            throw new Error('Failed fetching player matches');
+        }
+        return await res.json();
+    } 
+    catch (err) {
+        return [];
     }
 }
