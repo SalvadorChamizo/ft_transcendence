@@ -77,12 +77,18 @@ export async function selectConversation(otherUserId: number, otherUserName: str
     const blockButton = document.getElementById('block-user-btn') as HTMLButtonElement;
     const viewProfileButton = document.getElementById('view-profile-btn') as HTMLButtonElement;
     const profileBtn = document.getElementById('view-profile-btn') as HTMLButtonElement;
+    const friendBtn = document.getElementById('invite-friend-btn') as HTMLButtonElement;
+
     if (profileBtn) {
         profileBtn.style.display = 'block';
     }
 
     if (blockButton) {
         blockButton.style.display = 'block';
+    }
+
+    if (friendBtn) {
+        friendBtn.style.display = 'flex';
     }
 
     // Update block button state based on current blocked users

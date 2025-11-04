@@ -235,6 +235,9 @@ export function displayMessages(messages: any[]) {
         const isPongInvite = (msg.data && msg.data.event_type === 'game_invitation_message' && msg.data.room_id)
             || msg.message_type === 'pong-invite'
             || (msg.data && msg.data.room_id);
+        // Detect friend invitation
+        const isFriendInvite = (msg.data && msg.data.event_type === 'friend_invitation_message')
+            || msg.message_type === 'friend-invite';
         let messageHtml = '';
         if (isPongInvite) {
             const room = (msg.data && msg.data.room_id) || (msg.content && (msg.content.match(/<b>([^<]+)<\/b>/) || [])[1]) || '';
@@ -245,6 +248,19 @@ export function displayMessages(messages: any[]) {
                         ${msg.content}
                         <br>
                         <button class="join-remote-pong-btn" data-room="${room}">Entrar a la partida</button>
+                    </div>
+                    <div class="message-time">${new Date(msg.timestamp || msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                </div>
+            `;
+        } else if (isFriendInvite) {
+            // Render pong invitation message
+            messageHtml = `
+                <div class="message-bubble ${isSent ? 'message-sent' : 'message-received'} pong-invite">
+                    <div class="message-content">
+                        ${msg.content}
+                        <br>
+                        <button class='join-remote-pong-btn accept-friend-btn'>Add friend</button>
+                        <button class='join-remote-pong-btn reject-friend-btn'>Reject</button>
                     </div>
                     <div class="message-time">${new Date(msg.timestamp || msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
@@ -274,6 +290,13 @@ export function displayMessages(messages: any[]) {
             });
         });
     }, 0);
+    const acceptFriendBtn = document.getElementById('accept-friend-btn') as HTMLButtonElement;
+
+    if (acceptFriendBtn) {
+        acceptFriendBtn.addEventListener('click', async () => {
+            alert("Lo pilla");
+        })
+    }
     messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
 

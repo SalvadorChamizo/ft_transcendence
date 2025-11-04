@@ -55,6 +55,19 @@ db.prepare(`
 `).run();
 
 db.prepare(`
+    CREATE TABLE IF NOT EXISTS invitations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        other_user_id INTEGER NOT NULL,
+        status TEXT DEFAULT 'pending' CHECK(status IN ('pending', 'accepted', 'rejected', 'expired')),
+        type TEXT NOT NULL CHECK(type IN ('pong', 'tournament', 'friend')),
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        expires_at DATETIME NOT NULL,
+        room_id TEXT DEFAULT NULL
+    )
+`).run();
+
+db.prepare(`
   CREATE TABLE IF NOT EXISTS notifications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,

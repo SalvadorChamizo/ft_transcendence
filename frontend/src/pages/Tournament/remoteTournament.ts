@@ -17,7 +17,7 @@ export function startFastPolling(tournamentId: number) {
     stopPolling(); // Clear any existing polling
     pollingInterval = setInterval(() => {
         loadTournamentPlayers(tournamentId);
-    }, 500); // 0.5 seconds for fast polling when waiting for tournament to start
+    }, 1000); // 0.5 seconds for fast polling when waiting for tournament to start
 }
 
 export function stopPolling() {

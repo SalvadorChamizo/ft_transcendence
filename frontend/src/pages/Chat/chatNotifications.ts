@@ -170,6 +170,8 @@ export async function selectNotification(notificationId: number, title: string) 
     const blockButton = document.getElementById('block-user-btn') as HTMLButtonElement;
     const viewProfileButton = document.getElementById('view-profile-btn') as HTMLButtonElement;
     const profileBtn = document.getElementById('view-profile-btn') as HTMLButtonElement;
+    const friendBtn = document.getElementById('invite-friend-btn') as HTMLButtonElement;
+
     if (profileBtn) {
         profileBtn.style.display = 'none';
     }
@@ -178,6 +180,9 @@ export async function selectNotification(notificationId: number, title: string) 
         blockButton.style.display = 'none';
     }
 
+    if (friendBtn) {
+      friendBtn.style.display = 'none';
+    }
     // Show invite to game button
     const inviteBtn = document.getElementById('invite-game-btn') as HTMLButtonElement;
     if (inviteBtn) {

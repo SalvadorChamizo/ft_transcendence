@@ -57,6 +57,14 @@ export function getChatHtml(): string {
                         <button id="view-profile-btn" class="view-profile-btn" title="View profile">
                             👤
                         </button>
+                        <button id="invite-friend-btn" class="invite-friend-btn" title="Invite friend">
+                            <span id="person-emoji">
+                            <svg width="20" height="20" fill="#42F3FA" viewBox="0 0 24 24">
+                                <path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4 0-8 2-8 6v2h16v-2c0-4-4-6-8-6Z"/>
+                            </svg>
+                            </span>
+                            <span id="plus-emoji">+​</span>
+                        </button>
                         <button id="invite-game-btn" class="invite-game-btn" title="Invite to play Pong">
                             🎮
                         </button>

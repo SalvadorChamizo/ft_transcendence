@@ -7,6 +7,7 @@ import { gameInvitationRoutes } from "./routes/gameInvitationRoutes";
 import { websocketRoutes } from "./routes/websocketRoutes";
 import "./db/sqlite"; // Initialize database
 import { notificationsRoutes } from "./routes/notificationRoutes";
+import { friendInvitationRoutes } from "./routes/friendInvitationRoutes";
 
 // Loads .env variables into process.env
 dotenv.config();
@@ -63,6 +64,7 @@ async function startServer() {
     await app.register(notificationsRoutes);
     // ALL: Register WebSocket handlers
 
+    await app.register(friendInvitationRoutes);
     const PORT = process.env.PORT || 8083;
 
     // Graceful shutdown handlers
