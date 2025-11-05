@@ -331,31 +331,43 @@ export function profileHandlers() {
     if (!ctx) return;
 
     const total = wins + losses;
-    if (total === 0) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (total === 0) {
+      // draw a neutral circle centered
+      const cx0 = Math.floor(canvas.width / 2);
+      const cy0 = Math.floor(canvas.height / 2);
+      const r0 = Math.min(80, Math.floor(Math.min(canvas.width, canvas.height) / 4));
+      ctx.beginPath();
+      ctx.arc(cx0, cy0, r0, 0, Math.PI * 2);
+      ctx.fillStyle = '#ddd';
+      ctx.fill();
+      return;
+    }
 
     const winAngle = (wins / total) * 2 * Math.PI;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Center the pie chart in the canvas (dashboard only)
+    const cx = Math.floor(canvas.width / 2);
+    const cy = Math.floor(canvas.height / 2) - 10; // slightly up to make room
+    const radius = Math.min(90, Math.floor(Math.min(canvas.width, canvas.height) / 3));
 
-    // Wins (green)
+    // Draw wins slice
     ctx.beginPath();
-    ctx.arc(100, 100, 80, 0, winAngle);
-    ctx.lineTo(100, 100);
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, 0, winAngle);
+    ctx.closePath();
     ctx.fillStyle = 'green';
     ctx.fill();
 
-    // Losses (red)
+    // Draw losses slice
     ctx.beginPath();
-    ctx.arc(100, 100, 80, winAngle, 2 * Math.PI);
-    ctx.lineTo(100, 100);
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, winAngle, 2 * Math.PI);
+    ctx.closePath();
     ctx.fillStyle = 'red';
     ctx.fill();
 
-    // Labels
-    ctx.fillStyle = 'black';
-    ctx.font = '16px Arial';
-    ctx.fillText(`Wins: ${wins}`, 10, 20);
-    ctx.fillText(`Losses: ${losses}`, 10, 40);
+    // No legend/labels on the piechart (kept minimal)
   }
 
   fetchUserData();
