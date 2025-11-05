@@ -252,13 +252,68 @@ export function profileHandlers() {
       // Simple chart
       drawSimpleChart(statsChart, victories, defeats);
 
-      // Display history
+      // Display history (resolve player IDs to usernames)
       if (Array.isArray(history) && history.length > 0) {
-        historyContainer.innerHTML = history.slice(-10).reverse().map((match: any) => `
-          <p class="match-history-item" data-match-id="${match.id || match._id || match.uuid || ''}" style="cursor:pointer; padding: 8px; border: 1px solid #42f3fa; margin: 4px 0; border-radius: 4px;">
-            Match: ${match.players.join(' vs ')} - Score: ${match.score.left}-${match.score.right} - Winner: ${match.winner || 'N/A'}
-          </p>
-        `).join('');
+        const recent = history.slice(-10).reverse();
+
+        // Simple cache to avoid duplicate user lookups
+        const usernameCache = new Map<string, string | null>();
+
+        async function resolvePlayerUsernames(players: string[]): Promise<string[]> {
+          return Promise.all(players.map(async (p) => {
+            if (!p) return String(p);
+            if (usernameCache.has(p)) return usernameCache.get(p) || String(p);
+            try {
+              // Attempt to fetch user by id. getUserById expects a numeric id in body but handles strings too.
+              const user = await getUserById(Number(p));
+              const username = user?.username ?? String(p);
+              usernameCache.set(p, username);
+              return username;
+            } catch (err) {
+              // fallback to raw id
+              usernameCache.set(p, String(p));
+              return String(p);
+            }
+          }));
+        }
+
+        // Build HTML entries asynchronously
+        const entriesHtml = await Promise.all(recent.map(async (match: any) => {
+          const playersArr: string[] = Array.isArray(match.players) ? match.players : (typeof match.players === 'string' ? JSON.parse(match.players) : []);
+          const displayPlayers = await resolvePlayerUsernames(playersArr);
+          const playersText = displayPlayers.join(' vs ');
+          const scoreLeft = match.score?.left ?? (match.score ? match.score[0] : 0);
+          const scoreRight = match.score?.right ?? (match.score ? match.score[1] : 0);
+          // Resolve winner to a username when possible. winner may be 'left'/'right' or a user id/string
+          let winnerDisplay = 'N/A';
+          if (typeof match.winner !== 'undefined' && match.winner !== null) {
+            const rawWinner = String(match.winner);
+            if (rawWinner === 'left') {
+              winnerDisplay = displayPlayers[0] ?? rawWinner;
+            } else if (rawWinner === 'right') {
+              winnerDisplay = displayPlayers[1] ?? rawWinner;
+            } else {
+              // try cache or fetch by id
+              if (usernameCache.has(rawWinner)) {
+                winnerDisplay = usernameCache.get(rawWinner) || rawWinner;
+              } else {
+                try {
+                  const uw = await getUserById(Number(rawWinner));
+                  const uname = uw?.username ?? rawWinner;
+                  usernameCache.set(rawWinner, uname);
+                  winnerDisplay = uname;
+                } catch (err) {
+                  usernameCache.set(rawWinner, rawWinner);
+                  winnerDisplay = rawWinner;
+                }
+              }
+            }
+          }
+          const matchId = match.id || match._id || match.uuid || '';
+          return `<p class="match-history-item" data-match-id="${matchId}" style="cursor:pointer; padding: 8px; border: 1px solid #42f3fa; margin: 4px 0; border-radius: 4px;">Match: ${playersText} - Score: ${scoreLeft}-${scoreRight} - Winner: ${winnerDisplay}</p>`;
+        }));
+
+        historyContainer.innerHTML = entriesHtml.join('');
 
         // Add click handlers for match history items
         setTimeout(() => {

@@ -13,6 +13,7 @@ let playerRole: "left" | "right" | null = null;
 let roomId: string | null = null;
 let isRoomCreator = false;
 let gameInitialized = false;
+let matchRecorded = false; // ensure we only register a finished match once per room
 let beforeUnloadHandler: () => void = () => {};
 
 const apiHost = `http://${window.location.hostname}:8080`;
@@ -124,6 +125,7 @@ function cleanup() {
     isGameRunning = false;
     isRoomCreator = false;
     gameInitialized = false;
+    matchRecorded = false;
     roomId = null;
     playerRole = null;
     try { document.getElementById("scoreboard")?.classList.add("hidden"); } catch (e) {}
@@ -132,6 +134,52 @@ function cleanup() {
         if (roomId) postApi(`/game/${roomId}/powerup?enabled=false`).catch(() => {});
     } catch (e) { /* ignore */ }
     window.removeEventListener('beforeunload', beforeUnloadHandler as EventListener);
+}
+
+// Register finished match into server-side-pong so it appears in match history
+async function registerMatchToPongService(winnerSide: "left" | "right", score: { left: number; right: number }) {
+    try {
+        if (matchRecorded) return null;
+        if (!roomId) return null;
+
+        // Try to fetch room info to obtain player ids
+        const roomRes = await postApi(`/game/rooms/${roomId}`, "GET");
+        let players: string[] = [];
+        if (roomRes.ok) {
+            const room = await roomRes.json();
+            players = Array.isArray(room.players) ? room.players : [];
+        }
+
+        // Determine winner id when possible (players stored in order: left=0,right=1)
+        let winner: string | null = null;
+        if (players.length >= 2) {
+            winner = (winnerSide === "left") ? players[0] : players[1];
+        } else {
+            // fallback to store symbolic winner
+            winner = winnerSide;
+        }
+
+        const body: any = {
+            roomId: roomId,
+            players: players,
+            winner: winner,
+            score: score,
+            endedAt: Date.now(),
+        };
+
+        const res = await postApiJson(`/game/matches`, body);
+        if (!res.ok) {
+            console.error('[RemotePong] Failed to register match:', res.status, await res.text());
+            return null;
+        }
+        const data = await res.json();
+        matchRecorded = true;
+        console.log('[RemotePong] Match registered, id=', data.matchId);
+        return data.matchId || null;
+    } catch (err) {
+        console.error('[RemotePong] Error registering match:', err);
+        return null;
+    }
 }
 
 // Helper: POST with Authorization header and retry after refresh on 401
@@ -458,10 +506,18 @@ function checkWinner() {
     winnerMsg.style.display = "block";
     // If the local player won, send a victory to the user-management service
     const winnerSide = winner;
+    // Only the local winner should register the match to avoid duplicate records
     if (playerRole === winnerSide) {
+        registerMatchToPongService(winnerSide, { left: gameState.scores.left, right: gameState.scores.right })
+            .then((matchId) => {
+                if (matchId) {
+                    console.log('[RemotePong] Match saved with id', matchId);
+                }
+            }).catch((e) => console.warn('Failed to register match', e));
+
         sendVictoryToUserManagement().catch(err => console.error('Failed to send victory:', err));
     } else {
-        // local player lost — record a defeat as well
+        // local player lost — record a defeat as well (but don't register match)
         sendDefeatToUserManagement().catch(err => console.error('Failed to send defeat:', err));
     }
     endGame();
