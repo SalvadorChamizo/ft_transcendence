@@ -92,7 +92,6 @@ export function remotePongPage(): string {
                 <button id="startGameBtn" class="pong-button hidden">Start Game</button>
                 <!-- hide scoreboard while in lobby -->
                 <div id="scoreboard" class="scoreboard hidden">0 : 0</div>
-				<button id="playAgainBtn" class="pong-button hidden">Play Again</button>
             </div>
 
       <p id="winnerMessage" class="winner-message" style="display: none;"></p>
@@ -125,6 +124,8 @@ function cleanup() {
     isGameRunning = false;
     isRoomCreator = false;
     gameInitialized = false;
+    roomId = null;
+    playerRole = null;
     try { document.getElementById("scoreboard")?.classList.add("hidden"); } catch (e) {}
     // Ensure powerup disabled for this room when cleaning up
     try {
@@ -227,33 +228,10 @@ export function remotePongHandlers() {
         }
     });
 
-    document.getElementById("joinRoomBtn")!.addEventListener("click", () => {
-        const input = document.getElementById("roomIdInput") as HTMLInputElement;
-        const roomIdToJoin = input.value.trim();
-        if (roomIdToJoin) {
-            roomId = roomIdToJoin;
-            isRoomCreator = false;
-            prepareGameUI();
-            startGame(roomIdToJoin);
-        } else {
-            alert("Please enter a Room ID.");
-        }
-    });
-
     document.getElementById("startGameBtn")!.addEventListener("click", () => {
         if (!roomId) return;
         postApi(`/game/${roomId}/resume`);
         (document.getElementById("startGameBtn")!).classList.add("hidden");
-    });
-
-    document.getElementById("playAgainBtn")!.addEventListener("click", () => {
-        if (!roomId) return;
-        document.getElementById("winnerMessage")!.style.display = "none";
-        document.getElementById("playAgainBtn")!.classList.add("hidden");
-        postApi(`/game/${roomId}/init`).then(() => {
-            (document.getElementById("startGameBtn")!).classList.remove("hidden");
-        });
-        isGameRunning = false;
     });
 }
 
@@ -262,7 +240,6 @@ function prepareGameUI() {
     (document.getElementById("pongCanvas")!).style.display = "block";
     (document.getElementById("gameInfo")!).style.display = "flex";
     (document.getElementById("winnerMessage")!).style.display = "none";
-    (document.getElementById("playAgainBtn")!).classList.add("hidden");
     
     // For manual games, start button will be shown after init
     (document.getElementById("startGameBtn")!).classList.add("hidden");
@@ -520,12 +497,13 @@ async function sendVictoryToUserManagement() {
 
 function endGame() {
     isGameRunning = false;
-    document.getElementById("playAgainBtn")!.classList.remove("hidden");
     (document.getElementById("startGameBtn")!).classList.add("hidden");
     // After a short delay, leave the room and reload to return to the lobby
     setTimeout(() => {
+        try { window.history.replaceState(null, '', '#/remote-pong'); } catch (e) {}
         cleanup();
         try { window.location.reload(); } catch (e) {}
+
     }, 3000);
 }
 

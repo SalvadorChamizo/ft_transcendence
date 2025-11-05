@@ -1,8 +1,25 @@
-import { getAccessToken, isLoggedIn } from "../state/authState";
-import { getElement } from "./Login/loginDOM";
+import { getAccessToken } from "../state/authState";
 import { getUserIdByUsername, getUserById, getUserStatsById } from "../services/api";
 import { fetchCurrentUser } from "./Login/loginService";
 import { getMatchesByPlayerId } from "../services/api";
+
+(function setupUserUpdateListener() {
+  if (!(window as any).__profile_user_updated_listener_installed) {
+    window.addEventListener('user:updated', () => {
+      try { localStorage.removeItem('user'); } catch (e) {}
+      if ((window.location.hash || '').startsWith('#/profile')) {
+        window.location.reload();
+        return;
+      }
+      setTimeout(() => {
+        try { profileHandlers(); } catch (e) {}
+      }, 0);
+    });
+
+    (window as any).__profile_user_updated_listener_installed = true;
+  }
+})();
+
 
 const apiHost = `${window.location.hostname}`;
 
@@ -122,17 +139,22 @@ export function profileHandlers() {
         }
       } 
       else {
-        // Fetch data for current user
-         const cached = localStorage.getItem("user");
-        if (cached) {
-          userData = JSON.parse(cached);
-        } else {
+        // Fetch fresh data for current user — do NOT read from local cache.
+        try {
           const data = await fetchCurrentUser(accessToken);
-          userData = data.user;
-          if (userData) localStorage.setItem("user", JSON.stringify(userData));
+          userData = data?.user ?? null;
+        } catch (e) {
+          console.error('[Profile] fetchCurrentUser failed', e);
+          window.location.hash = '#/login';
+          return;
+        }
+
+        if (!userData) {
+          // no user data available — redirect to login
+          window.location.hash = '#/login';
+          return;
         }
         userId = userData.id;
-
       }
 
       if (usernameField) {
