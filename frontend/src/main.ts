@@ -12,6 +12,55 @@ import { fetchCurrentUser } from "./pages/Login/loginService";
 import { tournamentHandlers } from "./pages/Tournament/tournamentHandles";
 import { aboutHandlers } from "./pages/About/about";
 import { forgotPassHandle } from "./pages/Login/forgotPass";
+import { websocketClient } from "./services/websocketClient";
+import { setOnlineUsers, setUserOnline, setUserOffline } from "./state/presenceState";
+import { getUserIdFromToken } from "./state/authState";
+
+// Initialize WebSocket connection and presence tracking
+let wsInitialized = false;
+
+function initializeWebSocketPresence() {
+    if (wsInitialized) return;
+    
+    const accessToken = getAccessToken();
+    const userId = getUserIdFromToken();
+    
+    if (!accessToken || !userId) return;
+    
+    // Connect to WebSocket
+    websocketClient.connect(userId).then(() => {
+        console.log('WebSocket connected for presence tracking');
+        wsInitialized = true;
+    }).catch(error => {
+        console.error('Failed to connect WebSocket:', error);
+    });
+    
+    // Listen for presence events
+    websocketClient.onMessage((message) => {
+        switch (message.type) {
+            case 'connected_users_list':
+                // Initial list of online users
+                if (message.data && Array.isArray(message.data)) {
+                    setOnlineUsers(message.data);
+                }
+                break;
+                
+            case 'user_connected':
+                // User came online
+                if (message.userId) {
+                    setUserOnline(message.userId);
+                }
+                break;
+                
+            case 'user_disconnected':
+                // User went offline
+                if (message.userId) {
+                    setUserOffline(message.userId);
+                }
+                break;
+        }
+    });
+}
 
 export async function render() {
 
@@ -26,6 +75,9 @@ export async function render() {
         if (profileLink && user?.username)
             profileLink.href = `#/profile/${user?.username}`;
         }
+        
+        // Initialize WebSocket for presence tracking
+        initializeWebSocketPresence();
     }
     userLoggedIn();
 
