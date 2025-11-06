@@ -21,24 +21,29 @@ export async function sendGameInvitation(fromUserId: number, toUserId: number, g
     console.log("Entra en sendInvitation");
     if (gameType === 'pong') {
         try {
-            const res = await fetch(`http://pong-service:7000/remote-rooms`, {
+            // Create private room via gateway so behaviour matches frontend's private room creation
+            const res = await fetch(`http://gateway:8080/game/rooms`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ public: false })
+                body: JSON.stringify({ private: true })
             });
             if (res.ok) {
                 const data = await res.json();
-                roomId = data.roomId || data.id || data.room_id;
+                roomId = data.roomId ?? data.id ?? data.room_id ?? null;
             } else {
-
                 const text = await res.text();
-                console.warn("Failed to create private room for invitation:", res.status, text);
+                console.warn("Failed to create private room via gateway for invitation:", res.status, text);
             }
         } catch (err) {
-            console.warn('Error creating private room for invitation:', err);
+            console.warn('Error creating private room via gateway for invitation:', err);
         }
+    }
+
+    // If we couldn't create a room, abort the invitation flow to avoid sending invalid links
+    if (!roomId) {
+        throw new Error('Failed to create private room for invitation');
     }
 
     let conversation = await findConversation(fromUserId, toUserId);
@@ -73,7 +78,13 @@ export async function sendGameInvitation(fromUserId: number, toUserId: number, g
             data: invitationData
         };
         websocketService.sendToConversation(fromUserId, toUserId, message);
-        console.log(`🎮 Game invitation message sent to conversation between ${fromUserId} and ${toUserId}`);
+        // Diagnostic: check if recipient was online when sending
+        try {
+            const recipientOnline = websocketService.isUserConnected(toUserId);
+            console.log(`🎮 Game invitation attempted from ${fromUserId} -> ${toUserId}. Recipient online: ${recipientOnline}`);
+        } catch (e) {
+            console.log(`🎮 Game invitation message sent to conversation between ${fromUserId} and ${toUserId}`);
+        }
     } catch (wsError) {
         console.warn(`Failed to send game invitation message:`, wsError);
     }

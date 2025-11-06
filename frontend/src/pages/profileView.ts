@@ -342,6 +342,30 @@ export function profileViewHandlers() {
       </div>
     `;
 
+    // Fetch and display friends for this user (if allowed by backend) via direct fetch (minimal change)
+    (async () => {
+      try {
+        const token = getAccessToken();
+        const friendsResp = await fetch(`http://${window.location.hostname}:8080/users/getFriends`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'x-user-id': String(user.id)
+          }
+        });
+        if (friendsResp.ok) {
+          const friendsData = await friendsResp.json();
+          const friends = friendsData.friends || [];
+          if (friends.length > 0) {
+            const listHTML = `<div class="friends-section"><h3>Friends</h3><ul class="friends-list">${friends.map((f: any) => `<li><a href="#/profile/${encodeURIComponent(f.username)}">${f.username}</a></li>`).join('')}</ul></div>`;
+            resultDiv.querySelector('.profile-card.enhanced')!.insertAdjacentHTML('beforeend', listHTML);
+          }
+        }
+      } catch (err) {
+        // ignore silently, friends optional
+      }
+    })();
+
     // Draw chart after DOM insertion
     const canvas = document.getElementById('winloss-chart') as HTMLCanvasElement | null;
     if (canvas) {

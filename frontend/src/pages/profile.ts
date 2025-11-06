@@ -1,6 +1,25 @@
-import { getAccessToken, isLoggedIn } from "../state/authState";
-import { getElement } from "./Login/loginDOM";
+import { getAccessToken } from "../state/authState";
 import { getUserIdByUsername, getUserById, getUserStatsById } from "../services/api";
+import { fetchCurrentUser } from "./Login/loginService";
+import { getMatchesByPlayerId } from "../services/api";
+
+(function setupUserUpdateListener() {
+  if (!(window as any).__profile_user_updated_listener_installed) {
+    window.addEventListener('user:updated', () => {
+      try { localStorage.removeItem('user'); } catch (e) {}
+      if ((window.location.hash || '').startsWith('#/profile')) {
+        window.location.reload();
+        return;
+      }
+      setTimeout(() => {
+        try { profileHandlers(); } catch (e) {}
+      }, 0);
+    });
+
+    (window as any).__profile_user_updated_listener_installed = true;
+  }
+})();
+
 
 const apiHost = `${window.location.hostname}`;
 
@@ -14,12 +33,12 @@ export function Profile() {
       </div>
     `;
   }
-  setTimeout(() => profileHandlers(accessToken), 0);
+  setTimeout(() => profileHandlers(), 0);
   setTimeout(() => setupProfileTabs(), 0);
   return `
     <div class="profile-container">
       <h2>Profile</h2>
-      <div class="profile-card">
+      <div class="profile-card expanded">
         <ul class="profile-nav">
           <li class="profile-nav-item">
             <button type="button" class="profile-nav-link active" data-tab="profile-tab">Profile</button>
@@ -44,6 +63,10 @@ export function Profile() {
             <div class="profile-form-section">
               <p id="useremail">Email</p>
             </div>
+            <div class="profile-form-section">
+              <h3>Friends</h3>
+              <div id="friends-list">Loading friends...</div>
+            </div>
           </div>
 
           <div id="dashboard-tab" class="profile-tab-panel">
@@ -67,7 +90,8 @@ export function Profile() {
   `;
 }
 
-export function profileHandlers(accessToken: string) {
+export function profileHandlers() {
+  const accessToken = getAccessToken();
   const usernameField = document.querySelector<HTMLParagraphElement>("#username")!;
   const emailField = document.querySelector<HTMLParagraphElement>("#useremail")!;
   const avatarField = document.querySelector<HTMLParagraphElement>("#avatar")!;
@@ -113,19 +137,23 @@ export function profileHandlers(accessToken: string) {
           window.location.hash = '#/error';
           return;
         }
-      } else {
-        // Fetch data for current user
-        const res = await fetch(`http://${apiHost}:8080/users/me`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || 'Failed to fetch user data');
+      } 
+      else {
+        // Fetch fresh data for current user — do NOT read from local cache.
+        try {
+          const data = await fetchCurrentUser(accessToken);
+          userData = data?.user ?? null;
+        } catch (e) {
+          console.error('[Profile] fetchCurrentUser failed', e);
+          window.location.hash = '#/login';
+          return;
         }
-        userData = data.user;
+
+        if (!userData) {
+          // no user data available — redirect to login
+          window.location.hash = '#/login';
+          return;
+        }
         userId = userData.id;
       }
 
@@ -148,7 +176,32 @@ export function profileHandlers(accessToken: string) {
       }
 
       // Fetch stats and history for dashboard
-      fetchStatsAndHistory(userId);
+      fetchStatsAndHistory(userId, urlUsername ? null : userData);
+
+      // Fetch friends and render (call user-management endpoint directly)
+      try {
+        const friendsDiv = document.getElementById('friends-list');
+        const res = await fetch(`http://${apiHost}:8080/users/getFriends`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            'x-user-id': String(userId)
+          }
+        });
+        if (!res.ok) {
+          if (friendsDiv) friendsDiv.innerHTML = '<p>No friends found or error.</p>';
+        } else {
+          const data = await res.json();
+          const friends = data.friends || [];
+          if (friendsDiv) {
+            if (friends.length === 0) friendsDiv.innerHTML = '<p>No friends yet.</p>';
+            else friendsDiv.innerHTML = `<ul class="friends-list">${friends.map((f: any) => `<li class="friend-item" data-id="${f.id}"><a href="#/profile/${encodeURIComponent(f.username)}">${f.username}</a></li>`).join('')}</ul>`;
+          }
+        }
+      } catch (e) {
+        const friendsDiv = document.getElementById('friends-list');
+        if (friendsDiv) friendsDiv.innerHTML = '<p>Error loading friends.</p>';
+      }
     } catch (err: any) {
       console.error("Error fetching user data:", err);
       if (usernameField) {
@@ -157,26 +210,35 @@ export function profileHandlers(accessToken: string) {
     }
   }
 
-  async function fetchStatsAndHistory(userId: number) {
+  async function fetchStatsAndHistory(userId: number, userData?: any) {
     try {
-      // Fetch stats
-      const stats = await getUserStatsById(userId);
-      if (!stats) {
-        throw new Error('Stats not found');
+      let victories: number;
+      let defeats: number;
+
+      if (userData && userData.victories !== undefined && userData.defeats !== undefined) {
+        // Use stats from userData
+        victories = userData.victories;
+        defeats = userData.defeats;
+      } else {
+        // Fetch stats
+        const stats = await getUserStatsById(userId);
+        if (!stats) {
+          throw new Error('Stats not found');
+        }
+        victories = stats.victories || 0;
+        defeats = stats.defeats || 0;
       }
 
       // Fetch match history
-      const historyRes = await fetch(`http://${apiHost}:8080/matches/player/${userId}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      const history = await historyRes.json();
+      let history: any[];
+      if (userData && userData.matchHistory) {
+        history = userData.matchHistory;
+      } else {
+                history = await getMatchesByPlayerId(userId);
+      }
+
 
       // Display stats
-      const victories = stats.victories || 0;
-      const defeats = stats.defeats || 0;
       const games = victories + defeats;
       const winRate = games > 0 ? Math.round((victories / games) * 100) : 0;
 
@@ -190,26 +252,70 @@ export function profileHandlers(accessToken: string) {
       // Simple chart
       drawSimpleChart(statsChart, victories, defeats);
 
-      // Display history
+      // Display history (resolve player IDs to usernames)
       if (Array.isArray(history) && history.length > 0) {
-        historyContainer.innerHTML = history.slice(-10).reverse().map((match: any) => `
-          <p class="match-history-item" data-match-id="${match.id || match._id || match.uuid || ''}" style="cursor:pointer; padding: 8px; border: 1px solid #42f3fa; margin: 4px 0; border-radius: 4px;">
-            Match: ${match.players.join(' vs ')} - Score: ${match.score.left}-${match.score.right} - Winner: ${match.winner || 'N/A'}
-          </p>
-        `).join('');
+        const recent = history.slice(-10).reverse();
 
-        // Add click handlers for match history items
-        setTimeout(() => {
-          document.querySelectorAll('.match-history-item').forEach((item) => {
-            item.addEventListener('click', (e) => {
-              const target = e.currentTarget as HTMLElement;
-              const matchId = target.getAttribute('data-match-id');
-              if (matchId) {
-                window.location.hash = `#/game-stats?id=${encodeURIComponent(matchId)}`;
+        // Simple cache to avoid duplicate user lookups
+        const usernameCache = new Map<string, string | null>();
+
+        async function resolvePlayerUsernames(players: string[]): Promise<string[]> {
+          return Promise.all(players.map(async (p) => {
+            if (!p) return String(p);
+            if (usernameCache.has(p)) return usernameCache.get(p) || String(p);
+            try {
+              // Attempt to fetch user by id. getUserById expects a numeric id in body but handles strings too.
+              const user = await getUserById(Number(p));
+              const username = user?.username ?? String(p);
+              usernameCache.set(p, username);
+              return username;
+            } catch (err) {
+              // fallback to raw id
+              usernameCache.set(p, String(p));
+              return String(p);
+            }
+          }));
+        }
+
+        // Build HTML entries asynchronously
+        const entriesHtml = await Promise.all(recent.map(async (match: any) => {
+          const playersArr: string[] = Array.isArray(match.players) ? match.players : (typeof match.players === 'string' ? JSON.parse(match.players) : []);
+          const displayPlayers = await resolvePlayerUsernames(playersArr);
+          const playersText = displayPlayers.join(' vs ');
+          const scoreLeft = match.score?.left ?? (match.score ? match.score[0] : 0);
+          const scoreRight = match.score?.right ?? (match.score ? match.score[1] : 0);
+          // Resolve winner to a username when possible. winner may be 'left'/'right' or a user id/string
+          let winnerDisplay = 'N/A';
+          if (typeof match.winner !== 'undefined' && match.winner !== null) {
+            const rawWinner = String(match.winner);
+            if (rawWinner === 'left') {
+              winnerDisplay = displayPlayers[0] ?? rawWinner;
+            } else if (rawWinner === 'right') {
+              winnerDisplay = displayPlayers[1] ?? rawWinner;
+            } else {
+              // try cache or fetch by id
+              if (usernameCache.has(rawWinner)) {
+                winnerDisplay = usernameCache.get(rawWinner) || rawWinner;
+              } else {
+                try {
+                  const uw = await getUserById(Number(rawWinner));
+                  const uname = uw?.username ?? rawWinner;
+                  usernameCache.set(rawWinner, uname);
+                  winnerDisplay = uname;
+                } catch (err) {
+                  usernameCache.set(rawWinner, rawWinner);
+                  winnerDisplay = rawWinner;
+                }
               }
-            });
-          });
-        }, 0);
+            }
+          }
+          const matchId = match.id || match._id || match.uuid || '';
+          return `<a href="#/game-stats?id=${encodeURIComponent(matchId)}" class="match-history-item" data-match-id="${matchId}" style="display:block; padding: 8px; border: 1px solid #42f3fa; margin: 4px 0; border-radius: 4px; color:inherit; text-decoration:none">${playersText}</a>`;
+        }));
+
+        historyContainer.innerHTML = entriesHtml.join('');
+
+        // Items are anchors linking to #/game-stats?id=... so no JS click handler needed
       } else {
         historyContainer.innerHTML = '<p>No matches found.</p>';
       }
@@ -225,31 +331,43 @@ export function profileHandlers(accessToken: string) {
     if (!ctx) return;
 
     const total = wins + losses;
-    if (total === 0) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (total === 0) {
+      // draw a neutral circle centered
+      const cx0 = Math.floor(canvas.width / 2);
+      const cy0 = Math.floor(canvas.height / 2);
+      const r0 = Math.min(80, Math.floor(Math.min(canvas.width, canvas.height) / 4));
+      ctx.beginPath();
+      ctx.arc(cx0, cy0, r0, 0, Math.PI * 2);
+      ctx.fillStyle = '#ddd';
+      ctx.fill();
+      return;
+    }
 
     const winAngle = (wins / total) * 2 * Math.PI;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Center the pie chart in the canvas (dashboard only)
+    const cx = Math.floor(canvas.width / 2);
+    const cy = Math.floor(canvas.height / 2) - 10; // slightly up to make room
+    const radius = Math.min(90, Math.floor(Math.min(canvas.width, canvas.height) / 3));
 
-    // Wins (green)
+    // Draw wins slice
     ctx.beginPath();
-    ctx.arc(100, 100, 80, 0, winAngle);
-    ctx.lineTo(100, 100);
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, 0, winAngle);
+    ctx.closePath();
     ctx.fillStyle = 'green';
     ctx.fill();
 
-    // Losses (red)
+    // Draw losses slice
     ctx.beginPath();
-    ctx.arc(100, 100, 80, winAngle, 2 * Math.PI);
-    ctx.lineTo(100, 100);
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, winAngle, 2 * Math.PI);
+    ctx.closePath();
     ctx.fillStyle = 'red';
     ctx.fill();
 
-    // Labels
-    ctx.fillStyle = 'black';
-    ctx.font = '16px Arial';
-    ctx.fillText(`Wins: ${wins}`, 10, 20);
-    ctx.fillText(`Losses: ${losses}`, 10, 40);
+    // No legend/labels on the piechart (kept minimal)
   }
 
   fetchUserData();

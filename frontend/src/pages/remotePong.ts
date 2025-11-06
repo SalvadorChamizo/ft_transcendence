@@ -13,6 +13,7 @@ let playerRole: "left" | "right" | null = null;
 let roomId: string | null = null;
 let isRoomCreator = false;
 let gameInitialized = false;
+let matchRecorded = false; // ensure we only register a finished match once per room
 let beforeUnloadHandler: () => void = () => {};
 
 const apiHost = `http://${window.location.hostname}:8080`;
@@ -92,7 +93,6 @@ export function remotePongPage(): string {
                 <button id="startGameBtn" class="pong-button hidden">Start Game</button>
                 <!-- hide scoreboard while in lobby -->
                 <div id="scoreboard" class="scoreboard hidden">0 : 0</div>
-				<button id="playAgainBtn" class="pong-button hidden">Play Again</button>
             </div>
 
       <p id="winnerMessage" class="winner-message" style="display: none;"></p>
@@ -125,12 +125,61 @@ function cleanup() {
     isGameRunning = false;
     isRoomCreator = false;
     gameInitialized = false;
+    matchRecorded = false;
+    roomId = null;
+    playerRole = null;
     try { document.getElementById("scoreboard")?.classList.add("hidden"); } catch (e) {}
     // Ensure powerup disabled for this room when cleaning up
     try {
         if (roomId) postApi(`/game/${roomId}/powerup?enabled=false`).catch(() => {});
     } catch (e) { /* ignore */ }
     window.removeEventListener('beforeunload', beforeUnloadHandler as EventListener);
+}
+
+// Register finished match into server-side-pong so it appears in match history
+async function registerMatchToPongService(winnerSide: "left" | "right", score: { left: number; right: number }) {
+    try {
+        if (matchRecorded) return null;
+        if (!roomId) return null;
+
+        // Try to fetch room info to obtain player ids
+        const roomRes = await postApi(`/game/rooms/${roomId}`, "GET");
+        let players: string[] = [];
+        if (roomRes.ok) {
+            const room = await roomRes.json();
+            players = Array.isArray(room.players) ? room.players : [];
+        }
+
+        // Determine winner id when possible (players stored in order: left=0,right=1)
+        let winner: string | null = null;
+        if (players.length >= 2) {
+            winner = (winnerSide === "left") ? players[0] : players[1];
+        } else {
+            // fallback to store symbolic winner
+            winner = winnerSide;
+        }
+
+        const body: any = {
+            roomId: roomId,
+            players: players,
+            winner: winner,
+            score: score,
+            endedAt: Date.now(),
+        };
+
+        const res = await postApiJson(`/game/matches`, body);
+        if (!res.ok) {
+            console.error('[RemotePong] Failed to register match:', res.status, await res.text());
+            return null;
+        }
+        const data = await res.json();
+        matchRecorded = true;
+        console.log('[RemotePong] Match registered, id=', data.matchId);
+        return data.matchId || null;
+    } catch (err) {
+        console.error('[RemotePong] Error registering match:', err);
+        return null;
+    }
 }
 
 // Helper: POST with Authorization header and retry after refresh on 401
@@ -227,33 +276,10 @@ export function remotePongHandlers() {
         }
     });
 
-    document.getElementById("joinRoomBtn")!.addEventListener("click", () => {
-        const input = document.getElementById("roomIdInput") as HTMLInputElement;
-        const roomIdToJoin = input.value.trim();
-        if (roomIdToJoin) {
-            roomId = roomIdToJoin;
-            isRoomCreator = false;
-            prepareGameUI();
-            startGame(roomIdToJoin);
-        } else {
-            alert("Please enter a Room ID.");
-        }
-    });
-
     document.getElementById("startGameBtn")!.addEventListener("click", () => {
         if (!roomId) return;
         postApi(`/game/${roomId}/resume`);
         (document.getElementById("startGameBtn")!).classList.add("hidden");
-    });
-
-    document.getElementById("playAgainBtn")!.addEventListener("click", () => {
-        if (!roomId) return;
-        document.getElementById("winnerMessage")!.style.display = "none";
-        document.getElementById("playAgainBtn")!.classList.add("hidden");
-        postApi(`/game/${roomId}/init`).then(() => {
-            (document.getElementById("startGameBtn")!).classList.remove("hidden");
-        });
-        isGameRunning = false;
     });
 }
 
@@ -262,7 +288,6 @@ function prepareGameUI() {
     (document.getElementById("pongCanvas")!).style.display = "block";
     (document.getElementById("gameInfo")!).style.display = "flex";
     (document.getElementById("winnerMessage")!).style.display = "none";
-    (document.getElementById("playAgainBtn")!).classList.add("hidden");
     
     // For manual games, start button will be shown after init
     (document.getElementById("startGameBtn")!).classList.add("hidden");
@@ -316,7 +341,15 @@ function startGame(roomIdToJoin: string) {
     document.getElementById("roleInfo")!.textContent = `Joining room ${roomIdToJoin}...`;
     
     socket.on('connect', () => {
-        socket.emit("joinRoom", { roomId: roomIdToJoin });
+        // Prefer sending authenticated user id when available so server can persist user_ids
+        const userId = getUserIdFromToken() || (() => {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) return undefined;
+            try { const u = JSON.parse(userStr); return u?.id ?? u?.userId; } catch { return undefined; }
+        })();
+        const payload: any = { roomId: roomIdToJoin };
+        if (typeof userId !== 'undefined' && userId !== null) payload.userId = userId;
+        socket.emit("joinRoom", payload);
     });
 
     socket.on("roomJoined", (data: { roomId: string, role: "left" | "right" }) => {
@@ -473,8 +506,19 @@ function checkWinner() {
     winnerMsg.style.display = "block";
     // If the local player won, send a victory to the user-management service
     const winnerSide = winner;
+    // Only the local winner should register the match to avoid duplicate records
     if (playerRole === winnerSide) {
+        registerMatchToPongService(winnerSide, { left: gameState.scores.left, right: gameState.scores.right })
+            .then((matchId) => {
+                if (matchId) {
+                    console.log('[RemotePong] Match saved with id', matchId);
+                }
+            }).catch((e) => console.warn('Failed to register match', e));
+
         sendVictoryToUserManagement().catch(err => console.error('Failed to send victory:', err));
+    } else {
+        // local player lost — record a defeat as well (but don't register match)
+        sendDefeatToUserManagement().catch(err => console.error('Failed to send defeat:', err));
     }
     endGame();
 }
@@ -510,14 +554,44 @@ async function sendVictoryToUserManagement() {
     }
 }
 
+async function sendDefeatToUserManagement() {
+    try {
+        let userId = getUserIdFromToken();
+        if (!userId) {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) {
+                console.warn("No user id available (token/localStorage); cannot send defeat.");
+                return;
+            }
+            const user = JSON.parse(userStr);
+            userId = user?.id ?? user?.userId ?? null;
+        }
+        if (!userId) {
+            console.warn("Unable to resolve userId for defeat.");
+            return;
+        }
+
+        const res = await postApiJson(`/users/addDefeat`, { userId });
+        if (!res.ok) {
+            const text = await res.text();
+            console.error("Failed to post defeat:", res.status, text);
+        } else {
+            console.log(`Defeat recorded for user ${userId}`);
+        }
+    } catch (err) {
+        console.error("Error sending defeat:", err);
+    }
+}
+
 function endGame() {
     isGameRunning = false;
-    document.getElementById("playAgainBtn")!.classList.remove("hidden");
     (document.getElementById("startGameBtn")!).classList.add("hidden");
     // After a short delay, leave the room and reload to return to the lobby
     setTimeout(() => {
+        try { window.history.replaceState(null, '', '#/remote-pong'); } catch (e) {}
         cleanup();
         try { window.location.reload(); } catch (e) {}
+
     }, 3000);
 }
 

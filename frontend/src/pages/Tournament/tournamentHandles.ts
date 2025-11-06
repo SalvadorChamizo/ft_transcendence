@@ -101,8 +101,7 @@ async function startRemoteTournamentFlow(tournamentData: any) {
             currentRound = nextData.tournament.current_round;
             currentMatchIndex = 0;
             for (const key in winners) delete winners[key];
-            await sleep(1000);
-            playNextMatch();
+            setTimeout(() => playNextMatch(), 2000);
             return;
         }
 
@@ -132,8 +131,7 @@ async function startRemoteTournamentFlow(tournamentData: any) {
                 }
 
                 currentMatchIndex++;
-                await sleep(1500);
-                playNextMatch();
+                setTimeout(() => playNextMatch(), 2000);
             },
         });
     };
@@ -190,8 +188,7 @@ async function startLocalTournamentFlow(tournamentData: any) {
             currentRound = nextData.tournament.current_round;
             currentMatchIndex = 0;
             for (const key in winners) delete winners[key];
-            await sleep(1000);
-            playNextMatch();
+            setTimeout(() => playNextMatch(), 2000);
             return;
         }
 
@@ -221,8 +218,7 @@ async function startLocalTournamentFlow(tournamentData: any) {
                 }
 
                 currentMatchIndex++;
-                await sleep(1500);
-                playNextMatch();
+                setTimeout(() => playNextMatch(), 2000);
             },
         });
     };

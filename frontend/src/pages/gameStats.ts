@@ -56,7 +56,7 @@ export function gameStatsHandlers(accessToken: string) {
         throw new Error('Failed to get user data');
       }
 
-      const historyRes = await fetch(`http://${apiHost}:8080/matches/player/${userData.user.id}`, {
+  const historyRes = await fetch(`http://${apiHost}:8080/game/matches/player/${userData.user.id}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -72,26 +72,87 @@ export function gameStatsHandlers(accessToken: string) {
       }
 
       // Display match details
-      const players = match.players || [];
+      const rawPlayers = match.players || [];
       const score = match.score || { left: 0, right: 0 };
-      const winner = match.winner || 'N/A';
       const endedAt = match.endedAt ? new Date(match.endedAt).toLocaleString() : 'N/A';
-      const roomId = match.roomId || 'N/A';
+      // room id may come as roomId or room_id depending on backend; handle both
+  // Try multiple places where room id could be stored
+  let rawRoomId: any = match.roomId ?? match.room_id ?? (match.room && (match.room.roomId ?? match.room.id)) ?? match.room ?? null;
+  if (rawRoomId === null || typeof rawRoomId === 'undefined') rawRoomId = 'N/A';
+  const roomId = rawRoomId;
+
+      // Resolve player IDs to usernames (with simple cache)
+      const usernameCache = new Map<string, string>();
+      async function resolvePlayer(p: any) {
+        const pid = String(p);
+        if (usernameCache.has(pid)) return usernameCache.get(pid)!;
+        try {
+          const user = await api.getUserById(Number(pid));
+          const uname = user?.username ?? pid;
+          usernameCache.set(pid, uname);
+          return uname;
+        } catch (err) {
+          usernameCache.set(pid, pid);
+          return pid;
+        }
+      }
+
+      const playersArr: string[] = Array.isArray(rawPlayers) ? rawPlayers : (typeof rawPlayers === 'string' ? JSON.parse(rawPlayers) : []);
+      const displayPlayers = await Promise.all(playersArr.map(p => resolvePlayer(p)));
+
+      // If roomId is missing, try to find a matching room by players (best-effort)
+      let resolvedRoomId = roomId;
+      if ((resolvedRoomId === null || resolvedRoomId === 'N/A' || resolvedRoomId === undefined) && playersArr.length > 0) {
+        try {
+          const roomsRes = await fetch(`http://${apiHost}:8080/game/rooms`, {
+            method: 'GET',
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          if (roomsRes.ok) {
+            const rooms = await roomsRes.json();
+            // find a room whose players array contains all players in this match (string match)
+            const matchPlayersSet = new Set(playersArr.map(String));
+            for (const r of rooms) {
+              const rPlayers = Array.isArray(r.players) ? r.players.map(String) : (typeof r.players === 'string' ? JSON.parse(r.players) : []);
+              const rSet = new Set(rPlayers);
+              let allPresent = true;
+              for (const p of matchPlayersSet) {
+                if (!rSet.has(p)) { allPresent = false; break; }
+              }
+              if (allPresent && r.id) {
+                resolvedRoomId = r.id;
+                break;
+              }
+            }
+          }
+        } catch (err) {
+          // ignore — we'll keep room as N/A
+        }
+      }
+
+      // Resolve winner display
+      let winnerDisplay = 'N/A';
+      if (typeof match.winner !== 'undefined' && match.winner !== null) {
+        const w = String(match.winner);
+        if (w === 'left') winnerDisplay = displayPlayers[0] ?? w;
+        else if (w === 'right') winnerDisplay = displayPlayers[1] ?? w;
+        else winnerDisplay = await resolvePlayer(w);
+      }
+
+      // Make player usernames link to their profile
+      const playerLinks = displayPlayers.map(u => `<a href="#/profile/${encodeURIComponent(u)}">${u}</a>`).join(' vs ');
 
       container.innerHTML = `
         <div class="game-stats-card">
           <h3>Match Details</h3>
           <div class="stats-detail">
-            <strong>Room ID:</strong> ${roomId}
-          </div>
-          <div class="stats-detail">
-            <strong>Players:</strong> ${players.join(' vs ')}
+            <strong>Players:</strong> ${playerLinks}
           </div>
           <div class="stats-detail">
             <strong>Score:</strong> ${score.left} - ${score.right}
           </div>
           <div class="stats-detail">
-            <strong>Winner:</strong> ${winner}
+            <strong>Winner:</strong> ${winnerDisplay}
           </div>
           <div class="stats-detail">
             <strong>Date Played:</strong> ${endedAt}

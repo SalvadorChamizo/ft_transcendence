@@ -102,6 +102,12 @@ export function sendToConversation(userId1: number, userId2: number, message: We
     sendToUser(userId2, message);
 }
 
+// Utility to check if a user is currently connected via WebSocket
+export function isUserConnected(userId: number): boolean {
+    const connection = connectedUsers.get(userId);
+    return !!(connection && connection.websocket && connection.websocket.readyState === WebSocketState.OPEN);
+}
+
 export function broadcastToAll(message: WebSocketMessage, excludeUserId?: number): void {
     connectedUsers.forEach((connection, userId) => {
         if (excludeUserId && userId === excludeUserId) {

@@ -7,11 +7,21 @@ export function getResultsByUserId(userId: number) {
 }
 
 export function addVictoryForUserId(userId: number) {
-	const stmt = db.prepare("UPDATE stats SET victories = victories + 1 WHERE id = ?");
-	stmt.run(userId);
+	const update = db.prepare("UPDATE stats SET victories = victories + 1 WHERE id = ?");
+	const result = update.run(userId);
+	// If no row was updated, insert a new stats row for this user
+	if (result.changes === 0) {
+		const insert = db.prepare("INSERT INTO stats (id, victories, defeats) VALUES (?, 1, 0)");
+		insert.run(userId);
+	}
 }
 
 export function addDefeatForUserId(userId: number) {
-	const stmt = db.prepare("UPDATE stats SET defeats = defeats + 1 WHERE id = ?");
-	stmt.run(userId);
+	const update = db.prepare("UPDATE stats SET defeats = defeats + 1 WHERE id = ?");
+	const result = update.run(userId);
+	// If no row was updated, insert a new stats row for this user
+	if (result.changes === 0) {
+		const insert = db.prepare("INSERT INTO stats (id, victories, defeats) VALUES (?, 0, 1)");
+		insert.run(userId);
+	}
 }

@@ -5,26 +5,32 @@ import * as blockRepo from "../repositories/blockRepository";
 import * as websocketService from "./websocketService";
 
 export async function sendMessage(senderId: number, recipientId: number, content: string, messageType: string = 'text') {
-    // 1. Validate that users are not blocked
+    // 1. Validate message length
+    const MAX_MESSAGE_LENGTH = 200;
+    if (content.length > MAX_MESSAGE_LENGTH) {
+        throw new Error(`Message exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters`);
+    }
+    
+    // 2. Validate that users are not blocked
     const blocked = blockRepo.areUsersBlocked(senderId, recipientId);
     if (blocked) {
         throw new Error("Cannot send message: users are blocked");
     }
 
-    // 2. Search for an existing conversation or create a new one
+    // 3. Search for an existing conversation or create a new one
     let conversation = conversationRepo.findConversation(senderId, recipientId);
     if (!conversation) {
         conversationRepo.createConversation(senderId, recipientId);
         conversation = conversationRepo.findConversation(senderId, recipientId);
     }
 
-    // 3. Create the message
+    // 4. Create the message
     messageRepo.createMessage(conversation.id, senderId, content, messageType);
 
-    // 4. Update conversation timestamp
+    // 5. Update conversation timestamp
     conversationRepo.updateConversationTimestamp(conversation.id);
 
-    // 5. Send real-time notification via WebSocket if recipient is connected
+    // 6. Send real-time notification via WebSocket if recipient is connected
     try {
         const messageData = {
             conversation_id: conversation.id,

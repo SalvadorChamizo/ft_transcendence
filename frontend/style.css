@@ -1913,6 +1913,10 @@ header {
   border-radius: 8px;
   position: relative;
   word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  display: table;
 }
 
 .message-sent {
@@ -2554,8 +2558,9 @@ header {
 #scoreboard {
   position: absolute;
   left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  /* place scoreboard near top of its container to avoid overlapping the canvas */
+  top: 10px;
+  transform: translateX(-50%);
   z-index: 2;
 }
 
