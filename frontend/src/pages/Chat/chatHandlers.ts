@@ -15,7 +15,7 @@ import { sendGameInvitation } from "../../services/api";
 import { openNewChatModal, closeProfileModal } from "./chatModal";
 import { getAccessToken } from "../../state/authState";
 import { loadNotificationsAuto, getNotifications } from "./chatNotifications";
-import { acceptFriendInvitation, sendFriendInvitation, checkAlreadyFriend } from "./chatInvitations";
+import { acceptFriendInvitation, sendFriendInvitation, checkAlreadyFriend, rejectFriendInvitation } from "./chatInvitations";
 
 export async function chatHandlers() {
     // Get essential DOM elements with proper error handling
@@ -41,7 +41,7 @@ export async function chatHandlers() {
     const addFriendButton = document.getElementById('invite-friend-btn') as HTMLButtonElement;
 
     // Initialize WebSocket connection
-    initializeWebSocket();
+    await initializeWebSocket();
 
     // Setup typing indicator on message input
     setupTypingIndicator();
@@ -299,6 +299,10 @@ export async function chatHandlers() {
         if (target.classList.contains('reject-friend-btn')) {
             const userId = getActiveConversationId();
             console.log(`Reject friend clicked for user ${userId}`);
+
+            const rejected = await rejectFriendInvitation();
+            if (rejected.success === "false")
+                return ;
 
             const buttons = messageBubble.querySelectorAll('.accept-friend-btn, .reject-friend-btn');
             buttons.forEach(btn => btn.remove());
