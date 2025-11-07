@@ -1967,6 +1967,24 @@ header {
   box-shadow: 0 0 10px rgba(66, 243, 250, 0.3);
 }
 
+.friend-invitation-sent-rejected {
+  background: rgba(65, 23, 23, 0.9);
+  border: 1px solid #fa4242;
+  margin-left: auto;
+  margin-right: 0;
+  color: #42F3FA;
+  box-shadow: 0 0 10px rgba(66, 243, 250, 0.3);
+}
+
+.friend-invitation-received-rejected {
+  background: #411717e6;
+  border: 1px solid #FA4242;
+  margin-left: 0;
+  margin-right: auto;
+  color: white;
+  box-shadow: 0 0 10px rgba(66, 243, 250, 0.3);
+}
+
 .accept-friend-btn {
   background: #102229;
   color: #fff;
