@@ -23,6 +23,26 @@ export async function acceptFriendInvitation() {
     }
 }
 
+export async function rejectFriendInvitation() {
+    try {
+        const otherUserId = getActiveConversationId();
+        const token = getAccessToken();
+        const res = await fetch(`http://${apiHost}:8080/conversations/${otherUserId}/reject-friend`, {
+            method: 'POST',
+            headers: { 
+                "Authorization": `Bearer ${token}`,
+            },
+        });
+
+        if (!res.ok) {
+            throw new Error(`HTTP error! Status: ${res.status}`);
+        }
+        return await res.json();
+    } catch (err: any) {
+        console.log("Error:", err);
+    }
+}
+
 export async function checkAlreadyFriend() {
     try {
         const otherUserId = getActiveConversationId();
