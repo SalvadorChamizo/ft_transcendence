@@ -2637,11 +2637,7 @@ header {
 
 /* Center the scoreboard inside its container */
 #scoreboard {
-  position: absolute;
-  left: 50%;
-  /* place scoreboard near top of its container to avoid overlapping the canvas */
-  top: 10px;
-  transform: translateX(-50%);
+  /* Container already centers with flex, no additional positioning needed */
   z-index: 2;
 }
 
@@ -2649,6 +2645,11 @@ header {
 #startGameBtn, #playAgainBtn {
   position: relative;
   z-index: 1;
+  margin-bottom: 5px;
+}
+
+#startGameBtn.hidden {
+  display: none;
 }
 
 .hidden {
