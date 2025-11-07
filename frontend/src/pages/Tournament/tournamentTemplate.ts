@@ -42,10 +42,6 @@ export function getTournamentListHtml(tournaments: any): string {
     <div class="tournament-list-container">
       <h2>🏆 Available Tournaments</h2>
 
-      <div class="tournaments-list-header">
-        <button id="create-tournament-list-btn" class="tournament-btn create">➕ Create Tournament</button>
-      </div>
-
       <div id="tournaments-list" class="tournaments-list">
         ${tournamentCardsHtml}
       </div>

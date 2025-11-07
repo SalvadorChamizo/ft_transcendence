@@ -56,7 +56,7 @@ export function renderTournamentCard(t: RemoteTournamentCreateDTO): string {
                 <span class="tournament-name">${t.name}</span>
                 <span class="tournament-players">Players: ${t.current_players} / ${t.max_players}</span>
             </div>
-            <button class="tournament-btn">Join</button>
+            <button class="tournament-btn">Enter</button>
         </div>
     `
 }
