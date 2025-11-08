@@ -33,6 +33,7 @@ export function Settings() {
               <p id="avatar"></p>
               <input type="file" id="newAvatar" />
               <button type="button" id="changeAvatarBTN">Change Avatar</button>
+              <p id="avatar-error-message" class="error-message" style="display: none;"></p>
             </div>
             </div>
 
@@ -290,17 +291,30 @@ export function settingsHandlers(accessToken: string) {
   changeAvatarBtn.addEventListener("click", async (e) => {
     e.preventDefault();
     const file = avatarInput.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB');
+    const errorMessage = document.querySelector<HTMLParagraphElement>("#avatar-error-message")!;
+
+    errorMessage.style.display = "none";
+    errorMessage.textContent = "";
+
+    if (!file) {
+      errorMessage.textContent = "Please choose a image";
+      errorMessage.style.display = "block";
       return;
     }
 
     const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
     if (!allowedTypes.includes(file.type)) {
-      alert('Only PNG, JPEG and JPG files are allowed');
+      errorMessage.textContent = "Only PNG, JPEG and JPG files are allowed";
+      errorMessage.style.display = "block";
       return;
     }
+
+    if (file.size > 5 * 1024 * 1024) {
+      errorMessage.textContent = "Image size must be less than 5MB";
+      errorMessage.style.display = "block";
+      return;
+    }
+
 
     const formData = new FormData();
     formData.append('avatar', file);
