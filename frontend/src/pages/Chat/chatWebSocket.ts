@@ -6,10 +6,6 @@ import { getConnectedUsersSet, getActiveConversationId } from "./chatState";
 import { handleUserSearch } from "./chatUserSearch";
 
 function handleIncomingMessage(message: ChatMessage) {
-    const conversationId = getActiveConversationId();
-    if (!conversationId)
-        return ;
-    
     try {
         if (message.type === 'message' && message.data && message.data.event_type === 'game_invitation_accepted') {
             // If acceptance contains a room_id, redirect to private remote pong
@@ -25,46 +21,7 @@ function handleIncomingMessage(message: ChatMessage) {
         }
     } catch (e) {}
 
-    if (message.type === 'message') {
-        let sendByUser;
-        if (message.userId === getActiveConversationId())
-            sendByUser = false;
-        else
-            sendByUser = true;
-        console.log(message.content);
-        addMessageToUI({
-            ...message,
-            isSent: sendByUser
-        });
-        loadConversationsDebounced();
-    } else if (message.type === 'typing') {
-        // Show typing indicator
-        const activeConversationId = getActiveConversationId();
-        if (message.userId === activeConversationId) {
-            showTypingIndicator(true);
-        }
-    } else if (message.type === 'stop_typing') {
-        // Hide typing indicator
-        const activeConversationId = getActiveConversationId();
-        if (message.userId === activeConversationId) {
-            showTypingIndicator(false);
-        }
-    } else if (message.type === 'user_deleted') {
-            // A user was deleted - refresh conversations automatically
-        console.log(`User ${message.userId} was deleted - refreshing conversations`);
-        loadConversationsDebounced();
-
-        // If we're currently viewing the deleted user's conversation, clear it
-        const activeConversationId = getActiveConversationId();
-        if (activeConversationId === message.userId) {
-            const messagesContainer = document.getElementById('messages-container');
-            if (messagesContainer) {
-                messagesContainer.innerHTML = '<div class="welcome-message">This user has been deleted.</div>';
-            }
-            const contactName = document.getElementById('contact-name');
-            if (contactName) contactName.textContent = 'Deleted User';
-        }
-    } else if (message.type === 'user_connected') {
+     if (message.type === 'user_connected') {
         if (message.userId) {
             getConnectedUsersSet().add(message.userId);
             updateActiveContactStatus();
@@ -83,6 +40,49 @@ function handleIncomingMessage(message: ChatMessage) {
         }
         updateActiveContactStatus();
         updateUserSearchModalStatus();
+    } else if (message.type === 'user_deleted') {
+            // A user was deleted - refresh conversations automatically
+        console.log(`User ${message.userId} was deleted - refreshing conversations`);
+        loadConversationsDebounced();
+
+        // If we're currently viewing the deleted user's conversation, clear it
+        const activeConversationId = getActiveConversationId();
+        if (activeConversationId === message.userId) {
+            const messagesContainer = document.getElementById('messages-container');
+            if (messagesContainer) {
+                messagesContainer.innerHTML = '<div class="welcome-message">This user has been deleted.</div>';
+            }
+            const contactName = document.getElementById('contact-name');
+            if (contactName) contactName.textContent = 'Deleted User';
+        }
+    }
+    const conversationId = getActiveConversationId();
+    if (!conversationId)
+        return ;
+    
+    if (message.type === 'message') {
+        let sendByUser;
+        if (message.userId === getActiveConversationId())
+            sendByUser = false;
+        else
+            sendByUser = true;
+        addMessageToUI({
+            ...message,
+            isSent: sendByUser
+        });
+        loadConversationsDebounced();
+    } else if (message.type === 'typing') {
+        // Show typing indicator
+        const activeConversationId = getActiveConversationId();
+        if (message.userId === activeConversationId) {
+            showTypingIndicator(true);
+        }
+    } else if (message.type === 'stop_typing') {
+        // Hide typing indicator
+        const activeConversationId = getActiveConversationId();
+        if (message.userId === activeConversationId) {
+            showTypingIndicator(false);
+        }
     }
 }
 
@@ -151,7 +151,7 @@ async function updateUserSearchModalStatus() {
     }
 }
 
-        // Función para actualizar el estado del contacto activo
+// Function to update the active contact's status
 function updateActiveContactStatus() {
 
     const activeConversationId = getActiveConversationId();
