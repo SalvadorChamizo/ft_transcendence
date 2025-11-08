@@ -90,7 +90,7 @@ export function getChatHtml(): string {
                             <input 
                                 type="text" 
                                 id="message-content" 
-                                placeholder="Escribe un mensaje..." 
+                                placeholder="Type a message..." 
                                 class="message-input"
                                 required 
                             />
