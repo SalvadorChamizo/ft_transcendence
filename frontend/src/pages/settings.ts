@@ -8,15 +8,7 @@ const apiHost = `${window.location.hostname}`;
 
 export function Settings() {
   const accessToken = getAccessToken();
-  if (!accessToken) {
-    return `
-      <div class="settings-actions">
-        <h1>Settings</h1>
-        <p>Please log or register in to view your settings.</p>
-      </div>
-    `;
-  }
-  setTimeout(() => settingsHandlers(accessToken), 0); // Pasar el token como parámetro
+  setTimeout(() => settingsHandlers(accessToken), 0);
   setTimeout(() => setupSettingsTabs(), 0);
   return `
     <div class="settings-container">
@@ -48,12 +40,14 @@ export function Settings() {
               <p id="username">Username</p>
               <input type="text" id="newUsername" placeholder="New username" />
               <button type="button" id="changeUsernameBTN">Change Username</button>
+              <p id="username-error-message" class="error-message" style="display: none;"></p>
             </div>
 
             <div class="settings-form-section">
               <p id="useremail">Email</p>
               <input type="text" id="newEmail" placeholder="Enter a new Email" />
               <button type="button" id="changeEmailBTN">Change Email</button>
+              <p id="email-error-message" class="error-message" style="display: none;"></p>
             </div>
     
           </div>
@@ -118,7 +112,6 @@ export function settingsHandlers(accessToken: string) {
     }
   }
 
-  // Traer datos del usuario
   async function fetchUserData() {
     try {
       const res = await fetch(`http://${apiHost}:8080/users/me`, {
@@ -159,10 +152,29 @@ export function settingsHandlers(accessToken: string) {
   changeUsernameBtn.addEventListener("click", async (e) => {
     e.preventDefault();
     const currentUsername = usernameField.textContent?.replace("Username: ", "");
+    const errorMessage = document.querySelector<HTMLParagraphElement>("#username-error-message")!;
 
-    if (!newUsername.value || newUsername.value.length < 3 || newUsername.value.length > 20 || newUsername.value === currentUsername) {
+    errorMessage.style.display = "none";
+    errorMessage.textContent = "";
+    
+    if (!newUsername.value){
+      errorMessage.textContent = "Username cannot be empty";
+      errorMessage.style.display = "block";
       return;
     }
+
+    if (newUsername.value === currentUsername) {
+      errorMessage.textContent = "Username must be different from current";
+      errorMessage.style.display = "block";
+      return;
+    }
+    
+    if (!newUsername.value || newUsername.value.length < 3 || newUsername.value.length > 20) {
+      errorMessage.textContent = "Username must be between 3-20 characters";
+      errorMessage.style.display = "block";
+      return;
+    }
+
 
     try {
       const res = await fetch(`http://${apiHost}:8080/users/changeUsername`, {
@@ -195,9 +207,30 @@ export function settingsHandlers(accessToken: string) {
   changeEmailBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
     const currentEmail = emailField.textContent?.replace("Email: ", "");
-    if (!newEmail.value || newEmail.value === currentEmail) {
+    const errorMessage = document.querySelector<HTMLParagraphElement>("#email-error-message")!;
+
+    errorMessage.style.display = "none";
+    errorMessage.textContent = "";
+
+    if (!newEmail.value) {
+      errorMessage.textContent = "Email cannot be empty";
+      errorMessage.style.display = "block";
       return;
     }
+
+    if (newEmail.value === currentEmail) {
+      errorMessage.textContent = "Email must be different from current";
+      errorMessage.style.display = "block";
+      return;
+    }
+
+    const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+    if (!emailRegex.test(newEmail.value)) {
+      errorMessage.textContent = "Please enter a valid email address";
+      errorMessage.style.display = "block";
+      return;
+    }
+
     try {
       const res = await fetch (`http://${apiHost}:8080/users/changeEmail`, {
         method: "POST",
