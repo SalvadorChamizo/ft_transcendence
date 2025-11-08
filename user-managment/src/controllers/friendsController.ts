@@ -108,7 +108,7 @@ export async function checkFriendController(req: FastifyRequest, reply: FastifyR
 		}
 		const result = await checkFriendService(Number(userId), Number(friendId));
 		
-		return reply.send({ result });
+		return reply.send( result );
 	}
 	catch (err: any) {
 		console.error("[checkFriendController] Error:", err);

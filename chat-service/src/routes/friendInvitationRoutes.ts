@@ -12,7 +12,7 @@ export async function friendInvitationRoutes(fastify: FastifyInstance) {
     fastify.post('/conversations/:otherUserId/accept-friend', acceptFriendInvitationController);
     
     // POST /game-invitations/:id/reject - Reject game invitation
-    //fastify.post('/conversations/:otherUserId/reject-friend', rejectFriendInvitationController);
+    fastify.post('/conversations/:otherUserId/reject-friend', rejectFriendInvitationController);
     // GET /conversations/notifications - Get all notifications from the user
     //fastify.get('/conversations/:userId/check-invitation', checkInviteFriendController);
 

@@ -34,8 +34,7 @@ export class WebSocketClient {
                 return;
             }
 
-            // Clear any existing message handlers to prevent duplicates
-            this.messageHandlers = [];
+            // Do NOT clear handlers here; keep them across reconnects so listeners persist
 
             this.userId = userId;
             

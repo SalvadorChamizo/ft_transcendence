@@ -13,6 +13,7 @@ import {
 } from "./chatState";
 import { getMessages, displayMessages, updateMessageInputVisibility } from "./chatMessages";
 import { updateBlockButtonUI } from "./chatBlockUsers";
+import { checkAlreadyFriend } from "./chatInvitations";
 
 const apiHost = `${window.location.hostname}`;
 
@@ -88,7 +89,12 @@ export async function selectConversation(otherUserId: number, otherUserName: str
     }
 
     if (friendBtn) {
-        friendBtn.style.display = 'flex';
+        const isFriend = await checkAlreadyFriend();
+        if (isFriend) {
+            friendBtn.style.display = 'none';
+        } else {
+            friendBtn.style.display = 'flex';
+        }
     }
 
     // Update block button state based on current blocked users

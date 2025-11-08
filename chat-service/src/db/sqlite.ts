@@ -63,7 +63,8 @@ db.prepare(`
         type TEXT NOT NULL CHECK(type IN ('pong', 'tournament', 'friend')),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         expires_at DATETIME NOT NULL,
-        room_id TEXT DEFAULT NULL
+        room_id TEXT DEFAULT NULL,
+        message_id INTEGER NOT NULL
     )
 `).run();
 

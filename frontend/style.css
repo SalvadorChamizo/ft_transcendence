@@ -1915,7 +1915,6 @@ header {
   word-wrap: break-word;
   word-break: break-word;
   overflow-wrap: break-word;
-  white-space: pre-wrap;
   display: table;
 }
 
@@ -1939,6 +1938,88 @@ header {
 
 .message-content {
   color: inherit;
+}
+
+.friend-invitation {
+  background: rgba(23, 65, 45, 0.9);
+  border: 1px solid #98fa42;
+  margin-left: auto;
+  margin-right: 0;
+  color: #42F3FA;
+  box-shadow: 0 0 10px rgba(66, 243, 250, 0.3);
+}
+
+.friend-invitation-sent {
+  background: rgba(23, 65, 45, 0.9);
+  border: 1px solid #98fa42;
+  margin-left: auto;
+  margin-right: 0;
+  color: #42F3FA;
+  box-shadow: 0 0 10px rgba(66, 243, 250, 0.3);
+}
+
+.friend-invitation-received {
+  background: rgba(23, 65, 45, 0.9);
+  border: 1px solid #98fa42;
+  margin-left: 0;
+  margin-right: auto;
+  color: white;
+  box-shadow: 0 0 10px rgba(66, 243, 250, 0.3);
+}
+
+.friend-invitation-sent-rejected {
+  background: rgba(65, 23, 23, 0.9);
+  border: 1px solid #fa4242;
+  margin-left: auto;
+  margin-right: 0;
+  color: #42F3FA;
+  box-shadow: 0 0 10px rgba(66, 243, 250, 0.3);
+}
+
+.friend-invitation-received-rejected {
+  background: #411717e6;
+  border: 1px solid #FA4242;
+  margin-left: 0;
+  margin-right: auto;
+  color: white;
+  box-shadow: 0 0 10px rgba(66, 243, 250, 0.3);
+}
+
+.accept-friend-btn {
+  background: #102229;
+  color: #fff;
+  border: 1px solid #5a5f66;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.accept-friend-btn:hover {
+  color: #98fa42;
+  border-color: #98fa42;
+  box-shadow: 0 0 8px rgba(66,243,250,0.6);
+}
+
+.reject-friend-btn {
+  background: #102229;
+  color: #fff;
+  border: 1px solid #5a5f66;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+}
+
+.reject-friend-btn:hover {
+  color: #FA4242;
+  border-color: #FA4242;
+  box-shadow: 0 0 8px rgba(66,243,250,0.6);
 }
 
 .message-time {
@@ -2556,11 +2637,7 @@ header {
 
 /* Center the scoreboard inside its container */
 #scoreboard {
-  position: absolute;
-  left: 50%;
-  /* place scoreboard near top of its container to avoid overlapping the canvas */
-  top: 10px;
-  transform: translateX(-50%);
+  /* Container already centers with flex, no additional positioning needed */
   z-index: 2;
 }
 
@@ -2568,6 +2645,11 @@ header {
 #startGameBtn, #playAgainBtn {
   position: relative;
   z-index: 1;
+  margin-bottom: 5px;
+}
+
+#startGameBtn.hidden {
+  display: none;
 }
 
 .hidden {

@@ -119,11 +119,9 @@ export function localPongPage(): string {
                 <button id="1vAIBtn" class="pong-button">1 vs AI</button>
             </div>
       <div id="roleInfo"></div>
-
-    <div class="scoreboard-container">
-            <button id="startGameBtn" class="pong-button hidden">Start Game</button>
+      <div class="scoreboard-container">
             <div id="scoreboard" class="scoreboard hidden">0 : 0</div>
-    </div>
+      </div>
 
       <p id="winnerMessage" class="winner-message" style="display: none;"></p>
       <div id="errorMessage" class="error-message" style="display: none; color: red; text-align: center;"></div>

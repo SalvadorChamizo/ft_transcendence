@@ -34,7 +34,7 @@ export function removeFriend(userId: number, friendId: number) {
 
 export function checkFriend(userId: number, friendId: number) {
 	const stmt = db.prepare(`
-		SELECT 1 FROM friends WHERE user_id = @userId AND friend_id = @friendId
+		SELECT * FROM friends WHERE user_id = ? AND friend_id = ?
 	`);
 	return stmt.get(userId, friendId);
 }

@@ -89,11 +89,11 @@ export function remotePongPage(): string {
             </div>
       <div id="roleInfo"></div>
 
-            <div class="scoreboard-container">
-                <button id="startGameBtn" class="pong-button hidden">Start Game</button>
-                <!-- hide scoreboard while in lobby -->
-                <div id="scoreboard" class="scoreboard hidden">0 : 0</div>
-            </div>
+      <div class="scoreboard-container">
+            <button id="startGameBtn" class="pong-button hidden">Start Game</button>
+            <!-- hide scoreboard while in lobby -->
+            <div id="scoreboard" class="scoreboard hidden">0 : 0</div>
+      </div>
 
       <p id="winnerMessage" class="winner-message" style="display: none;"></p>
 

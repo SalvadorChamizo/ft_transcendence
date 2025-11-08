@@ -2,7 +2,8 @@ import db from "../db/sqlite"
 
 export function createMessage(conversation_id: number, sender_id: number, content: string, message_type: string = 'text') {
     const stmt = db.prepare("INSERT INTO messages (conversation_id, sender_id, content, message_type) VALUES (?, ?, ?, ?)");
-    stmt.run(conversation_id, sender_id, content, message_type);
+    const result = stmt.run(conversation_id, sender_id, content, message_type);
+    return result.lastInsertRowid;
 }
 
 export function getMessagesByConversation(conversation_id: number) {
@@ -46,4 +47,37 @@ export function getUnreadCount(user_id: number) {
         AND m.read_at IS NULL
     `);
     return stmt.get(user_id, user_id, user_id);
+}
+
+export function updateMessageTypeByInvitation(invitationId: number, status: string) {
+    try {
+        const stmt = db.prepare(`
+            SELECT message_id 
+            FROM invitations 
+            WHERE id = ?
+        `);
+        const row = stmt.get(invitationId);
+
+        if (!row || typeof row.message_id === "undefined" || row.message_id === null) {
+            console.warn(`No message_id found for invitation ${invitationId}`);
+            return false;
+        }
+
+        const updateStmt = db.prepare(`
+            UPDATE messages
+            SET message_type = ?
+            WHERE id = ?
+        `);
+        const result = updateStmt.run(status, row.message_id);
+
+        if (result.changes === 0) {
+            console.warn(`No message updated for message_id ${row.message_id}`);
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error(`updateMessageTypeByInvitation failed:`, err);
+        return false;
+    }
 }

@@ -52,6 +52,6 @@ export default async (fastify: FastifyInstance) => {
     fastify.get("/getFriends", getFriendController);
     fastify.post("/addFriend", addFriendController);
     fastify.post("/removeFriend", removeFriendController);
-    fastify.get("/checkFriend", checkFriendController);
+    fastify.post("/checkFriend", checkFriendController);
     fastify.delete("/removeUsers", removeUser)
 };

@@ -15,7 +15,7 @@ import { sendGameInvitation } from "../../services/api";
 import { openNewChatModal, closeProfileModal } from "./chatModal";
 import { getAccessToken } from "../../state/authState";
 import { loadNotificationsAuto, getNotifications } from "./chatNotifications";
-import { acceptFriendInvitation, sendFriendInvitation, checkAlreadyFriend } from "./chatInvitations";
+import { acceptFriendInvitation, sendFriendInvitation, checkAlreadyFriend, rejectFriendInvitation } from "./chatInvitations";
 
 export async function chatHandlers() {
     // Get essential DOM elements with proper error handling
@@ -41,7 +41,7 @@ export async function chatHandlers() {
     const addFriendButton = document.getElementById('invite-friend-btn') as HTMLButtonElement;
 
     // Initialize WebSocket connection
-    initializeWebSocket();
+    await initializeWebSocket();
 
     // Setup typing indicator on message input
     setupTypingIndicator();
@@ -283,7 +283,8 @@ export async function chatHandlers() {
             console.log(`Accept friend clicked for user ${userId}`);
 
             const accepted = await acceptFriendInvitation();
-            if (accepted.success === "false")
+            console.log("Accepted:", accepted);
+            if (accepted.success === false)
                 return ;
 
             const buttons = messageBubble.querySelectorAll('.accept-friend-btn, .reject-friend-btn');
@@ -292,7 +293,7 @@ export async function chatHandlers() {
             const content = messageBubble.querySelector('.message-content');
             if (content) 
                 content.insertAdjacentHTML('beforeend', "<div class='friend-action-result'>✅ Friend accepted</div>");
-
+            addFriendButton.style.display = "none";
             return;
         }
 
@@ -300,14 +301,23 @@ export async function chatHandlers() {
             const userId = getActiveConversationId();
             console.log(`Reject friend clicked for user ${userId}`);
 
+            const rejected = await rejectFriendInvitation();
+            if (rejected.success === "false")
+                return ;
+
             const buttons = messageBubble.querySelectorAll('.accept-friend-btn, .reject-friend-btn');
             buttons.forEach(btn => btn.remove());
 
             const content = messageBubble.querySelector('.message-content');
-            if (content)
+            if (content) {
                 content.insertAdjacentHTML('beforeend', "<div class='friend-action-result'>❌ Friend request rejected</div>");
 
-            return;
+            }
+                const el = document.querySelector(".message-bubble.friend-invitation-received.pong-invite");
+                if (el) {
+                el.className = "message-bubble friend-invitation-received-rejected";
+                }   
+                return;
         }
     });
     // Update visibility on page load
