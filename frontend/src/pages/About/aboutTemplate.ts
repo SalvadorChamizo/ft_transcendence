@@ -180,7 +180,7 @@ export function getWebModuleHTML(): string {
         <div class="modules-container">
             <div class="module-card">
                 <h2 class="module-title">Fastify Backend Framework</h2>
-                <h3 class="module-subtitle">Mayor Module</h3>
+                <h3 class="module-subtitle">Major Module</h3>
                 <p class="module-description">
                     We built our backend using <strong>Fastify</strong>, a lightweight Node.js framework known for its
                     speed and simplicity. It handles API requests, authentication, and real-time communication between
@@ -453,7 +453,7 @@ export function getAboutUsHTML() {
             <div class="team-member">
                 <div class="our-team">
                     <div class="picture">
-                        <img src="../../public/jeandrad_intra.jpg" alt="saroca_intra">
+                        <img src="../../public/jeandrad_intra.jpg" alt="jeandrad_intra">
                     </div>
                     <div class="team-content">
                         <h3 class="name">Jesús Andrade</h3>
@@ -470,7 +470,7 @@ export function getAboutUsHTML() {
             <div class="team-member">
                 <div class="our-team">
                     <div class="picture">
-                        <img src="../../public/pablogon_intra.jpg" alt="saroca_intra">
+                        <img src="../../public/pablogon_intra.jpg" alt="pablogon_intra">
                     </div>
                     <div class="team-content">
                         <h3 class="name">Pablo González</h3>
@@ -487,7 +487,7 @@ export function getAboutUsHTML() {
             <div class="team-member">
                 <div class="our-team">
                     <div class="picture">
-                        <img src="../../public/schamizo_intra.jpg" alt="saroca_intra">
+                        <img src="../../public/schamizo_intra.jpg" alt="schamizo_intra">
                     </div>
                     <div class="team-content">
                         <h3 class="name">Salvador Chamizo</h3>
@@ -512,11 +512,11 @@ export function getAboutProjectHTML() {
         <div class="project-modules">
             <button id="mandatory-module-btn" class="module-btn">Mandatory</button>
             <button id="web-module-btn" class="module-btn">Web</button>
-            <button id="user-module-btn" class="module-btn">User-Management</button>
+            <button id="user-module-btn" class="module-btn">User Management</button>
             <button id="gameplay-module-btn" class="module-btn">Gameplay and User Experience</button>
-            <button id="ai-module-btn" class="module-btn">AI-Algo</button>
+            <button id="ai-module-btn" class="module-btn">AI & Algorithms</button>
             <button id="security-module-btn" class="module-btn">Cybersecurity</button>
-            <button id="devops-module-btn" class="module-btn">Devops</button>
+            <button id="devops-module-btn" class="module-btn">DevOps</button>
             <button id="access-module-btn" class="module-btn">Accessibility</button>
             <button id="serverPong-module-btn" class="module-btn">Server-Side Pong</button>
         </div>
