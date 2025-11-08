@@ -40,6 +40,33 @@ export async function roomRoutes(fastify: FastifyInstance) {
     reply.send({ roomId, public: isPublic });
   });
 
+  fastify.get("/rooms", async (request, reply) => {
+    try {
+      const q = (request.query as any) || {};
+      const onlyPublic =
+        q.public === true || q.public === "true" || q.public === 1 || q.public === "1";
+
+      const roomsRaw: any = getAllRooms();
+      const roomsArr: any[] = Array.isArray(roomsRaw) ? roomsRaw : Object.values(roomsRaw || {});
+
+      const result = roomsArr
+        .map((r: any) => ({
+          id: r?.id ?? r?.roomId,
+          players: Array.isArray(r?.players) ? r.players : [],
+          public: typeof r?.public === "boolean" ? r.public : true,
+          state: r?.state ?? {},
+        }))
+        .filter((r: any) => (onlyPublic ? r.public === true : true));
+
+      return reply.send(result);
+    }
+    catch (e) {
+      request.log.error("Failed to list rooms", e);
+      return reply.code(500).send({ error: "Failed to list rooms" });
+    }
+  });
+
+
   fastify.post("/rooms/:id/add-player", async (request, reply) => {
     const { id } = request.params as { id: string };
     const { playerId } = request.body as { playerId: string };
