@@ -126,11 +126,18 @@ export async function userRemover(id: number) {
 		const response = await fetch(`${chatServiceUrl}/users/${id}/data`, {
 			method: 'DELETE'
 		});
-		
+
+		const res = await fetch("http://auth-service:8081/deleteAuthUser", {
+			method: "DELETE",
+        	headers: { "Content-Type": "application/json" },
+        	body: JSON.stringify({ userId: id }),
+		})
 		if (!response.ok) {
 			console.error(`Failed to delete chat data for user ${id}:`, await response.text());
+		} else if (!res.ok) {
+			console.error(`Failed to delete auth data for user ${id}`);
 		} else {
-			console.log(`Chat data deleted successfully for user ${id}`);
+			console.log(`Chat data and auth data deleted successfully for user ${id}`);
 		}
 	} catch (error) {
 		console.error(`Error deleting chat data for user ${id}:`, error);

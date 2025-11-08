@@ -67,7 +67,7 @@ export function removeUser(id: number) {
 	return( result );
 }
 
-export function removeInactiveUsers(inactiveDays : number) {
+export async function removeInactiveUsers(inactiveDays : number) {
 	
 	const timeLimit = Math.floor(Date.now() / 1000) - inactiveDays;
 
@@ -78,6 +78,13 @@ export function removeInactiveUsers(inactiveDays : number) {
 
 	for (const user of inactiveUsers) {
 		totalRemoved += removeUser(user.id);
+
+		const res = await fetch("http://auth-service:8081/deleteAuthUser", {
+			method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id }),
+        credentials: "include", // include cookies
+		})
 	}
 
 	console.log("Total inactive users removed: ", totalRemoved);
