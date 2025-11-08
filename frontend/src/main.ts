@@ -29,10 +29,8 @@ function initializeWebSocketPresence() {
     
     // Connect to WebSocket
     websocketClient.connect(userId).then(() => {
-        console.log('WebSocket connected for presence tracking');
         wsInitialized = true;
     }).catch(error => {
-        console.error('Failed to connect WebSocket:', error);
     });
     
     // Listen for presence events
