@@ -59,6 +59,7 @@ export function Settings() {
               <input id="newPassword" type="password" placeholder="New password" />
               <input id="confirmPassword" type="password" placeholder="Confirm password" />
               <button id="changePasswordBTN">Change Password</button>
+              <p id="password-error-message" class="error-message" style="display: none;"></p>
             </div>
             <div id="twofa-section" class="settings-form-section">
               <p>Two-Factor Authentication</p>
@@ -261,10 +262,42 @@ export function settingsHandlers(accessToken: string) {
 
   changePasswordBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
-    if (!newPassword.value || !confirmPassword.value || newPassword.value !== confirmPassword.value) {
+    const errorMessage = document.querySelector<HTMLParagraphElement>("#password-error-message")!;
+
+    errorMessage.style.display = "none";
+    errorMessage.textContent = "";
+
+    if (!newPassword.value) {
+      errorMessage.textContent = "Please, introduce a new password";
+      errorMessage.style.display = "block";
       return;
     }
-    //Politica de contraseñas por implementar
+
+    if (!confirmPassword.value) {
+      errorMessage.textContent = "Please, confirm your new password";
+      errorMessage.style.display = "block";
+      return;
+    }
+
+    if (newPassword.value.length < 3 || newPassword.value.length > 12) {
+      errorMessage.textContent = "Password must be between 3-12 characters";
+      errorMessage.style.display = "block";
+      return;
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/;
+    if (!passwordRegex.test(newPassword.value)) {
+      errorMessage.textContent = "Password must contain at least: one lowercase, one uppercase, one number, and one special character";
+      errorMessage.style.display = "block";
+      return;
+    }
+
+    if (newPassword.value !== confirmPassword.value) {
+      errorMessage.textContent = "Password must be different from current";
+      errorMessage.style.display = "block";
+      return;
+    }
+
     try {
       const res = await fetch (`http://${apiHost}:8080/users/changePassword`, {
         method: "POST",
