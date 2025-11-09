@@ -20,7 +20,7 @@ export async function callback42Controller(req: FastifyRequest, reply: FastifyRe
         error_description?: string; 
     };
 
-    const frontendRedirectBase = "http://localhost:5173/#/login";
+    const frontendRedirectBase = "http://localhost:8000/#/login";
 
     if (error) {
         console.warn("42 OAuth cancelled or failed:", error, error_description);
@@ -90,7 +90,7 @@ export async function callback42Controller(req: FastifyRequest, reply: FastifyRe
             maxAge: 7 * 24 * 60 * 60,
         });
 
-        return reply.redirect("http://localhost:5173/#/");
+        return reply.redirect("http://localhost:8000/#/");
     
     } catch (err: any) {
         console.error("42 OAuth error:", err);
@@ -115,7 +115,7 @@ export async function callbackGoogleController(req: FastifyRequest, reply: Fasti
         error_description?: string;
     };
 
-    const frontendRedirectBase = "http://localhost:5173/#/login"; // Adjust if needed
+    const frontendRedirectBase = "http://localhost:8000/#/login"; // Adjust if needed
 
     if (error) {
         console.warn("Google OAuth cancelled or failed:", error, error_description);
@@ -185,7 +185,7 @@ export async function callbackGoogleController(req: FastifyRequest, reply: Fasti
             maxAge: 7 * 24 * 60 * 60,
         });
 
-        return reply.redirect("http://localhost:5173/#/");
+        return reply.redirect("http://localhost:8000/#/");
 
     } catch (err) {
         console.error("Google OAuth error:", err);
