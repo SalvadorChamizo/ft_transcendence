@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import dotenv from "dotenv";
 import cors from "@fastify/cors";
 import jwt from "jsonwebtoken";
+//import websocket from "@fastify/websocket";
 
 import { authMiddleware } from "./middleware/authMiddleware";
 import authRoutes from "./routes/authRoutes";
@@ -17,6 +18,9 @@ dotenv.config();
 // Creates a Fastify instance with logger activated
 const app = Fastify({ logger: true });
 
+// Register websocket plugin
+// app.register(websocket);
+
 // Register auth middleware BEFORE routes
 app.addHook("preHandler", authMiddleware);
 
@@ -28,7 +32,7 @@ app.register(tournamentRoutes);
 app.register(gatewayRoutes);
 
 // CORS (puedes dejarlo donde estaba)
-const whitelist = ["https://localhost:8443"];
+const whitelist = ["https://localhost:8443", "http://localhost:7000"];
 app.register(cors, {
   origin: (origin, callback) => {
 

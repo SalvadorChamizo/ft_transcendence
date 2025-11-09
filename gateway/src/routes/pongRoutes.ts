@@ -4,21 +4,15 @@ import proxy from "@fastify/http-proxy";
 export default async function pongRoutes(fastify: FastifyInstance) {
   fastify.log.info("Registering pongRoutes");
 
-  // Proxy only REST API routes to the pong service
-  // Socket.IO connections go directly from frontend to pong service
+  // Proxy REST API routes to the pong service
   fastify.register(proxy, {
     upstream: "http://pong-service:7000",
-    prefix: "/game",
-    // rewritePrefix: "/game",
+    prefix: "/game", // REST API calls
     
     preHandler: async (request, reply) => {
-      fastify.log.info(`[PONG PROXY] Incoming request: ${request.method} ${request.url}`);
-      // Log extra para ver cómo se va a reenviar la petición
-      fastify.log.info(`[PONG PROXY] Will proxy to: ${request.raw.url}`);
+      fastify.log.info(`[PONG PROXY] Incoming REST request: ${request.method} ${request.url}`);
     },
-    
-    replyOptions: {
-      rewriteRequestHeaders: (originalReq, headers) => {
+    rewriteRequestHeaders: (originalReq, headers) => {
         fastify.log.info(`[PONG PROXY] Rewriting headers for ${originalReq.method} ${originalReq.url}`);
         if (originalReq.user) {
           headers["x-player-id"] = String(originalReq.user.id);
@@ -26,8 +20,16 @@ export default async function pongRoutes(fastify: FastifyInstance) {
         }
         return headers;
       },
-    },
   });
+
+  // Proxy WebSocket connections for Socket.IO
+  fastify.register(proxy, {
+    upstream: `http://pong-service:7000`,
+    websocket: true, // Enable WebSocket proxying
+    prefix: "/socket.io",
+    rewritePrefix: "/socket.io",
+  });
+
 
   fastify.log.info("pongRoutes registered successfully");
 }
