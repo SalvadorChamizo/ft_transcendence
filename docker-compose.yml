@@ -1,13 +1,22 @@
 services:
 
-  # nginx:
-  #   build: ./frontend
-  #   ports:
-  #     - "8082:443"
-  #   depends_on:
-  #     - gateway
-  #   networks:
-  #     - backend
+  nginx:
+    build: ./nginx
+    ports:
+      - "8000:8000"
+    depends_on:
+      - frontend-dev
+      - gateway
+      - auth-service
+      - chat-service
+      - user-management-service
+      - pong-service
+      - ai-opponent
+      - tournament-service
+    volumes:
+      - frontend_dist:/usr/share/nginx/html
+    networks:
+      - backend
 
   node-base:
     build:
@@ -17,12 +26,11 @@ services:
   frontend-dev:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile
     ports:
       - "5173:5173"
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - frontend_dist:/app/dist
     depends_on:
       - gateway
     networks:
@@ -120,3 +128,4 @@ volumes:
   chat_data:
   tournament_data:
   pong_data:
+  frontend_dist:
