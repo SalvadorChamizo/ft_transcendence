@@ -87,12 +87,6 @@ let gameState: GameState = {
     gameEnded: false,
 };
 
-// Desired power-up state selected by the user in the UI. We store this locally
-// so changing the selector before the room exists doesn't attempt a POST that
-// will 404. The selection will be applied after the room is initialized.
-let desiredPowerUpEnabled = false;
-let desiredPowerUpRandom = false;
-
 /**
  * HTML for the router
  */
@@ -117,18 +111,9 @@ export function localPowerUpPongPage(): string {
                                                 <option value="long">Long (10)</option>
                                             </select>
                                         </label>
-
-                                        <!-- New dropdown for the power-up (same style as the others) -->
-                                        <label>Speed Power-Up:
-                                            <select id="powerupSelect" aria-label="Speed Power-Up">
-                                                <option value="false">Disabled</option>
-                                                <option value="true">Enabled</option>
-                                            </select>
-                                        </label>
                                 </div>
                 <button id="1v1Btn" class="pong-button">1 vs 1</button>
                 <button id="1vAIBtn" class="pong-button">1 vs AI</button>
-                <button id="activateSpeedBtn" class="pong-button">Activate Speed Power-Up</button>
             </div>
       <div id="roleInfo"></div>
 
@@ -293,48 +278,6 @@ export function localPowerUpPongHandlers() {
         startGame(true);
     });
 
-    // New: sync power-up select and toggle via button
-    const powerupSelect = document.getElementById("powerupSelect") as HTMLSelectElement | null;
-    const activateBtn = document.getElementById("activateSpeedBtn") as HTMLButtonElement | null;
-
-    if (powerupSelect) {
-      const reflectBtnLabel = () => {
-        const enabled = powerupSelect.value === "true";
-        if (activateBtn) {
-          activateBtn.textContent = enabled ? "Power-Up: ENABLED" : "Activate Speed Power-Up";
-          activateBtn.classList.toggle("active-powerup", enabled);
-        }
-      };
-      reflectBtnLabel();
-
-              powerupSelect.addEventListener("change", async () => {
-                        reflectBtnLabel();
-                        // Update the locally-stored desired state. If the socket/room is
-                        // already active, send an immediate update to the server. If not,
-                        // the change will be applied when the game is started (after
-                        // init), avoiding 404s for non-existent rooms.
-                        desiredPowerUpEnabled = powerupSelect.value === "true";
-                        desiredPowerUpRandom = desiredPowerUpEnabled; // default: random when enabled
-                        if (socket && socket.connected) {
-                            try {
-                                await postGame(`/game/${roomId}/powerup?enabled=${desiredPowerUpEnabled}&random=${desiredPowerUpRandom}`);
-                            } catch (err) {
-                                console.warn("[LocalPowerUpPong] Failed to change power-up:", err);
-                            }
-                        } else {
-                            console.log('[LocalPowerUpPong] Powerup selection saved locally; will apply on game start.');
-                        }
-                    });
-
-      // button toggles the select for quick UX
-      if (activateBtn) {
-        activateBtn.addEventListener("click", () => {
-          powerupSelect.value = powerupSelect.value === "true" ? "false" : "true";
-          powerupSelect.dispatchEvent(new Event("change"));
-        });
-      }
-    }
-
     // Initial cleanup in case of hot-reloading or re-navigation
     cleanup();
 }
@@ -379,20 +322,15 @@ async function startGame(isAiMode: boolean) {
             }
             // Apply speeds (if any) after initializing the game for this room (init resets state)
             await applySpeedsToRoom(roomId);
-            if (!initResponse.ok) {
-                throw new Error(`init failed (${initResponse.status})`);
-            }
 
-            // Enable the powerup for this local room according to the user's
-            // selection. If the user toggled the selector before starting the
-            // room we stored the desired state in `desiredPowerUpEnabled` and
-            // `desiredPowerUpRandom` and will apply it now (avoids 404s).
+            // Enable powerup for this local room (speed increases on paddle hit)
             try {
-                await postGame(`/game/${roomId}/powerup?enabled=${desiredPowerUpEnabled}&random=${desiredPowerUpRandom}`);
+                await postGame(`/game/${roomId}/powerup?enabled=true&random=true`);
             } catch (e) {
-                console.warn('Failed to enable powerup for room', roomId, e);
+                console.warn('[LocalPowerUpPong] Failed to enable powerup for room', roomId, e);
             }
 
+            // If playing vs AI, request the backend to start the AI opponent
             if (isAiMode) {
                 const startAiResponse = await postGame(`/game/${roomId}/start-ai`);
                 if (!startAiResponse.ok) {
@@ -400,21 +338,7 @@ async function startGame(isAiMode: boolean) {
                 }
             }
             // The game starts paused by default after init. Use a 3-2-1 countdown then resume.
-            import("../utils/countdown").then(mod => {
-                mod.runCountdown('countdown', 3).then(async () => {
-                    const resumeResponse = await postGame(`/game/${roomId}/resume`);
-                    if (!resumeResponse.ok) throw new Error(`resume failed (${resumeResponse.status})`);
-                    isGameRunning = true;
-                    console.log("[LocalPowerUpPong] Game started and resumed after countdown.");
-
-                    // Re-enable buttons after starting
-                    if (btn1v1) btn1v1.disabled = false;
-                    if (btn1vAI) btn1vAI.disabled = false;
-
-                    // Start the animation loop
-                    gameLoop(isAiMode);
-                });
-            });
+            await startLocalCountdownAndStart(roomId, isAiMode, btn1v1, btn1vAI);
 
         } catch (error: any) {
             console.error("[LocalPowerUpPong] Failed to start game:", error);

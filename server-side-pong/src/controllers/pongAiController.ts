@@ -189,7 +189,7 @@ export async function pongAiController(fastify: FastifyInstance, io: Server)
                     console.error('[AI] Fallback planning failed:', e);
                 }
             }
-        }, 1000); // <-- RESTRICTIOM: 1 CALL PER SECOND
+        }, 1000); // RESTRICTIOM: 1 CALL PER SECOND
 
         aiIntervals.set(roomId, intervalId);
         io.to(roomId).emit("gameReady", { roomId });

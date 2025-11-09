@@ -341,7 +341,8 @@ export function settingsHandlers(accessToken: string) {
       if (res.ok) {
         console.log("User delete successfully");
         logoutOutsideLoginPage();
-        location.hash = "/#login";
+/*         logout();
+        location.hash = "/#login"; */
       }
       else {
         console.log("Error deleting user:", data.error)

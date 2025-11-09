@@ -176,9 +176,11 @@ export async function showTournamentMatchesLobbyForPlayers(tournamentId: number)
         }
 
         const matchesHtml = matches.map((match: any) => {
-            const player1 = match.player1?.username || 'Player1';
-            const player2 = match.player2?.username || 'Player2';
-            const roomLink = match.roomId ? `<a href="#/remote-tournament-pong?matchId=${match.id}">Join Room</a>` : 'Room not ready';
+            const player1 = match.player1?.username || match.player1_username || 'Player1';
+            const player2 = match.player2?.username || match.player2_username || 'Player2';
+            const rid = match.roomId || match.room_id;
+            const roomLink = rid ? `<a href="#/remote-tournament-pong?matchId=${match.id}">Join Room</a>` : 'Room not ready';
+
             return `<li>${player1} vs ${player2} - ${roomLink}</li>`;
         }).join('');
 

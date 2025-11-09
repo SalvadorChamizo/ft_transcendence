@@ -40,6 +40,33 @@ export async function roomRoutes(fastify: FastifyInstance) {
     reply.send({ roomId, public: isPublic });
   });
 
+  fastify.get("/rooms", async (request, reply) => {
+    try {
+      const q = (request.query as any) || {};
+      const onlyPublic =
+        q.public === true || q.public === "true" || q.public === 1 || q.public === "1";
+
+      const roomsRaw: any = getAllRooms();
+      const roomsArr: any[] = Array.isArray(roomsRaw) ? roomsRaw : Object.values(roomsRaw || {});
+
+      const result = roomsArr
+        .map((r: any) => ({
+          id: r?.id ?? r?.roomId,
+          players: Array.isArray(r?.players) ? r.players : [],
+          public: typeof r?.public === "boolean" ? r.public : true,
+          state: r?.state ?? {},
+        }))
+        .filter((r: any) => (onlyPublic ? r.public === true : true));
+
+      return reply.send(result);
+    }
+    catch (e) {
+      request.log.error("Failed to list rooms", e);
+      return reply.code(500).send({ error: "Failed to list rooms" });
+    }
+  });
+
+
   fastify.post("/rooms/:id/add-player", async (request, reply) => {
     const { id } = request.params as { id: string };
     const { playerId } = request.body as { playerId: string };
@@ -60,6 +87,16 @@ export async function roomRoutes(fastify: FastifyInstance) {
     const room = getRoom(id);
     if (!room) return reply.code(404).send({ error: "Room not found" });
     reply.send(room);
+  });
+
+  fastify.get("/rooms", async (request, reply) => {
+    const query = request.query as any;
+    const allRooms = getAllRooms();
+    if (query.public === 'true') {
+      const publicRooms = allRooms.filter(r => (r as any).public);
+      return reply.send(publicRooms);
+    }
+    reply.send(allRooms);
   });
 
   fastify.post('/matches', async (request: any, reply: any) => {

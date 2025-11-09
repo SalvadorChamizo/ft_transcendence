@@ -374,6 +374,23 @@ function startGame(roomIdToJoin: string) {
         const winnerMsg = document.getElementById("winnerMessage")!;
         winnerMsg.textContent = "Opponent disconnected. You win!";
         winnerMsg.style.display = "block";
+        
+        try { (gameState as any).gameEnded = true; } catch {}
+
+        if (!resultRecorded){
+            resultRecorded = true;
+            try{
+                registerMatchToPongService(playerRole || "left",{
+                    left: gameState.scores.left,
+                    right: gameState.scores.right
+                }).catch(() => {});
+            } 
+            catch {}
+            try { sendVictoryToUserManagement().catch(() => {}); } catch {}
+        }
+
+
+
         endGame();
     });
 

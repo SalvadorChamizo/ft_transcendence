@@ -14,7 +14,10 @@ let roomId: string | null = null;
 let isRoomCreator = false;
 let gameInitialized = false;
 let matchRecorded = false; // ensure we only register a finished match once per room
+let resultRecorded = false; // ensure victory/defeat is only recorded once per match
 let beforeUnloadHandler: () => void = () => {};
+let logoutWatchInterval: number | null = null;
+let removePresenceHooks: (() => void) | null = null;
 
 const apiHost = `http://${window.location.hostname}:8080`;
 
@@ -118,14 +121,21 @@ export function remotePongPage(): string {
 }
 
 function cleanup() {
+    // announce leave before disconnect if possible
+    try { if (socket && roomId) socket.emit('leaveRoom', { roomId }); } catch {}
     if (socket) socket.disconnect();
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     window.removeEventListener("keydown", handleKeyDown);
     window.removeEventListener("keyup", handleKeyUp);
+    // remove presence/logout hooks
+    try { removePresenceHooks?.(); } catch {}
+    removePresenceHooks = null;
+    if (logoutWatchInterval) { clearInterval(logoutWatchInterval); logoutWatchInterval = null; }
     isGameRunning = false;
     isRoomCreator = false;
     gameInitialized = false;
     matchRecorded = false;
+    resultRecorded = false;
     roomId = null;
     playerRole = null;
     try { document.getElementById("scoreboard")?.classList.add("hidden"); } catch (e) {}
@@ -350,6 +360,7 @@ function startGame(roomIdToJoin: string) {
         const payload: any = { roomId: roomIdToJoin };
         if (typeof userId !== 'undefined' && userId !== null) payload.userId = userId;
         socket.emit("joinRoom", payload);
+        setupPresenceHooks();
     });
 
     socket.on("roomJoined", (data: { roomId: string, role: "left" | "right" }) => {
@@ -459,6 +470,19 @@ function startGame(roomIdToJoin: string) {
         const winnerMsg = document.getElementById("winnerMessage")!;
         winnerMsg.textContent = "Opponent disconnected. You win!";
         winnerMsg.style.display = "block";
+        try {
+            if (!resultRecorded && playerRole){
+                resultRecorded = true;
+                registerMatchToPongService(playerRole,{
+                    left: gameState.scores.left,
+                    right: gameState.scores.right
+                }).catch(e => console.warn('Failed to register match on disconnect:', e));
+                sendVictoryToUserManagement().catch(err => console.error('Failed to send victory:', err));
+            }
+        } 
+        catch (e) {
+            console.warn('Post-disconnect winner flow failed:', e);
+        }
         endGame();
     });
 
@@ -475,6 +499,63 @@ function startGame(roomIdToJoin: string) {
     window.addEventListener("keyup", handleKeyUp);
 
     gameLoop();
+}
+
+// Graceful disconnect used by presence/logout hooks
+function gracefulSelfDisconnect(reason: string) {
+    if (!socket || socket.disconnected) return;
+    console.log('[RemotePong] Graceful self-disconnect due to', reason);
+    try { if (roomId) socket.emit('leaveRoom', { roomId, reason }); } catch {}
+    try { socket.disconnect(); } catch {}
+}
+
+// Setup hooks to detect logout (token removed) or tab switch (visibility change)
+function setupPresenceHooks() {
+    if (removePresenceHooks) return; // already set
+
+    const onStorage = (e: StorageEvent) => {
+        if (!e.key) return;
+        if (["access_token", "refresh_token", "user"].includes(e.key) && e.newValue === null) {
+            gracefulSelfDisconnect('logout_storage');
+        }
+    };
+    window.addEventListener('storage', onStorage);
+
+    const onAppLogout = () => gracefulSelfDisconnect('logout_event');
+    window.addEventListener('app:logout', onAppLogout as EventListener);
+
+    // Watch token disappearance in same tab (no storage event fired)
+    let lastHadToken = !!getAccessToken();
+    logoutWatchInterval = window.setInterval(() => {
+        const has = !!getAccessToken();
+        if (lastHadToken && !has) gracefulSelfDisconnect('logout_interval');
+        lastHadToken = has;
+    }, 1000);
+
+    const onVisibility = () => {
+        if (document.hidden) {
+            // treat switching away as forfeiting
+            gracefulSelfDisconnect('tab_hidden');
+        }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    // Detect SPA route changes (hash-based router) and disconnect immediately
+    const onHashChange = () => {
+        // if we leave the remote-pong route, forfeit
+        if (!String(window.location.hash).startsWith('#/remote-pong')) {
+            gracefulSelfDisconnect('route_change');
+        }
+    };
+    window.addEventListener('hashchange', onHashChange);
+
+    removePresenceHooks = () => {
+        window.removeEventListener('storage', onStorage);
+        window.removeEventListener('app:logout', onAppLogout as EventListener);
+        document.removeEventListener('visibilitychange', onVisibility);
+        window.removeEventListener('hashchange', onHashChange);
+        if (logoutWatchInterval) { clearInterval(logoutWatchInterval); logoutWatchInterval = null; }
+    };
 }
 
 function startCountdownAndResume(roomToStart: string) {
@@ -496,7 +577,8 @@ function startCountdownAndResume(roomToStart: string) {
 }
 
 function checkWinner() {
-    if (!gameState.gameEnded || !isGameRunning) return;
+    // Do not depend on isGameRunning; server controls gameEnded
+    if (!gameState.gameEnded) return;
 
     const winnerMsg = document.getElementById("winnerMessage")!;
     const winning = (gameState as any).winningScore ?? WINNING_SCORE;
@@ -506,19 +588,23 @@ function checkWinner() {
     winnerMsg.style.display = "block";
     // If the local player won, send a victory to the user-management service
     const winnerSide = winner;
-    // Only the local winner should register the match to avoid duplicate records
-    if (playerRole === winnerSide) {
-        registerMatchToPongService(winnerSide, { left: gameState.scores.left, right: gameState.scores.right })
-            .then((matchId) => {
-                if (matchId) {
-                    console.log('[RemotePong] Match saved with id', matchId);
-                }
-            }).catch((e) => console.warn('Failed to register match', e));
+    // Only record once
+    if (!resultRecorded) {
+        resultRecorded = true;
+        // Only the local winner should register the match to avoid duplicate records
+        if (playerRole === winnerSide) {
+            registerMatchToPongService(winnerSide, { left: gameState.scores.left, right: gameState.scores.right })
+                .then((matchId) => {
+                    if (matchId) {
+                        console.log('[RemotePong] Match saved with id', matchId);
+                    }
+                }).catch((e) => console.warn('Failed to register match', e));
 
-        sendVictoryToUserManagement().catch(err => console.error('Failed to send victory:', err));
-    } else {
-        // local player lost — record a defeat as well (but don't register match)
-        sendDefeatToUserManagement().catch(err => console.error('Failed to send defeat:', err));
+            sendVictoryToUserManagement().catch(err => console.error('Failed to send victory:', err));
+        } else {
+            // local player lost — record a defeat as well (but don't register match)
+            sendDefeatToUserManagement().catch(err => console.error('Failed to send defeat:', err));
+        }
     }
     endGame();
 }

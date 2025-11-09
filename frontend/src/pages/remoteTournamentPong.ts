@@ -16,6 +16,7 @@ let matchId: number | null = null;
 let isPlayer1: boolean = false;
 let player1Id: number | null = null;
 let player2Id: number | null = null;
+let resultRecorded = false; // ensure victory/defeat only sent once
 
 const apiHost = `http://${window.location.hostname}:8080`;
 
@@ -95,6 +96,7 @@ function cleanup() {
     window.removeEventListener("keyup", handleKeyUp);
     isGameRunning = false;
     gameInitialized = false;
+    resultRecorded = false;
     // Ensure powerup disabled when cleaning up tournament room
     try {
         if (roomId) postApi(`/game/${roomId}/powerup?enabled=false`).catch(() => {});
@@ -292,6 +294,25 @@ function startGame(roomIdToJoin: string) {
         const winnerMsg = document.getElementById("winnerMessage")!;
         winnerMsg.textContent = "Opponent disconnected. You win!";
         winnerMsg.style.display = "block";
+        
+        try { (gameState as any).gameEnded = true; } catch {}
+
+        try {
+            const winnerId =
+                (playerRole === "left" ? (player1Id ?? undefined) : (player2Id ?? undefined)) ?? undefined;
+
+            if (typeof matchId === "number" && winnerId) {
+                handleTournamentMatchEnd(matchId, winnerId, true);
+            }
+            if (!resultRecorded) {
+                resultRecorded = true;
+                sendVictoryToUserManagement?.();
+            }
+        } 
+        catch (e){
+            console.warn('Tournament winner flow on disconnect failed:', e);
+        }
+
         endGame();
     });
 
@@ -302,7 +323,8 @@ function startGame(roomIdToJoin: string) {
 }
 
 function checkWinner() {
-    if (!gameState.gameEnded || !isGameRunning) return;
+    // Do not depend on isGameRunning; server sets gameEnded
+    if (!gameState.gameEnded) return;
 
     const winnerMsg = document.getElementById("winnerMessage")!;
     const winning = (gameState as any).winningScore ?? WINNING_SCORE;
@@ -311,8 +333,13 @@ function checkWinner() {
     
     winnerMsg.style.display = "block";
     const winnerSide = winner;
-    if (playerRole === winnerSide) {
-        sendVictoryToUserManagement().catch(err => console.error('Failed to send victory:', err));
+    if (!resultRecorded) {
+        resultRecorded = true;
+        if (playerRole === winnerSide) {
+            sendVictoryToUserManagement().catch(err => console.error('Failed to send victory:', err));
+        } else {
+            sendDefeatToUserManagement().catch(err => console.error('Failed to send defeat:', err));
+        }
     }
 
     // Report match result - only the winner client should report to reduce duplicate reports
@@ -324,7 +351,7 @@ function checkWinner() {
 
             // Handle tournament flow after 3 seconds (only winner handles navigation/flow)
             setTimeout(async () => {
-                await handleTournamentMatchEnd(matchId, winnerIdNum, true);
+                await handleTournamentMatchEnd(matchId as number, winnerIdNum, true);
             }, 3000);
         }
     } else if (matchId && playerRole !== winnerSide) {
@@ -336,6 +363,35 @@ function checkWinner() {
     }
 
     endGame();
+}
+
+async function sendDefeatToUserManagement() {
+    try {
+        let userId = getUserIdFromToken();
+        if (!userId) {
+            const userStr = localStorage.getItem("user");
+            if (!userStr) {
+                console.warn("No user id available (token/localStorage); cannot send defeat.");
+                return;
+            }
+            const user = JSON.parse(userStr);
+            userId = user?.id ?? user?.userId ?? null;
+        }
+        if (!userId) {
+            console.warn("Unable to resolve userId for defeat.");
+            return;
+        }
+
+        const res = await postApiJson(`/users/addDefeat`, { userId });
+        if (!res.ok) {
+            const text = await res.text();
+            console.error("Failed to post defeat:", res.status, text);
+        } else {
+            console.log(`Defeat recorded for user ${userId}`);
+        }
+    } catch (err) {
+        console.error("Error sending defeat:", err);
+    }
 }
 
 async function sendVictoryToUserManagement() {
