@@ -9,7 +9,11 @@ const inactiveDays = 30 * 24 * 60 * 60;
 
 const app = Fastify({ logger: true });
 
-app.register(multipart);
+app.register(multipart, {
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB max
+  },
+});
 
 app.register(usersRoutes);
 

@@ -33,6 +33,7 @@ export function Settings() {
               <p id="avatar"></p>
               <input type="file" id="newAvatar" />
               <button type="button" id="changeAvatarBTN">Change Avatar</button>
+              <p id="avatar-error-message" class="error-message" style="display: none;"></p>
             </div>
             </div>
 
@@ -58,6 +59,7 @@ export function Settings() {
               <input id="newPassword" type="password" placeholder="New password" />
               <input id="confirmPassword" type="password" placeholder="Confirm password" />
               <button id="changePasswordBTN">Change Password</button>
+              <p id="password-error-message" class="error-message" style="display: none;"></p>
             </div>
             <div id="twofa-section" class="settings-form-section">
               <p>Two-Factor Authentication</p>
@@ -260,10 +262,41 @@ export function settingsHandlers(accessToken: string) {
 
   changePasswordBtn?.addEventListener("click", async (e) => {
     e.preventDefault();
-    if (!newPassword.value || !confirmPassword.value || newPassword.value !== confirmPassword.value) {
+    const errorMessage = document.querySelector<HTMLParagraphElement>("#password-error-message")!;
+
+    errorMessage.style.display = "none";
+    errorMessage.textContent = "";
+
+    if (!newPassword.value) {
+      errorMessage.textContent = "Please, introduce a new password";
+      errorMessage.style.display = "block";
       return;
     }
-    // Password policy to be implemented
+
+    if (!confirmPassword.value) {
+      errorMessage.textContent = "Please, confirm your new password";
+      errorMessage.style.display = "block";
+    }
+
+    if (newPassword.value.length < 3 || newPassword.value.length > 12) {
+      errorMessage.textContent = "Password must be between 3-12 characters";
+      errorMessage.style.display = "block";
+      return;
+    }
+
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/;
+    if (!passwordRegex.test(newPassword.value)) {
+      errorMessage.textContent = "Password must contain at least: one lowercase, one uppercase, one number, and one special character";
+      errorMessage.style.display = "block";
+      return;
+    }
+
+    if (newPassword.value !== confirmPassword.value) {
+      errorMessage.textContent = "Password must be different from current";
+      errorMessage.style.display = "block";
+      return;
+    }
+
     try {
       const res = await fetch (`http://${apiHost}:8080/users/changePassword`, {
         method: "POST",
@@ -290,18 +323,31 @@ export function settingsHandlers(accessToken: string) {
   changeAvatarBtn.addEventListener("click", async (e) => {
     e.preventDefault();
     const file = avatarInput.files?.[0];
-    if (!file) return;
+    const errorMessage = document.querySelector<HTMLParagraphElement>("#avatar-error-message")!;
+
+    errorMessage.style.display = "none";
+    errorMessage.textContent = "";
+
+    if (!file) {
+      errorMessage.textContent = "Please choose a image";
+      errorMessage.style.display = "block";
+      return;
+    }
+
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB');
+      errorMessage.textContent = "Image size must be less than 5MB";
+      errorMessage.style.display = "block";
       return;
     }
-
+    
     const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+
     if (!allowedTypes.includes(file.type)) {
-      alert('Only PNG, JPEG and JPG files are allowed');
+      errorMessage.textContent = "Only PNG, JPEG and JPG files are allowed";
+      errorMessage.style.display = "block";
       return;
     }
-
+    
     const formData = new FormData();
     formData.append('avatar', file);
 
