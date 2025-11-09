@@ -169,44 +169,45 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("Player disconnected:", socket.id);
+
     for (const roomId of socket.rooms) {
-      if (roomId.startsWith("local_")) {
+      if (roomId.startsWith("local_")) continue;
+
+      const playerId = socketToUserId.get(socket.id) ?? socket.id;
+      socketToUserId.delete(socket.id);
+
+      const dbRoom = getRoom(roomId);
+      const state = getGameState(roomId);
+
+      // If no DB record exists, try to remove the state anyway
+      if (!dbRoom) {
+        deleteRoom(roomId);
+        console.log(`Orphan room ${roomId} (no DB) deleted.`);
         continue;
       }
-      const dbRoom = getRoom(roomId);
-      if (dbRoom) {
-  const playerId = socketToUserId.get(socket.id) ?? socket.id;
-  const playerIndex = dbRoom.players.indexOf(String(playerId));
-        if (playerIndex !== -1) {
-          dbRoom.players.splice(playerIndex, 1);
-          // clean socket->user mapping for this socket
-          socketToUserId.delete(socket.id);
-          const remainingPlayerId = dbRoom.players[0];
-          // Game state
-            const state = getGameState(roomId);
-            // Only award victory if the game was actually running (not paused) and not already ended
-            if (state && !state.gameEnded && !getIsPaused(roomId)) {
-              const disconnectedPlayerRole = playerIndex === 0 ? "left" : "right";
-              if (disconnectedPlayerRole === "left") {
-                state.scores.right = WINNING_SCORE;
-              } else {
-                state.scores.left = WINNING_SCORE;
-              }
-              state.gameEnded = true;
-              state.gameEndedTimestamp = Date.now();
-              io.to(roomId).emit("gameState", state);
-            }
-          if (remainingPlayerId) {
-            io.to(roomId).emit("opponentDisconnected");
-          }
-          if (dbRoom.players.length === 0) {
-            dbDeleteRoom(roomId);
-            deleteRoom(roomId); // clean the state
-            console.log(`Room ${roomId} and its game state have been deleted.`);
-          } else {
-            saveRoom(roomId, state, dbRoom.players);
-          }
-          break;
+
+      const playerIndex = dbRoom.players.indexOf(String(playerId));
+      if (playerIndex !== -1) {
+        dbRoom.players.splice(playerIndex, 1);
+
+        // Award victory to the remaining player (if any)
+        if (state && !state.gameEnded && !getIsPaused(roomId)) {
+          const disconnectedRole = playerIndex === 0 ? "left" : "right";
+          if (disconnectedRole === "left") state.scores.right = WINNING_SCORE;
+          else state.scores.left = WINNING_SCORE;
+          state.gameEnded = true;
+          state.gameEndedTimestamp = Date.now();
+          io.to(roomId).emit("gameState", state);
+        }
+
+        if (dbRoom.players.length > 0) {
+          io.to(roomId).emit("opponentDisconnected");
+          saveRoom(roomId, state, dbRoom.players);
+        } else {
+          // Last player left — remove room entirely
+          dbDeleteRoom(roomId);
+          deleteRoom(roomId);
+          console.log(`Room ${roomId} fully deleted (no players left).`);
         }
       }
     }
@@ -270,6 +271,18 @@ setInterval(() => {
     }
   }
   }, 5000); // Check every 5 seconds
+
+  setInterval(() => {
+    for (const [roomId] of roomStates.entries()) {
+      const roomAdapter = io.sockets.adapter.rooms.get(roomId);
+      const playersInSocket = roomAdapter ? roomAdapter.size : 0;
+      if (playersInSocket === 0) {
+        deleteRoom(roomId);
+        dbDeleteRoom(roomId);
+        console.log(`Force-cleaned idle room ${roomId} (no sockets left).`);
+      }
+    }
+  }, 15000);
 
 /**
  * START SERVER
