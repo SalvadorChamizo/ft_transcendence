@@ -455,6 +455,19 @@ export async function tournamentHandlers() {
         const playerThree = (document.querySelector<HTMLInputElement>("#player-three")!).value;
         const playerFour = (document.querySelector<HTMLInputElement>("#player-four")!).value;
 
+        // Validate alias lengths
+        const aliases = [playerOne, playerTwo, playerThree, playerFour];
+        for (let i = 0; i < aliases.length; i++) {
+            if (aliases[i].length > 10) {
+                alert(`Player ${i + 1} alias cannot exceed 10 characters`);
+                return;
+            }
+            if (aliases[i].trim() === "") {
+                alert(`Player ${i + 1} alias cannot be empty`);
+                return;
+            }
+        }
+
         const tournament = await fetch(`http://${apiHost}:8080/tournaments/local`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },

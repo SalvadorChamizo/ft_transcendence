@@ -3578,6 +3578,10 @@ header {
   font-weight: bold;
   transition: all 0.3s ease;
   box-shadow: 0 0 5px rgba(66,243,250,0.5);
+  padding: 0 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tournament-match:hover {
@@ -4037,6 +4041,15 @@ header {
   color: #999;
   margin-top: -10px;
   font-style: italic;
+}
+
+.tournament-alias-hint {
+  font-size: 0.85rem;
+  color: #999;
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-style: italic;
+  text-align: center;
 }
 
 .lobby-container {

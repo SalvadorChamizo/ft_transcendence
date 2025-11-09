@@ -100,18 +100,19 @@ export function getTournamentAliasFourHtml(): string {
     <div class="tournament-form">
       <form id="fourPlayerForm">
         <h2>Enter the alias for each player</h2>
+        <p class="tournament-alias-hint">Maximum 10 characters per alias</p>
         <div class="tournament-form-inputs">
           <div>
             <label for="player-one">Player one:</label><br>
-            <input type="text" id="player-one" name="player-one"><br>
+            <input type="text" id="player-one" name="player-one" maxlength="10" required><br>
             <label for="player-two">Player two:</label><br>
-            <input type="text" id="player-two" name="player-two"><br>
+            <input type="text" id="player-two" name="player-two" maxlength="10" required><br>
           </div>
           <div>
             <label for="player-three">Player three:</label><br>
-            <input type="text" id="player-three" name="player-one"><br>
+            <input type="text" id="player-three" name="player-one" maxlength="10" required><br>
             <label for="player-four">Player four:</label><br>
-            <input type="text" id="player-four" name="player-four"><br>
+            <input type="text" id="player-four" name="player-four" maxlength="10" required><br>
           </div>
         </div>
         <button type="submit">Create Tournament</button>

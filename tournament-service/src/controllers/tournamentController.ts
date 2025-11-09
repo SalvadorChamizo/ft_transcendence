@@ -37,10 +37,21 @@ export async function createLocalTournamentController(req: FastifyRequest, reply
             return reply.code(400).send({ error: "Tournament name cannot exceed 30 characters" });
         }
 
+        // Validate player aliases
+        const players = [playerOne, playerTwo, playerThree, playerFour].filter(Boolean);
+        for (const playerAlias of players) {
+            if (typeof playerAlias !== 'string' || playerAlias.trim() === '') {
+                return reply.code(400).send({ error: "All player aliases must be non-empty strings" });
+            }
+            if (playerAlias.length > 10) {
+                return reply.code(400).send({ error: "Player aliases cannot exceed 10 characters" });
+            }
+        }
+
         const newTournament = await TournamentService.createLocalTournament({
             name: tournamentName,
             maxPlayers: tournamentPlayers,
-            players: [playerOne, playerTwo, playerThree, playerFour].filter(Boolean),
+            players: players,
         });
         
         return reply.code(201).send(newTournament);
