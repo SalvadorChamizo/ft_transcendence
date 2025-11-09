@@ -33,7 +33,7 @@ export function ProfileView(): string {
   `;
 }
 
-/** Extrae el username de la URL:
+/** Extract the username from the URL:
  * - "#/profile/username"
  * - "#/profile?user=username"
  */
@@ -58,11 +58,11 @@ function parseUsernameFromHash(): string | null {
   return null;
 }
 
-/** Intenta resolver el username del usuario logueado por varios medios */
+/** Attempt to resolve the username of the logged-in user by various means. */
 async function resolveCurrentUsername(): Promise<string | null> {
   console.log('[profile] resolveCurrentUsername: start');
 
-  // 1) api.getCurrentUser() si existe
+  // 1) api.getCurrentUser() if it exists
   try {
     if (typeof (api as any).getCurrentUser === 'function') {
       console.log('[profile] resolveCurrentUsername: calling api.getCurrentUser()');
@@ -77,7 +77,7 @@ async function resolveCurrentUsername(): Promise<string | null> {
     console.error('[profile] resolveCurrentUsername: api.getCurrentUser error', err);
   }
 
-  // 2) Intentar /users/me directamente (gateway -> user-management-service)
+  // 2) Try /users/me directly (gateway -> user-management-service)
   try {
     const token = getAccessToken();
     console.log('[profile] resolveCurrentUsername: token present?', !!token);
@@ -99,7 +99,7 @@ async function resolveCurrentUsername(): Promise<string | null> {
     console.error('[profile] resolveCurrentUsername: fetch /users/me error', err);
   }
 
-  // 3) fallback: localStorage (si el login guardó username allí)
+  // 3) fallback: localStorage (if the login saved the username there)
   try {
     const stored = localStorage.getItem('username');
     console.log('[profile] resolveCurrentUsername: localStorage username', stored);
@@ -111,8 +111,8 @@ async function resolveCurrentUsername(): Promise<string | null> {
 }
 
 /**
- * Dibuja la progresión de win% en un canvas.
- * - matches: array cronológico/reciente; se usa ownerResult/won/result/winner/profileUsername para determinar victorias.
+ * Draw the win% progression on a canvas.
+ * - matches: chronological/recent array; ownerResult/won/result/winner/profileUsername is used to determine wins.
  */
 function drawWinLossChart(canvas: HTMLCanvasElement, matches: any[]) {
   if (!canvas) return;
@@ -229,7 +229,7 @@ function drawWinLossChart(canvas: HTMLCanvasElement, matches: any[]) {
 }
 
 export function profileViewHandlers() {
-  // al cargar la vista, obtenemos el username de la URL o el usuario actual automáticamente
+  // When loading the view, we automatically obtain the username from the URL or the current user.
   (async () => {
     const resultDiv = document.getElementById('profile-result');
     if (!resultDiv) return;

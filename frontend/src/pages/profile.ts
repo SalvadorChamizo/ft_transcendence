@@ -335,13 +335,13 @@ export function profileHandlers() {
             try {
               // Attempt to fetch user by id. getUserById expects a numeric id in body but handles strings too.
               const user = await getUserById(Number(p));
-              const username = user?.username ?? String(p);
+              const username = user?.username ?? 'deleted_account';
               usernameCache.set(p, username);
               return username;
             } catch (err) {
               // fallback to raw id
-              usernameCache.set(p, String(p));
-              return String(p);
+              usernameCache.set(p, 'deleted_account');
+              return 'deleted_account';
             }
           }));
         }

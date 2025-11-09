@@ -420,15 +420,25 @@ export async function tournamentHandlers() {
         {
             tournamentPlayers = 4;
             const name = (document.querySelector<HTMLInputElement>("#tournamentName"));
-            if (name?.value)
+            if (name?.value) {
+                if (name.value.length > 30) {
+                    alert("Tournament name cannot exceed 30 characters");
+                    return;
+                }
                 tournamentName = name.value;
+            }
             setTournamentContent(getTournamentAliasFourHtml());
         }
         else {
             tournamentPlayers = 4;
             const name = (document.querySelector<HTMLInputElement>("#tournamentName"));
-            if (name?.value)
+            if (name?.value) {
+                if (name.value.length > 30) {
+                    alert("Tournament name cannot exceed 30 characters");
+                    return;
+                }
                 tournamentName = name.value;
+            }
             currentTournamentId = await createRemoteTournament(tournamentName, tournamentPlayers);
             const html = await getTournamentLobbyHTML(currentTournamentId)
             setTournamentContent(html);
@@ -444,6 +454,31 @@ export async function tournamentHandlers() {
         const playerTwo = (document.querySelector<HTMLInputElement>("#player-two")!).value;
         const playerThree = (document.querySelector<HTMLInputElement>("#player-three")!).value;
         const playerFour = (document.querySelector<HTMLInputElement>("#player-four")!).value;
+
+        // Validate alias lengths
+        const aliases = [playerOne, playerTwo, playerThree, playerFour];
+        for (let i = 0; i < aliases.length; i++) {
+            if (aliases[i].length > 10) {
+                alert(`Player ${i + 1} alias cannot exceed 10 characters`);
+                return;
+            }
+            if (aliases[i].trim() === "") {
+                alert(`Player ${i + 1} alias cannot be empty`);
+                return;
+            }
+        }
+
+        // Check for duplicate aliases
+        const aliasSet = new Set<string>();
+        const playerNames = ['Player one', 'Player two', 'Player three', 'Player four'];
+        for (let i = 0; i < aliases.length; i++) {
+            const normalizedAlias = aliases[i].toLowerCase().trim();
+            if (aliasSet.has(normalizedAlias)) {
+                alert(`Duplicate alias detected: "${aliases[i]}". Each player must have a unique alias.`);
+                return;
+            }
+            aliasSet.add(normalizedAlias);
+        }
 
         const tournament = await fetch(`http://${apiHost}:8080/tournaments/local`, {
             method: "POST",

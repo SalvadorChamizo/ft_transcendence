@@ -3595,6 +3595,10 @@ header {
   font-weight: bold;
   transition: all 0.3s ease;
   box-shadow: 0 0 5px rgba(66,243,250,0.5);
+  padding: 0 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tournament-match:hover {
@@ -3929,6 +3933,11 @@ header {
   font-size: 1rem;
   font-weight: bold;
   color: #ffffff;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tournaments-list {
@@ -3989,10 +3998,15 @@ header {
   justify-content: space-between;
   align-items: center;
   margin-left: 40px;
+  flex: 1;
+  min-width: 0;
+  gap: 1rem;
 }
 
 .tournament-players {
   margin-bottom: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tournament-btn {
@@ -4007,6 +4021,8 @@ header {
   font-weight: bold;
   transition: all 0.3s ease;
   box-shadow: 0 0 5px rgba(66,243,250,0.5);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .tournament-name-field {
@@ -4037,6 +4053,22 @@ header {
   box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
 }
 
+.tournament-name-hint {
+  font-size: 0.85rem;
+  color: #999;
+  margin-top: -10px;
+  font-style: italic;
+}
+
+.tournament-alias-hint {
+  font-size: 0.85rem;
+  color: #999;
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-style: italic;
+  text-align: center;
+}
+
 .lobby-container {
   background-color: #1b1e2b;
   color: white;
@@ -4047,6 +4079,15 @@ header {
   box-shadow: 0 0 20px rgba(0, 255, 255, 0.2);
   text-align: center;
   font-family: 'Poppins', sans-serif;
+}
+
+.lobby-container #tournament-name strong {
+  display: inline-block;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
 }
 
 .lobby-players {
