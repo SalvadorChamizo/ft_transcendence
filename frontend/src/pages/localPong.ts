@@ -302,12 +302,12 @@ async function startGame(isAiMode: boolean) {
     if (btn1vAI) btn1vAI.disabled = true;
 
     ctx = (document.getElementById("pongCanvas") as HTMLCanvasElement).getContext("2d")!;
-    const wsHost = `ws://${window.location.hostname}:7000`;
     if (socket) {
         // If there’s a previous socket, clean it up
         cleanup();
     }
-    socket = io(wsHost, { 
+    socket = io(apiHost, { 
+        path: "/socket.io",
         transports: ['websocket'],
         auth: {
             token: "local"

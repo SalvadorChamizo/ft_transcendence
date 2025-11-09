@@ -25,6 +25,10 @@ const publicUrls = [
 export async function authMiddleware(req: FastifyRequest, reply: FastifyReply) {
   const urlPath = req.url.split("?")[0];
 
+  if (req.url.startsWith("/socket.io")) {
+    return;
+  }
+
   const isPublic = publicUrls.some((publicUrl) => {
     if (publicUrl.includes(":")) {
       const regex = new RegExp("^" + publicUrl.replace(/:[^/]+/g, "[^/]+") + "$");

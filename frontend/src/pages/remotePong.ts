@@ -345,8 +345,10 @@ async function loadPublicRooms() {
 }
 
 function startGame(roomIdToJoin: string) {
-    const wsHost = `ws://${window.location.hostname}:7000`;
-    socket = io(wsHost);
+    // Connect to the gateway, which will proxy to the pong service
+    socket = io(apiHost, {
+        path: "/socket.io/", // Ensure the path matches the gateway proxy
+    });
 
     document.getElementById("roleInfo")!.textContent = `Joining room ${roomIdToJoin}...`;
     

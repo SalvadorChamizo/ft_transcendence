@@ -157,8 +157,7 @@ function prepareGameUI() {
 }
 
 function startGameVsAI() {
-    const wsHost = `ws://${window.location.hostname}:7000`;
-    socket = io(wsHost);
+    socket = io(apiHost);
     roomId = "ai-room-" + Math.random().toString(36).substring(2, 8);
 
     socket.on('connect', async () => {
