@@ -122,15 +122,36 @@ export function remotePongPage(): string {
 
 function cleanup() {
     // announce leave before disconnect if possible
-    try { if (socket && roomId) socket.emit('leaveRoom', { roomId }); } catch {}
-    if (socket) socket.disconnect();
-    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    try { 
+        if (socket && roomId) 
+            socket.emit('leaveRoom', { roomId }); 
+    } catch {
+
+    }
+    if (socket) 
+        socket.disconnect();
+
+    if (animationFrameId)
+        cancelAnimationFrame(animationFrameId);
+
     window.removeEventListener("keydown", handleKeyDown);
+
     window.removeEventListener("keyup", handleKeyUp);
+
     // remove presence/logout hooks
-    try { removePresenceHooks?.(); } catch {}
+    try { 
+        removePresenceHooks?.(); 
+    } catch {
+
+    }
+    
     removePresenceHooks = null;
-    if (logoutWatchInterval) { clearInterval(logoutWatchInterval); logoutWatchInterval = null; }
+
+    if (logoutWatchInterval) { 
+        clearInterval(logoutWatchInterval); 
+        logoutWatchInterval = null; 
+    }
+    
     isGameRunning = false;
     isRoomCreator = false;
     gameInitialized = false;
@@ -138,11 +159,18 @@ function cleanup() {
     resultRecorded = false;
     roomId = null;
     playerRole = null;
-    try { document.getElementById("scoreboard")?.classList.add("hidden"); } catch (e) {}
+    try { 
+        document.getElementById("scoreboard")?.classList.add("hidden"); 
+    } catch (e) {
+
+    }
     // Ensure powerup disabled for this room when cleaning up
     try {
-        if (roomId) postApi(`/game/${roomId}/powerup?enabled=false`).catch(() => {});
-    } catch (e) { /* ignore */ }
+        if (roomId) 
+            postApi(`/game/${roomId}/powerup?enabled=false`).catch(() => {});
+    } catch (e) { 
+        /* ignore */ 
+    }
     window.removeEventListener('beforeunload', beforeUnloadHandler as EventListener);
 }
 
