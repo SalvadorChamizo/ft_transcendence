@@ -3912,7 +3912,8 @@ header {
   font-size: 1rem;
   font-weight: bold;
   color: #ffffff;
-  max-width: 300px;
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -3976,10 +3977,15 @@ header {
   justify-content: space-between;
   align-items: center;
   margin-left: 40px;
+  flex: 1;
+  min-width: 0;
+  gap: 1rem;
 }
 
 .tournament-players {
   margin-bottom: 0;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .tournament-btn {
@@ -3994,6 +4000,8 @@ header {
   font-weight: bold;
   transition: all 0.3s ease;
   box-shadow: 0 0 5px rgba(66,243,250,0.5);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .tournament-name-field {
