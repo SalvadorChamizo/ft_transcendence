@@ -244,6 +244,10 @@ async function startTournamentGame(isAiMode: boolean, playerLeft: string, player
             const initResponse = await postGame(`/game/${roomId}/init`);
             if (!initResponse.ok) throw new Error(`init failed (${initResponse.status})`);
 
+            // Enable powerup for tournament games to increase ball speed on paddle hits
+            const powerupResponse = await postGame(`/game/${roomId}/powerup?enabled=true`);
+            if (!powerupResponse.ok) console.warn(`[LocalTournament] Failed to enable powerup (${powerupResponse.status})`);
+
             if (isAiMode) {
                 const startAiResponse = await postGame(`/game/${roomId}/start-ai`);
                 if (!startAiResponse.ok) throw new Error(`start-ai failed (${startAiResponse.status})`);

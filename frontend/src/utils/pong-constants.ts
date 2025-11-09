@@ -11,5 +11,5 @@ export const PADDLE_HEIGHT = 100;
 export const PADDLE_SPEED = 5;
 export const PADDLE_OFFSET_X = 30;
 export const PADDLE_WIDTH = 20;
-export const BALL_SPEED_X = 6;
-export const BALL_SPEED_Y = 6;
+export const BALL_SPEED_X = 5;
+export const BALL_SPEED_Y = 5;
