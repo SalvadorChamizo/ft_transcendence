@@ -277,20 +277,17 @@ export async function getUserAvatar(userId: number): Promise<string | null> {
         });
 
         if (!response.ok) {
-            console.log(`[Avatar] No avatar found for user ID: ${userId}`);
             avatarCache.set(userId, null);
             return null;
         }
 
         const blob = await response.blob();
         const blobUrl = URL.createObjectURL(blob);
-        console.log(`[Avatar] Avatar loaded for user ID: ${userId}`);
         
         // Cache the result
         avatarCache.set(userId, blobUrl);
         return blobUrl;
     } catch (error) {
-        console.error(`[Avatar] Error fetching avatar for user ID: ${userId}`, error);
         avatarCache.set(userId, null);
         return null;
     }

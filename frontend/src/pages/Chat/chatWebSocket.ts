@@ -113,7 +113,11 @@ function showTypingIndicator(show: boolean) {
         messagesContainer.appendChild(typingDiv);
         
         // Auto-scroll to bottom
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        try {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        } catch (err: any) {
+            
+        }
     }
 }
 

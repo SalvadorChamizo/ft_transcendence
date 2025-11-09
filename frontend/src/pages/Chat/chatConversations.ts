@@ -212,7 +212,12 @@ export async function loadConversationsAuto() {
         }
     }
     setTimeout(() => {
-    conversationsList.scrollTop = conversationsList.scrollHeight;
+    try {
+        conversationsList.scrollTop = conversationsList.scrollHeight;
+
+    } catch (err: any) {
+
+    }
     }, 0);
 }
 

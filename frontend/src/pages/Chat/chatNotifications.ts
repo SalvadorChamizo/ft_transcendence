@@ -142,7 +142,6 @@ export function displayNotification(notification: any) {
         messagesContainer.innerHTML = '';
         return;
     }
-    console.log("not:", notification);
     messagesContainer.innerHTML = `
                 <div class="message-bubble message-received">
                     <div class="message-content">${notification[0].content}</div>
@@ -298,6 +297,9 @@ export async function loadNotificationsAuto() {
       `;
     }
   }
+  try {
+    notificationsList.scrollTop = notificationsList.scrollHeight;
+  } catch (err: any) {
 
-  notificationsList.scrollTop = notificationsList.scrollHeight;
+  }
 }

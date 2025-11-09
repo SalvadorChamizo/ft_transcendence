@@ -272,7 +272,11 @@ export function addMessageToUI(message: ChatMessage & { isSent: boolean }) {
     messagesContainer.appendChild(messageDiv);
         
     // Auto-scroll to bottom
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    try {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    } catch (err: any) {
+
+    }
 }
 
 export function displayMessages(messages: any[]) {
@@ -402,7 +406,11 @@ export function displayMessages(messages: any[]) {
             alert("Lo pilla");
         })
     }
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    try {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    } catch (err: any) {
+        
+    }
 }
 
 // Function to show/hide message input based on conversation selection
