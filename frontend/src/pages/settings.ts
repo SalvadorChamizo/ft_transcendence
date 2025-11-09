@@ -234,7 +234,7 @@ export function settingsHandlers(accessToken: string) {
     }
 
     try {
-      const res = await fetch (`https://${apiHost}:8080/users/changeEmail`, {
+      const res = await fetch (`https://${apiHost}:8443/api/users/changeEmail`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -298,7 +298,7 @@ export function settingsHandlers(accessToken: string) {
     }
 
     try {
-      const res = await fetch (`https://${apiHost}:8080/users/changePassword`, {
+      const res = await fetch (`https://${apiHost}:8443/api/users/changePassword`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -375,7 +375,7 @@ export function settingsHandlers(accessToken: string) {
   deleteUserBtn.addEventListener("click", async (e) => {  
     e.preventDefault();
     try {
-      const res = await fetch (`https://${apiHost}:8080/users/removeUsers`, {
+      const res = await fetch (`https://${apiHost}:8443/api/users/removeUsers`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
