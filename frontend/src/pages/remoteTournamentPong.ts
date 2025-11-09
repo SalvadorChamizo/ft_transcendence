@@ -219,8 +219,9 @@ function prepareGameUI() {
 }
 
 function startGame(roomIdToJoin: string) {
-    const wsHost = `ws://${window.location.hostname}:7000`;
-    socket = io(wsHost);
+    socket = io(apiHost, {
+        path: "/socket.io/",
+    });
 
     document.getElementById("roleInfo")!.textContent = `Joining tournament room ${roomIdToJoin}...`;
     

@@ -21,7 +21,6 @@ let isRoomCreator = false;
 let gameInitialized = false;
 
 const apiHost = `https://${window.location.hostname}:8443/api`;
-const wsHost = `ws://${window.location.hostname}:7000`;
 
 const keysPressed = new Set<string>();
 
@@ -281,7 +280,9 @@ async function registerMatchToPongService(winnerSide: "left" | "right", score: {
 }
 
 function startGame(roomIdToJoin: string) {
-    socket = io(wsHost);
+    socket = io(apiHost, {
+        path: "/socket.io/",
+    });
 
     document.getElementById("roleInfo")!.textContent = `Joining room ${roomIdToJoin}...`;
 

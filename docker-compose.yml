@@ -86,8 +86,8 @@ services:
     container_name: trascendence-pong-service
     env_file:
       - ./server-side-pong/.env
-    ports:
-      - "7000:7000"
+    expose:
+      - "7000"
     depends_on:
       - node-base
       - ai-opponent
@@ -101,8 +101,8 @@ services:
      container_name: trascendence-ai-opponent
      env_file:
         - ./ai-opponent/.env
-     ports:
-        - "7010:7010"
+     expose:
+        - "7010"
      networks:
         - backend
 

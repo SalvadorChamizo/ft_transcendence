@@ -224,10 +224,9 @@ async function startTournamentGame(isAiMode: boolean, playerLeft: string, player
     document.querySelector(".left-controls p")!.textContent = `Left Player: ${playerLeft} -> "W / S"`;
     document.querySelector(".right-controls p")!.textContent = `Right Player: ${playerRight} -> "↑ / ↓"`;
 
-    const wsHost = `ws://${window.location.hostname}:7000`;
     if (socket) cleanup();
 
-    socket = io(wsHost, { 
+    socket = io(apiHost, { 
         transports: ['websocket'],
         auth: { token: "local" }
     });
