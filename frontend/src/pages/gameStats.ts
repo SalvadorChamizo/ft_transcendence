@@ -88,12 +88,12 @@ export function gameStatsHandlers(accessToken: string) {
         if (usernameCache.has(pid)) return usernameCache.get(pid)!;
         try {
           const user = await api.getUserById(Number(pid));
-          const uname = user?.username ?? pid;
+          const uname = user?.username ?? 'deleted_account';
           usernameCache.set(pid, uname);
           return uname;
         } catch (err) {
-          usernameCache.set(pid, pid);
-          return pid;
+          usernameCache.set(pid, 'deleted_account');
+          return 'deleted_account';
         }
       }
 
