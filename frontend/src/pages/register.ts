@@ -49,7 +49,7 @@ export function registerHandlers() {
           try {
             const parsed = JSON.parse(data.error);
             if (parsed && parsed.error) {
-              errorMessage = parsed.error;
+              errorMessage = parsed.message;
             }
           } catch {
 
