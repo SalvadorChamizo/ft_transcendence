@@ -32,7 +32,8 @@ import {
 
 import { 
   registerSchema,
-  usernameChangerSchema
+  usernameChangerSchema,
+  addVictorySchema
 } from "../schemas/userSchemas";
 
 export default async (fastify: FastifyInstance) => {
@@ -52,7 +53,7 @@ export default async (fastify: FastifyInstance) => {
     fastify.get("/getAvatar", avatarGetterController);
     fastify.post("/changeAvatar", avatarChanger);
     fastify.get("/getResults", getResultsController);
-    fastify.post("/addVictory", addVictoryController);
+    fastify.post("/addVictory", { schema: usernameChangerSchema, handler: addVictoryController});
     fastify.post("/addDefeat", addDefeatController);
     fastify.get("/getFriends", getFriendController);
     fastify.post("/addFriend", addFriendController);

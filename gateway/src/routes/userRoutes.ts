@@ -24,10 +24,8 @@ export default async function userRoutes(app: FastifyInstance) {
           return;
         }
 
-        // Autenticación para rutas protegidas
         await authMiddleware(req, reply);
 
-        // Añadir headers personalizados de manera segura
         if (req.user) {
           reply.headers({
             "x-user-id": req.user.id,

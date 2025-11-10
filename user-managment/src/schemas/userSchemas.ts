@@ -5,7 +5,7 @@ export const registerSchema = {
     properties: {
       email: { type: 'string', format: 'email' },
       username: { type: 'string', minLength: 3, maxLength: 10 },
-      password: { type: 'string', minLength: 6, maxLength: 12, pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[!@#$%^&*(),.?":{}|<>]).+$' }
+      password: { type: 'string', minLength: 6, maxLength: 12, pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[-!@#$%^&*(),.?":{}|<>]).+$' }
     },
     additionalProperties: false
   },
@@ -30,12 +30,32 @@ export const usernameChangerSchema = {
     type: "object",
     required: ["newUsername"],
     properties: {
-      newUsername: {
-        type: "string",
-        minLength: 3,
-        maxLength: 10
-      }
+      newUsername: { type: "string", minLength: 3, maxLength: 10 }
     },
+    additionalProperties: false
+  },
+  response: {
+    200: {
+      type: 'object',
+      properties: { result: { type: 'string' } },
+      required: ["result"]
+    },
+    400: {
+      type: 'object',
+      properties: { error: { type: 'string' } },
+      required: ["error"]
+    },
+    401: {
+      type: 'object',
+      properties: { error: { type: 'string' } },
+      required: ["error"]
+    }
+  }
+};
+
+export const addVictorySchema = {
+  body: {
+    type: "object",
     additionalProperties: false
   },
   response: {
@@ -45,11 +65,10 @@ export const usernameChangerSchema = {
         result: { type: 'string' }
       }
     },
-    400: {
+    401: {
       type: 'object',
-      properties: {
-        error: { type: 'string' }
-      }
+      properties: { error: { type: 'string' } },
+      required: ["error"]
     }
   }
 };

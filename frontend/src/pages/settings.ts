@@ -284,7 +284,7 @@ export function settingsHandlers(accessToken: string) {
       return;
     }
 
-    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>])/;
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[-!@#$%^&*(),.?":{}|<>])/;
     if (!passwordRegex.test(newPassword.value)) {
       errorMessage.textContent = "Password must contain at least: one lowercase, one uppercase, one number, and one special character";
       errorMessage.style.display = "block";
@@ -377,8 +377,6 @@ export function settingsHandlers(accessToken: string) {
       const data = await res.json();
       if (res.ok) {
         logoutOutsideLoginPage();
-/*         logout();
-        location.hash = "/#login"; */
       }
     }
     catch (err) {

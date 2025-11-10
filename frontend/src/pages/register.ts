@@ -77,6 +77,6 @@ function validateUsername(username: string): boolean {
 
 function validatePassword(password: string): boolean {
   // Minimum 6 chars, Max 12 char, upper. lower, number, special char
-  const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{6,12}$/;
+  const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[-!@#$%^&*(),.?":{}|<>]).{6,12}$/;
   return re.test(password);
 }

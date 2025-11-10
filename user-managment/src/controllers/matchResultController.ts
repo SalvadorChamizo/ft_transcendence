@@ -16,6 +16,10 @@ export async function getResultsController(req: FastifyRequest, reply: FastifyRe
 export async function addVictoryController(req: FastifyRequest, reply: FastifyReply) {
     const { userId } = req.body as { userId: number };
 
+	if (!userId) {
+		return reply.code(401).send({ error: "Not authenticated" });
+	}
+
     try {
         await addVictory(userId);
         return reply.send({ message: "Victory added successfully" });
