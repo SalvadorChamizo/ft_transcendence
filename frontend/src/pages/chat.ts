@@ -276,7 +276,7 @@ export function chatHandlers() {
     // Initialize WebSocket connection
     initializeWebSocket();
 
-    // Definir el handler fuera para poder eliminarlo antes de añadirlo
+    // Define the handler outside to be able to remove it before adding it
     const handleMessageFormSubmit = async (e: Event) => {
         e.preventDefault();
         if (!activeConversationId) {
@@ -341,7 +341,7 @@ export function chatHandlers() {
         }
     };
 
-    // Eliminar el listener previo antes de añadirlo
+    // Remove the previous listener before adding it
     messageForm.removeEventListener('submit', handleMessageFormSubmit);
     messageForm.addEventListener('submit', handleMessageFormSubmit);
 
@@ -606,7 +606,7 @@ export function chatHandlers() {
                 }
             });
 
-            // Actualiza el estado online/offline en el modal de búsqueda de usuarios si está abierto
+            // Update the online/offline status in the user search modal if it's open
             async function updateUserSearchModalStatus() {
                 const modal = document.getElementById('new-chat-modal');
                 if (modal && modal.style.display !== 'none') {
@@ -620,7 +620,7 @@ export function chatHandlers() {
                 }
             }
 
-            // Función para actualizar el estado del contacto activo
+            // Function to update the active contact status
             function updateActiveContactStatus() {
                 if (activeConversationId != null) {
                     const contactStatus = document.getElementById('contact-status');
@@ -671,7 +671,7 @@ export function chatHandlers() {
      * @param eventData - Event data containing invitation details
      */
     function handleGameInvitationEvent(eventData: any) {
-        // Ya no se maneja lógica especial de invitaciones, todo es por mensajes
+        // No special invitation logic is handled anymore, everything is through messages
     }
 
     // Function to select a conversation and load messages
@@ -691,7 +691,7 @@ export function chatHandlers() {
             };
         }
 
-        // Actualizar el estado online/offline dinámicamente
+        // Update the online/offline status dynamically
         const contactStatus = document.getElementById('contact-status');
         if (contactStatus) {
             if (connectedUsersSet.has(otherUserId)) {

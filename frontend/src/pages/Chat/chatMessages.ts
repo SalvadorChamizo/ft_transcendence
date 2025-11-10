@@ -75,7 +75,7 @@ export async function sendMessage(recipientId: number, content: string) {
         }
         return await res.json();
     } catch (err) {
-        // console.error("Failed to send message:", err); // Eliminado para evitar logs en consola
+        // console.error("Failed to send message:", err); // Removed to avoid console logs
         throw err;
     }
 }
@@ -95,7 +95,7 @@ export async function getMessages(otherUserId: number) {
     }
 }
 
-// Definir el handler fuera para poder eliminarlo antes de añadirlo
+// Define the handler outside to be able to remove it before adding it
 export const handleMessageFormSubmit = async (e: Event) => {
     e.preventDefault();
 
@@ -153,10 +153,10 @@ export const handleMessageFormSubmit = async (e: Event) => {
         // Clear form
         messageContentInput.value = '';
     } catch (error) {
-        // console.error('Error sending message:', error); // Eliminado para evitar logs en consola
+        // console.error('Error sending message:', error); // Removed to avoid console logs
         let errorMsg = '❌ Error sending message';
         if (error instanceof Error && error.message.includes('400')) {
-            errorMsg = 'No puedes enviar mensajes a este usuario porque está bloqueado.';
+            errorMsg = 'You cannot send messages to this user because they are blocked.';
         }
         if (messageResult) {
             messageResult.innerHTML = `<span class=\"error\">${errorMsg}</span>`;
@@ -197,7 +197,7 @@ export function addMessageToUI(message: ChatMessage & { isSent: boolean }) {
         messageDiv.innerHTML = `
             <div class="message-content">
                 🎮 Pong Invitation<br>
-                <b>Sala:</b> <span class="room-id">${room}</span><br>
+                <b>Room:</b> <span class="room-id">${room}</span><br>
                 <button class="join-remote-pong-btn" data-room="${room}">Join the game</button>
             </div>
             <div class="message-time">${time}</div>
@@ -318,7 +318,7 @@ export function displayMessages(messages: any[]) {
                     <div class="message-content">
                         ${msg.content}
                         <br>
-                        <button class="join-remote-pong-btn" data-room="${room}">Entrar a la partida</button>
+                        <button class="join-remote-pong-btn" data-room="${room}">Join the game</button>
                     </div>
                     <div class="message-time">${new Date(msg.timestamp || msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
                 </div>
@@ -403,7 +403,7 @@ export function displayMessages(messages: any[]) {
 
     if (acceptFriendBtn) {
         acceptFriendBtn.addEventListener('click', async () => {
-            alert("Lo pilla");
+            alert("Got it");
         })
     }
     try {

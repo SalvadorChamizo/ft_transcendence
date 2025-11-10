@@ -59,7 +59,7 @@ export async function selectConversation(otherUserId: number, otherUserName: str
         // If no avatar, keep the text initial that was already set
     }
 
-    // Actualizar el estado online/offline dinámicamente
+    // Update the online/offline status dynamically
     const contactStatus = document.getElementById('contact-status');
     if (contactStatus) {
         contactStatus.style.display = 'block';
