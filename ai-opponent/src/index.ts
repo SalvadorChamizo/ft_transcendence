@@ -3,8 +3,8 @@
  * @brief Listens for game state and returns a sequence of key events.
  */
 
-import express from 'express';
-import cors from 'cors';
+import fastify from "fastify";
+import fastifyCors from "@fastify/cors";
 import { GameState, Side, AIActionResponse } from './utils/types';
 import { computeAIKeyEvents } from './services/ai';
 
@@ -24,11 +24,12 @@ const FIELD_HEIGHT = CANVAS_HEIGHT;
 const PADDLE_X_LEFT = PADDLE_OFFSET_X;
 const PADDLE_X_RIGHT = CANVAS_WIDTH - PADDLE_OFFSET_X - PADDLE_WIDTH;
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const app = fastify();
+app.register(fastifyCors, {
+    origin: "*",
+});
 
-app.get("/health", async (req, reply) => {
+app.get("/health", async (request, reply) => {
   const uptime = process.uptime();
 
   return reply.status(200).send({
@@ -45,11 +46,11 @@ app.get("/health", async (req, reply) => {
 * body: { state: GameState, side: 'left'|'right', dt?: number }
 * returns: AIActionResponse -> The sequence of key events for the AI paddle.
 */
-app.post('/ai/update', (req, res) => {
+app.post('/ai/update', (request, reply) => {
     try {
-    const { state, side, dt, paddleSpeed } = req.body as { state: GameState; side: Side; dt?: number, paddleSpeed?: number };
+    const { state, side, dt, paddleSpeed } = request.body as { state: GameState; side: Side; dt?: number, paddleSpeed?: number };
         if (!state || !side) {
-            return res.status(400).json({ error: 'Missing state or side' });
+            return reply.status(400).send({ error: 'Missing state or side' });
         }
 
         const paddle = side === 'left' ? state.paddles.left : state.paddles.right;
@@ -73,14 +74,20 @@ app.post('/ai/update', (req, res) => {
             dtSeconds
         );
 
-        return res.json(aiResponse);
+        return reply.status(200).send(aiResponse);
 
     } catch (err) {
         console.error("AI Update Error:", err);
-        return res.status(500).json({ error: 'Internal server error' });
+        return reply.status(500).send({ error: 'Internal server error' });
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Pong AI microservice listening on port ${PORT}`);
-});
+(async function startServer() {
+   try {
+     await app.listen({ port: Number(PORT), host: "0.0.0.0" });
+     console.log(`Pong AI microservice listening on port ${PORT}`);
+   } catch (err) {
+     app.log.error(err);
+     process.exit(1);
+   }
+})();
