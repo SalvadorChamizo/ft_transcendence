@@ -73,12 +73,13 @@ export const MessageResponseSchema = {
     type: 'object',
     properties: {
         id: { type: 'number' },
-        conversationId: { type: 'number' },
-        senderId: { type: 'number' },
+        conversation_id: { type: 'number' },
+        sender_id: { type: 'number' },
         content: { type: 'string' },
-        messageType: { type: 'string' },
-        timestamp: { type: 'string' },
-        read: { type: 'boolean' }
+        message_type: { type: 'string' },
+        created_at: { type: 'string' },
+        read_at: { type: ['string', 'null'] },
+        delivered_at: { type: ['string', 'null'] }
     }
 } as const;
 
@@ -86,11 +87,11 @@ export const ConversationResponseSchema = {
     type: 'object',
     properties: {
         id: { type: 'number' },
-        participant1_id: { type: 'number' },
-        participant2_id: { type: 'number' },
-        last_message_at: { type: 'string' },
-        unread_count: { type: 'number' }
-    }
+        otherUserId: { type: 'number' },
+        createdAt: { type: 'string' },
+        updatedAt: { type: 'string' }
+    },
+    required: ['id', 'otherUserId']
 } as const;
 
 export const ConversationsResponseSchema = {
@@ -129,7 +130,7 @@ export const SuccessResponseSchema = {
         success: { type: 'boolean' },
         message: { type: 'string' }
     },
-    required: ['success']
+    required: ['success', 'message']
 } as const;
 
 export const ErrorResponseSchema = {

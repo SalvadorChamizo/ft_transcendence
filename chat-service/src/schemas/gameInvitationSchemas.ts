@@ -48,11 +48,13 @@ export const GameInvitationResponseSchema = {
     type: 'object',
     properties: {
         id: { type: 'number' },
-        fromUserId: { type: 'number' },
-        toUserId: { type: 'number' },
-        gameType: { type: 'string' },
+        from_user_id: { type: 'number' },
+        to_user_id: { type: 'number' },
+        game_type: { type: 'string' },
         status: { type: 'string' },
-        createdAt: { type: 'string' }
+        created_at: { type: 'string' },
+        expires_at: { type: 'string' },
+        room_id: { type: ['string', 'null'] }
     }
 } as const;
 
@@ -63,7 +65,8 @@ export const GameInvitationsListResponseSchema = {
             type: 'array',
             items: GameInvitationResponseSchema
         }
-    }
+    },
+    required: ['invitations']
 } as const;
 
 export const GameInvitationSuccessResponseSchema = {
@@ -71,7 +74,11 @@ export const GameInvitationSuccessResponseSchema = {
     properties: {
         success: { type: 'boolean' },
         message: { type: 'string' },
-        invitation: GameInvitationResponseSchema
+        invitationId: { type: 'number' },
+        expiresIn: { type: 'string' },
+        gameType: { type: 'string' },
+        opponentId: { type: 'number' },
+        room_id: { type: ['string', 'null'] }
     },
     required: ['success']
 } as const;

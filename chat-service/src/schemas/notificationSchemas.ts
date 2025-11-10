@@ -5,29 +5,26 @@ export const NotificationSchema = {
     type: 'object',
     properties: {
         id: { type: 'number' },
-        userId: { type: 'number' },
-        type: {
-            type: 'string',
-            description: 'Type of notification (message, friend_request, game_invitation, etc.)'
-        },
+        user_id: { type: 'number' },
+        title: { type: ['string', 'null'] },
         content: { type: 'string' },
-        read: { type: 'boolean' },
-        createdAt: { type: 'string' },
-        relatedUserId: { type: 'number' },
-        relatedEntityId: { type: 'number' }
+        message_type: { type: 'string' },
+        created_at: { type: 'string' },
+        delivered_at: { type: ['string', 'null'] },
+        read_at: { type: ['string', 'null'] }
     },
-    required: ['id', 'userId', 'type', 'content', 'read', 'createdAt']
+    required: ['id', 'user_id', 'content', 'message_type', 'created_at']
 } as const;
 
 export interface NotificationType {
     id: number;
-    userId: number;
-    type: string;
+    user_id: number;
+    title: string | null;
     content: string;
-    read: boolean;
-    createdAt: string;
-    relatedUserId?: number;
-    relatedEntityId?: number;
+    message_type: string;
+    created_at: string;
+    delivered_at: string | null;
+    read_at: string | null;
 }
 
 /**
@@ -103,18 +100,34 @@ export interface UpdateNotificationsBodyType {
 export const NotificationsListResponseSchema = {
     type: 'object',
     properties: {
+        success: { type: 'boolean' },
         notifications: {
             type: 'array',
             items: NotificationSchema
         }
-    }
+    },
+    required: ['success', 'notifications']
+} as const;
+
+export const SpecificNotificationResponseSchema = {
+    type: 'object',
+    properties: {
+        success: { type: 'boolean' },
+        notification: {
+            type: 'array',
+            items: NotificationSchema
+        }
+    },
+    required: ['success', 'notification']
 } as const;
 
 export const NotificationSuccessResponseSchema = {
     type: 'object',
     properties: {
         success: { type: 'boolean' },
-        message: { type: 'string' }
+        message: { type: 'string' },
+        id: { type: 'number' },
+        updated: { type: 'number' }
     },
     required: ['success']
 } as const;

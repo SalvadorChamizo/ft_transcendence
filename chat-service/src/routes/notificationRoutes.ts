@@ -11,9 +11,9 @@ import {
     NotificationIdParamSchema,
     UpdateNotificationsBodySchema,
     NotificationsListResponseSchema,
+    SpecificNotificationResponseSchema,
     NotificationSuccessResponseSchema,
     NotificationErrorResponseSchema,
-    NotificationSchema,
     UserIdParamSchema
 } from "../schemas";
 
@@ -43,7 +43,7 @@ export async function notificationsRoutes(fastify: FastifyInstance) {
         schema: {
             params: NotificationIdParamSchema,
             response: {
-                200: NotificationSchema
+                200: SpecificNotificationResponseSchema
             }
         }
     }, getSpecificNotificationController);
@@ -58,8 +58,8 @@ export async function notificationsRoutes(fastify: FastifyInstance) {
         }
     }, updateNotificationsController);
 
-    // PUT /conversations/:notId/read - Mark notification as read
-    fastify.put('/conversations/:notId/read', {
+    // GET /conversations/:notId/read - Mark notification as read
+    fastify.get('/conversations/:notId/read', {
         schema: {
             params: NotificationIdParamSchema,
             response: {

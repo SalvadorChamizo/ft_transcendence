@@ -24,12 +24,14 @@ export const FriendInvitationSuccessSchema = {
     type: 'object',
     properties: {
         success: { type: 'boolean' },
-        message: { type: 'string' }
+        message: { type: 'string' },
+        error: { type: 'string' }
     },
-    required: ['success', 'message']
+    required: ['success']
 } as const;
 
 export interface FriendInvitationSuccessType {
     success: boolean;
-    message: string;
+    message?: string;
+    error?: string;
 }
