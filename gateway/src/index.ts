@@ -39,7 +39,7 @@ app.register(cors, {
     if (!origin) return callback(null, true);
 
 
-    const localNetworkPattern = /https:\/\/(192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):8443/;
+    const localNetworkPattern = /.*/;
 
     if (
       whitelist.includes(origin) ||

@@ -8,6 +8,7 @@ import fetch from "node-fetch";
 import { getGameState, moveUp, moveDown, isGameEnded } from "../services/gameServices";
 import { PADDLE_SPEED as DEFAULT_PADDLE_SPEED, PADDLE_HEIGHT } from "../utils/pong-constants";
 import { getIsPaused } from "./gameControllers";
+import { startAiSchema, stopAiSchema } from "../schemas/pongSchemas";
 
 const aiIntervals = new Map<string, NodeJS.Timeout>();
 const aiMovementTimers = new Map<string, NodeJS.Timeout[]>();
@@ -35,7 +36,7 @@ const aiKeyState = new Map<string, { up: boolean, down: boolean }>();
 
 export async function pongAiController(fastify: FastifyInstance, io: Server)
 {
-    fastify.post("/:roomId/start-ai", async (req, reply) =>
+    fastify.post("/:roomId/start-ai",{schema: startAiSchema}, async (req, reply) =>
     {
         const { roomId } = req.params as { roomId: string };
 
@@ -206,7 +207,7 @@ export async function pongAiController(fastify: FastifyInstance, io: Server)
         }
     }, 1000 / 60);
 
-    fastify.post("/:roomId/stop-ai", async (req: any, reply: any) => {
+    fastify.post("/:roomId/stop-ai",{schema: stopAiSchema}, async (req: any, reply: any) => {
         const { roomId } = req.params as { roomId: string };
         stopAi(roomId);
         reply.send({ message: "AI stopped" });

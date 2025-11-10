@@ -22,10 +22,12 @@ const setIsPaused = (value: boolean, roomId?: string) =>
 
 import { getRoom, saveRoom } from "../db/roomRepository";
 import { POWERUP_SPEED_MULTIPLIER, PADDLE_SPEED as DEFAULT_PADDLE_SPEED, BALL_SPEED_X as DEFAULT_BALL_SPEED_X, BALL_SPEED_Y as DEFAULT_BALL_SPEED_Y } from "../utils/pong-constants";
+import { getStateSchema, initGameSchema, pauseSchema, powerupSchema, 
+	resetScoreSchema, resumeSchema, speedsSchema, togglePauseSchema } from "../schemas/pongSchemas";
 
 export async function gameController(fastify: FastifyInstance, io: Server)
 {
-	fastify.post("/:roomId/init", async (req, reply) =>
+	fastify.post("/:roomId/init",{schema: initGameSchema}, async (req, reply) =>
 	{
 			const { roomId } = req.params as { roomId: string };
 			const state = resetGame(roomId);
@@ -39,13 +41,13 @@ export async function gameController(fastify: FastifyInstance, io: Server)
 			return { message: "Game initialized", state };
 	});
 
-	fastify.get("/:roomId/state", async (req, reply) =>
+	fastify.get("/:roomId/state",{schema: getStateSchema}, async (req, reply) =>
 	{
 		const { roomId } = req.params as { roomId: string };
 		return { paused: getIsPaused(roomId), state: getGameState(roomId) };
   	});
 
-	fastify.post("/:roomId/pause", async (req, reply) =>
+	fastify.post("/:roomId/pause",{schema:pauseSchema}, async (req, reply) =>
 	{
 		const { roomId } = req.params as { roomId: string };
 		if (isGameEnded(roomId)) return { message: "Game has ended" };
@@ -54,7 +56,7 @@ export async function gameController(fastify: FastifyInstance, io: Server)
 		return { message: "Game paused" };
 	});
 
-	fastify.post("/:roomId/resume", async (req, reply) => {
+	fastify.post("/:roomId/resume",{schema:resumeSchema}, async (req, reply) => {
 		const { roomId } = req.params as { roomId: string };
 		const dbRoom = getRoom(roomId);
 		// Validation
@@ -80,7 +82,7 @@ export async function gameController(fastify: FastifyInstance, io: Server)
 		return { message: "Game will start in 1 second" };
 	});
 
-	fastify.post("/:roomId/toggle-pause", async (req, reply) => {
+	fastify.post("/:roomId/toggle-pause",{schema: togglePauseSchema}, async (req, reply) => {
 		const { roomId } = req.params as { roomId: string };
 		const dbRoom = getRoom(roomId);
 		// Validation
@@ -94,7 +96,7 @@ export async function gameController(fastify: FastifyInstance, io: Server)
 		return { message: `Game ${getIsPaused(roomId) ? "paused" : "resumed"}` };
 	});
 
-	fastify.post("/:roomId/reset-score", async (req, reply) => {
+	fastify.post("/:roomId/reset-score",{schema:resetScoreSchema}, async (req, reply) => {
 		const { roomId } = req.params as { roomId: string };
 		const state = getGameState(roomId);
 		if (state) {
@@ -113,7 +115,7 @@ export async function gameController(fastify: FastifyInstance, io: Server)
 	});
 
 	// Toggle power-up multiplier per room. Accepts ?enabled=true/false or JSON { enabled: boolean }
-	fastify.post("/:roomId/powerup", async (req, reply) => {
+	fastify.post("/:roomId/powerup",{schema: powerupSchema}, async (req, reply) => {
 		const { roomId } = req.params as { roomId: string };
 		const enabledQuery = (req.query as any)?.enabled;
 		const randomQuery = (req.query as any)?.random;
@@ -142,7 +144,7 @@ export async function gameController(fastify: FastifyInstance, io: Server)
 	});
 
 	// Set per-room speeds. Accepts query params or JSON body with paddleSpeed, ballSpeedX, ballSpeedY (numbers).
-	fastify.post("/:roomId/speeds", async (req: FastifyRequest, reply: FastifyReply) => {
+	fastify.post("/:roomId/speeds",{schema: speedsSchema}, async (req: FastifyRequest, reply: FastifyReply) => {
 		const { roomId } = req.params as { roomId: string };
 		const body = req.body as any || {};
 		const query = req.query as any || {};
