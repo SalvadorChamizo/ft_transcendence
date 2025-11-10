@@ -43,7 +43,6 @@ async function startLocalCountdownAndStart(roomToStart: string, isAiMode: boolea
     const resumeResponse = await postGame(`/game/${roomToStart}/resume`);
     if (!resumeResponse.ok) throw new Error(`resume failed (${resumeResponse.status})`);
     isGameRunning = true;
-    console.log("[LocalPong] Game started and resumed after countdown.");
 
     // Re-enable buttons after starting
     if (btn1v1) btn1v1.disabled = false;
@@ -147,7 +146,6 @@ export function localPongPage(): string {
 }
 
 function cleanup() {
-    console.log("[LocalPong] Cleaning up previous game...");
     if (endGameTimeoutId) {
         clearTimeout(endGameTimeoutId);
         endGameTimeoutId = undefined;
@@ -160,13 +158,10 @@ function cleanup() {
     // Ensure powerup is disabled when cleaning up a non-local room only
     try {
         if (!String(roomId).startsWith("local_")) {
-            console.debug(`[LocalPong] cleanup: disabling powerup for ${roomId}`);
-            postGame(`/game/${roomId}/powerup?enabled=false`).catch((err) => { console.debug('[LocalPong] cleanup: powerup disable failed', err); });
+            postGame(`/game/${roomId}/powerup?enabled=false`).catch((err) => { });
         } else {
-            console.debug(`[LocalPong] cleanup: skipping powerup disable for local room ${roomId}`);
         }
     } catch (e) {
-        console.debug('[LocalPong] cleanup: unexpected error while disabling powerup', e);
     }
     if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
@@ -189,21 +184,18 @@ function cleanup() {
 // Helper: POST with Authorization header and one retry after token refresh
 async function postGame(path: string): Promise<Response> {
     const makeReq = async () => {
-        console.debug(`[LocalPong][HTTP POST] request -> ${apiHost}${path}`);
         const token = getAccessToken();
         const headers: Record<string, string> = {};
         if (token) headers["Authorization"] = `Bearer ${token}`;
         return fetch(`${apiHost}${path}`, { method: "POST", headers });
     };
     let res = await makeReq();
-    console.debug(`[LocalPong][HTTP POST] initial response -> ${res.status} ${path}`);
     if (res.status === 401) {
         const refreshed = await refreshAccessToken();
         if (refreshed) {
             res = await makeReq();
         }
     }
-    console.debug(`[LocalPong][HTTP POST] final response -> ${res.status} ${path}`);
     return res;
 }
 
@@ -231,10 +223,8 @@ async function applySpeedsToRoom(roomIdToSet: string) {
     // Only post if body has at least one property
     if (Object.keys(body).length === 0) return;
     try {
-        console.debug('[LocalPong] applySpeedsToRoom', roomIdToSet, body);
         await postGameJson(`/game/${roomIdToSet}/speeds`, body);
     } catch (e) {
-        console.warn('Failed to set speeds for room', roomIdToSet, e);
     }
 }
 
@@ -332,13 +322,10 @@ async function startGame(isAiMode: boolean) {
     window.addEventListener("keyup", handleKeyUp);
 
     socket!.on('connect', async () => {
-        console.log(`[LocalPong] Socket connected, joining room '${roomId}'`);
         socket!.emit("joinRoom", { roomId });
-        console.debug('[LocalPong] emitted joinRoom', { roomId });
 
         // Wait for the server to confirm we've joined the room (avoids racing with HTTP calls)
         socket!.once('roomJoined', async (payload: { roomId: string, role?: string }) => {
-            console.debug('[LocalPong] socket roomJoined payload', payload);
             const rId = payload?.roomId ?? roomId;
             try {
                 // (no AI start/stop here for local UI behavior)
@@ -353,7 +340,6 @@ async function startGame(isAiMode: boolean) {
                 try {
                     await postGame(`/game/${rId}/powerup?enabled=true`);
                 } catch (e) {
-                    console.warn('[LocalPong] Failed to enable powerup for room', rId, e);
                 }
 
                 // The game starts paused by default after init. Use a 3-2-1 countdown then resume.
@@ -362,7 +348,6 @@ async function startGame(isAiMode: boolean) {
                         const resumeResponse = await postGame(`/game/${rId}/resume`);
                         if (!resumeResponse.ok) throw new Error(`resume failed (${resumeResponse.status})`);
                         isGameRunning = true;
-                        console.log("[LocalPong] Game started and resumed after countdown.");
 
                         // Pause on tab visibility change (do not auto-resume)
                         handleVisibility = () => {
@@ -396,10 +381,8 @@ async function startGame(isAiMode: boolean) {
                                 if (startAiResponse.ok) {
                                     aiStarted = true;
                                 } else {
-                                    console.warn(`[LocalPong] start-ai failed (${startAiResponse.status})`);
                                 }
                             } catch (e) {
-                                console.warn('[LocalPong] Failed to start AI for room', rId, e);
                             }
                         }
 
@@ -413,7 +396,6 @@ async function startGame(isAiMode: boolean) {
                 });
 
             } catch (error: any) {
-                console.error("[LocalPong] Failed to start game:", error);
                 const errorMsg = document.getElementById("errorMessage");
                 if (errorMsg) {
                     errorMsg.textContent = error?.message || "Error al iniciar la partida";
@@ -427,7 +409,6 @@ async function startGame(isAiMode: boolean) {
     });
 
     socket!.on("gameState", (state: GameState) => {
-        console.debug('[LocalPong] received gameState', { left: state.scores.left, right: state.scores.right, gameEnded: state.gameEnded });
         gameState = state;
         draw();
         if (state.gameEnded) {
@@ -436,7 +417,6 @@ async function startGame(isAiMode: boolean) {
     });
 
     socket!.on('gameReady', (payload: { roomId: string }) => {
-        console.debug('[LocalPong] gameReady', payload);
     });
 
     socket!.on('roomFull', (payload: { roomId: string }) => {
@@ -460,7 +440,6 @@ async function startGame(isAiMode: boolean) {
     });
 
     socket!.on("disconnect", (reason: string) => {
-        console.log("[LocalPong] Socket disconnected.", reason);
         isGameRunning = false;
         const errorMsg = document.getElementById("errorMessage");
         if (errorMsg) {
