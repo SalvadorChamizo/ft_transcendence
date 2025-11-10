@@ -30,8 +30,13 @@ import {
     checkFriendController
 } from "../controllers/friendsController";
 
+import { 
+  registerSchema 
+} from "../schemas/userSchemas";
+
 export default async (fastify: FastifyInstance) => {
-    fastify.post("/register", registerController);
+    //fastify.post("/register", registerController);
+    fastify.post("/register", { schema: registerSchema, handler: registerController });
     fastify.post("/register42", register42Controller);
     fastify.post("/loginTime", loginTimeRegister)
     fastify.get("/me", getCurrentUserController);

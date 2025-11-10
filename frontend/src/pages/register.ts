@@ -14,7 +14,7 @@ export function registerHandlers() {
       const email = (document.querySelector<HTMLInputElement>("#email")!).value;
       result.style.display = "block";
 
-      /*if (!validateEmail(email)) {
+      if (!validateEmail(email)) {
         result.textContent = "Please enter a valid email address.";
         return ;
       }
@@ -27,7 +27,7 @@ export function registerHandlers() {
       if (!validatePassword(password)) {
         result.textContent = "Password must be at least 8 characters and include upper, lower, number, and symbol.";
         return ;
-      }*/
+      }
 
       try {
         const res = await fetch(`https://${apiHost}:8443/api/auth/register`, {
@@ -70,13 +70,13 @@ function validateEmail(email: string): boolean {
 }
 
 function validateUsername(username: string): boolean {
-  // Minimum 3 chars, alphanumeric + underscore
-  const re = /^[a-zA-Z0-9_]{3,}$/;
+  // Minimum 3 chars and Max 10 char
+  const re = /^().{3,10}$/;
   return re.test(username);
 }
 
 function validatePassword(password: string): boolean {
-  // Minimum 8 chars, upper. lower, number, symbol
-  const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]{8,}$/;
+  // Minimum 6 chars, Max 12 char, upper. lower, number, symbol
+  const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*(),.?":{}|<>]).{6,12}$/;
   return re.test(password);
 }

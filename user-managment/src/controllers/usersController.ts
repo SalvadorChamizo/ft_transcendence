@@ -19,13 +19,16 @@ import {
 export async function registerController(req: FastifyRequest, reply: FastifyReply) {
 	const { email, username, password } = req.body as { email: string; username: string; password: string };
 
-	const userName = await getUserByUsername(username);
-	const userEmail = await getUserByEmail(email);
 	try {
+
+		const userName = await getUserByUsername(username);
 		if (userName)
 			throw new Error("Username already exists");
+
+		const userEmail = await getUserByEmail(email);
 		if (userEmail)
 			throw new Error("Email already exists");
+
 		const hashed = await bcrypt.hash(password, 10);
 		const result = await registerUser(email, username, hashed);
 		return reply.send(result);

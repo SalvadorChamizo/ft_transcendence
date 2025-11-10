@@ -10,19 +10,19 @@ clean:
 	docker system prune -a
 
 logs-auth:
-	docker logs ft_transcendence-auth-service-1
+	docker logs transcendence-auth-service-1
 
 logs-user:
-	docker logs ft_transcendence-user-management-service-1
+	docker logs trascende-user-management-service-1
 
 logs-gateway:
-	docker logs ft_transcendence-gateway-1
+	docker logs transcendence-gateway-1
 
 logs-frontend:
-	docker logs ft_transcendence-frontend-dev-1
+	docker logs transcendence-frontend-dev-1
 
 logs-chat:
-	docker logs ft_transcendence-chat-service-1
+	docker logs transcendence-chat-service-1
 
 erase:
 	@sudo docker ps -qa | xargs -r docker stop
