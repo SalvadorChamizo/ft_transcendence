@@ -92,6 +92,7 @@ export function getChatHtml(): string {
                                 id="message-content" 
                                 placeholder="Type a message..." 
                                 class="message-input"
+                                autocomplete="off"
                                 required 
                             />
                             <button type="submit" class="send-button">
