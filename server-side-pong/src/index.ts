@@ -21,6 +21,7 @@ import {
   deleteRoom,
 } from "./services/gameServices";
 import { WINNING_SCORE } from "./utils/pong-constants";
+import { healthSchema } from "./schemas/pongSchemas";
 
 const app = fastify({ logger: true });
 const io = new Server(app.server, { cors: { origin: "*" } });
@@ -274,7 +275,7 @@ setInterval(() => {
 /**
  * START SERVER
  */
-app.get("/health", async (req, reply) => {
+app.get("/health", { schema: healthSchema }, async (req, reply) => {
   const uptime = process.uptime();
 
   return reply.status(200).send({

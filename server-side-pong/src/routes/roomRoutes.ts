@@ -2,10 +2,11 @@ import { FastifyInstance } from "fastify";
 import { createRoom } from "../services/roomService";
 import { getRoom, getAllRooms, saveRoom, saveMatch, getMatchesByPlayer, addPlayerToRoom } from "../db/roomRepository";
 import { scheduleAutoDeleteIfEmpty } from "../services/publicRoomtimers";
+import { addPlayerSchema, createRemoteRoomSchema, createRoomSchema, getMatchesByPlayerSchema, getRoomSchema, listRoomsSchema, saveMatchSchema } from "../schemas/pongSchemas";
 
 export async function roomRoutes(fastify: FastifyInstance) {
 
-  fastify.post("/rooms", async (request, reply) => {
+  fastify.post("/rooms", { schema: createRoomSchema }, async (request, reply) => {
     const body = (request.body as any) || {};
     const isPublic = body.private === true ? false : (typeof body.public === 'boolean' ? body.public : true);
 
@@ -20,7 +21,7 @@ export async function roomRoutes(fastify: FastifyInstance) {
     reply.send({ roomId, public: isPublic });
   });
 
-  fastify.post("/remote-rooms", async (request, reply) => {
+  fastify.post("/remote-rooms",{schema: createRemoteRoomSchema }, async (request, reply) => {
     const body = (request.body as any) || {};
     const isPublic = typeof body.public === 'boolean' ? body.public : true;
 
@@ -40,7 +41,7 @@ export async function roomRoutes(fastify: FastifyInstance) {
     reply.send({ roomId, public: isPublic });
   });
 
-  fastify.get("/rooms", async (request, reply) => {
+  fastify.get("/rooms",{schema: listRoomsSchema}, async (request, reply) => {
     try {
       const q = (request.query as any) || {};
       const onlyPublic =
@@ -67,7 +68,7 @@ export async function roomRoutes(fastify: FastifyInstance) {
   });
 
 
-  fastify.post("/rooms/:id/add-player", async (request, reply) => {
+  fastify.post("/rooms/:id/add-player", { schema: addPlayerSchema }, async (request, reply) => {
     const { id } = request.params as { id: string };
     const { playerId } = request.body as { playerId: string };
     if (!playerId) return reply.code(400).send({ error: "playerId required" });
@@ -82,14 +83,14 @@ export async function roomRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get("/rooms/:id", async (request, reply) => {
+  fastify.get("/rooms/:id",{schema: getRoomSchema}, async (request, reply) => {
     const { id } = request.params as { id: string };
     const room = getRoom(id);
     if (!room) return reply.code(404).send({ error: "Room not found" });
     reply.send(room);
   });
 
-  fastify.post('/matches', async (request: any, reply: any) => {
+  fastify.post('/matches', { schema: saveMatchSchema }, async (request: any, reply: any) => {
     const body = request.body as any;
     if (!body || !Array.isArray(body.players) || typeof body.score === 'undefined') {
       return reply.code(400).send({ error: 'Invalid body' });
@@ -103,7 +104,7 @@ export async function roomRoutes(fastify: FastifyInstance) {
     }
   });
 
-  fastify.get('/matches/player/:playerId', async (request: any, reply: any) => {
+  fastify.get('/matches/player/:playerId',{schema: getMatchesByPlayerSchema}, async (request: any, reply: any) => {
     const { playerId } = request.params as { playerId: string };
     if (!playerId) return reply.code(400).send({ error: 'playerId required' });
     try {
