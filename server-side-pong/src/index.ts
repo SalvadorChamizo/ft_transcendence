@@ -151,6 +151,13 @@ io.on("connection", (socket) => {
       if (dbRoom && dbRoom.players.length === 2) {
         io.to(roomId).emit("gameReady", { roomId });
       }
+      try {
+          // Auto-resume remote rooms when both players are present (like local_ rooms)
+          resumeRoom(io, roomId);
+        } catch (err) {
+          console.warn("Failed to auto-resume remote room:", err);
+        }
+
     }
   });
 

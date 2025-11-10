@@ -307,7 +307,7 @@ export function remotePongHandlers() {
     // Only add lobby event listeners for manual games
     document.getElementById("createRoomBtn")!.addEventListener("click", async () => {
         try {
-            const response = await postApi("/game/remote-rooms");
+            const response = await postApiJson("/game/remote-rooms", { public: true });
             if (!response.ok) throw new Error("Failed to create room");
             const { roomId: newRoomId } = await response.json();
             roomId = newRoomId;
