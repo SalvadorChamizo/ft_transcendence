@@ -20,7 +20,7 @@ export async function callback42Controller(req: FastifyRequest, reply: FastifyRe
         error_description?: string; 
     };
 
-    const frontendRedirectBase = "https://10.13.6.2:8443/#/login";
+    const frontendRedirectBase = `${process.env.FRONTEND_REDIRECT_IP}/#/login`;
 
     if (error) {
         console.warn("42 OAuth cancelled or failed:", error, error_description);
@@ -90,7 +90,7 @@ export async function callback42Controller(req: FastifyRequest, reply: FastifyRe
             maxAge: 7 * 24 * 60 * 60,
         });
 
-        return reply.redirect("https://10.13.6.2:8443/#/");
+        return reply.redirect(`${process.env.FRONTEND_REDIRECT_IP}/#/`);
     
     } catch (err: any) {
         console.error("42 OAuth error:", err);
