@@ -40,7 +40,6 @@ async function startLocalCountdownAndStart(roomToStart: string, isAiMode: boolea
     const resumeResponse = await postGame(`/game/${roomToStart}/resume`);
     if (!resumeResponse.ok) throw new Error(`resume failed (${resumeResponse.status})`);
     isGameRunning = true;
-    console.log("[LocalPowerUpPong] Game started and resumed after countdown.");
 
     // Re-enable buttons after starting
     if (btn1v1) btn1v1.disabled = false;
@@ -146,7 +145,6 @@ export function localPowerUpPongPage(): string {
 }
 
 function cleanup() {
-    console.log("[LocalPowerUpPong] Cleaning up previous game...");
     if (endGameTimeoutId) {
         clearTimeout(endGameTimeoutId);
         endGameTimeoutId = undefined;
@@ -314,7 +312,6 @@ async function startGame(isAiMode: boolean) {
     window.addEventListener("keyup", handleKeyUp);
 
     socket!.on('connect', async () => {
-        console.log(`[LocalPowerUpPong] Socket connected, joining room '${roomId}'`);
         socket!.emit("joinRoom", { roomId });
 
         try {
@@ -387,7 +384,6 @@ async function startGame(isAiMode: boolean) {
     });
 
     socket!.on("disconnect", (reason: string) => {
-        console.log("[LocalPowerUpPong] Socket disconnected.", reason);
         isGameRunning = false;
         const errorMsg = document.getElementById("errorMessage");
         if (errorMsg) {

@@ -982,7 +982,6 @@ export function chatHandlers() {
     async function handleAcceptInvitation(invitationId: number) {
         try {
             const result = await acceptGameInvitation(invitationId);
-            console.log('Invitation accepted:', result);
             // Show the room ID if available
             if (result && result.room_id) {
                 messageResult.innerHTML = `<span class="success">✅ Game invitation accepted!<br>Room code: <b>${result.room_id}</b><br>Redirigiendo a Pong...</span>`;

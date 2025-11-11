@@ -268,8 +268,6 @@ async function registerMatchToPongService(winnerSide: "left" | "right", score: {
             endedAt: Date.now(),
         };
 
-        console.log('[PrivateRemotePong] Enviando /game/matches payload:', JSON.stringify(body, null, 2));
-
         const res = await postApiJson(`/game/matches`, body);
         if (!res.ok) {
             console.error('[PrivateRemotePong] Failed to register match:', res.status, await res.text());
@@ -277,7 +275,6 @@ async function registerMatchToPongService(winnerSide: "left" | "right", score: {
         }
         const data = await res.json();
         matchRecorded = true;
-        console.log('[PrivateRemotePong] Match registered, id=', data.matchId);
         return data.matchId || null;
     } catch (err) {
         console.error('[PrivateRemotePong] Error registering match:', err);
@@ -469,9 +466,7 @@ function checkWinner() {
         resultRecorded = true;
         if (playerRole === winnerSide) {
             registerMatchToPongService(winnerSide, { left: gameState.scores.left, right: gameState.scores.right })
-                .then((matchId) => {
-                    if (matchId) console.log('[PrivateRemotePong] Match saved with id', matchId);
-                }).catch((e) => console.warn('Failed to register match', e));
+                .catch((e) => console.warn('Failed to register match', e));
 
             sendVictoryToUserManagement().catch(err => console.error('Failed to send victory:', err));
         } else {
@@ -496,7 +491,6 @@ async function sendVictoryToUserManagement() {
         if (!res.ok) {
             console.error("Failed to post victory:", res.status, await res.text());
         } else {
-            console.log(`Victory recorded for user ${userId}`);
         }
     } catch (err) {
         console.error("Error sending victory:", err);
@@ -517,7 +511,6 @@ async function sendDefeatToUserManagement() {
         if (!res.ok) {
             console.error("Failed to post defeat:", res.status, await res.text());
         } else {
-            console.log(`Defeat recorded for user ${userId}`);
         }
     } catch (err) {
         console.error("Error sending defeat:", err);
