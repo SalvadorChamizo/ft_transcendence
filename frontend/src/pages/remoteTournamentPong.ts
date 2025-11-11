@@ -400,7 +400,6 @@ async function sendDefeatToUserManagement() {
             const text = await res.text();
             console.error("Failed to post defeat:", res.status, text);
         } else {
-            console.log(`Defeat recorded for user ${userId}`);
         }
     } catch (err) {
         console.error("Error sending defeat:", err);
@@ -429,7 +428,6 @@ async function sendVictoryToUserManagement() {
             const text = await res.text();
             console.error("Failed to post victory:", res.status, text);
         } else {
-            console.log(`Victory recorded for user ${userId}`);
         }
     } catch (err) {
         console.error("Error sending victory:", err);
@@ -453,7 +451,6 @@ async function reportMatchResult(matchId: number, winnerId: number) {
             credentials: "include",
         });
         if (!response.ok) throw new Error("Failed to report match result");
-        console.log("Match result reported successfully");
     } catch (error) {
         console.error("Error reporting match result:", error);
     }
@@ -485,14 +482,12 @@ async function handleTournamentMatchEnd(matchId: number, winnerId: number, isWin
         
         if (isWinner) {
             // Winner: go back to tournament lobby
-            console.log("Player won the match, returning to tournament lobby");
             window.location.hash = `#/tournament`;
             
             // After navigation, we need to load the tournament lobby
             // This will be handled by the tournament router
         } else {
             // Loser: leave the tournament
-            console.log("Player lost the match, leaving tournament");
             const leaveResponse = await fetch(`https://${window.location.hostname}:8443/api/tournaments/${tournamentId}/leave`, {
                 method: "GET",
                 headers: {
@@ -502,7 +497,6 @@ async function handleTournamentMatchEnd(matchId: number, winnerId: number, isWin
             });
             
             if (leaveResponse.ok) {
-                console.log("Successfully left tournament");
                 // Go back to tournament list
                 window.location.hash = `#/tournament`;
             } else {

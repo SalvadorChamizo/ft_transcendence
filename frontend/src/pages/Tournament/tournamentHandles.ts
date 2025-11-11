@@ -70,19 +70,17 @@ async function startRemoteTournamentFlow(tournamentData: any) {
 
     const playNextMatch = async () => {
         if (currentMatchIndex >= matches.length) {
-            console.log("Round winners:", winners);
 
             const roundWinners = Object.values(winners); // guaranteed to have id + username
 
             // Tournament finished
             if (roundWinners.length === 1) {
                 alert(`Tournament Winner: ${roundWinners[0].username}`);
-                console.log("Tournament completed!");
+
                 return;
             }
 
             // Advance to next round
-            console.log("Sending winners to backend:", roundWinners);
             const res = await fetch(`https://${apiHost}:8443/api/tournaments/${currentTournamentId}/advance`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -90,11 +88,10 @@ async function startRemoteTournamentFlow(tournamentData: any) {
             });
 
             const nextData = await res.json();
-            console.log("nextData:", nextData);
 
             if (!nextData.matches || nextData.matches.length === 0) {
                 alert("Tournament complete! No more matches left.");
-                console.log("Final winners:", roundWinners);
+
                 return;
             }
 
@@ -117,7 +114,6 @@ async function startRemoteTournamentFlow(tournamentData: any) {
         if (leftP) leftP.textContent = `Left Player: ${player1.username}`;
         if (rightP) rightP.textContent = `Right Player: ${player2.username}`;
 
-        console.log(`Starting match ${currentMatchIndex + 1}: ${player1.username} vs ${player2.username}`);
 
         await playTournamentMatch({
             id: match.id,
@@ -158,19 +154,17 @@ async function startLocalTournamentFlow(tournamentData: any) {
 
     const playNextMatch = async () => {
         if (currentMatchIndex >= matches.length) {
-            console.log("Round winners:", winners);
 
             const roundWinners = Object.values(winners); // guaranteed to have id + username
 
             // Tournament finished
             if (roundWinners.length === 1) {
                 alert(`Tournament Winner: ${roundWinners[0].username}`);
-                console.log("Tournament completed!");
+
                 return;
             }
 
             // Advance to next round
-            console.log("Sending winners to backend:", roundWinners);
             const res = await fetch(`https://${apiHost}:8443/api/tournaments/${currentTournamentId}/advance`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -178,11 +172,10 @@ async function startLocalTournamentFlow(tournamentData: any) {
             });
 
             const nextData = await res.json();
-            console.log("nextData:", nextData);
 
             if (!nextData.matches || nextData.matches.length === 0) {
                 alert("Tournament complete! No more matches left.");
-                console.log("Final winners:", roundWinners);
+
                 return;
             }
 
@@ -204,8 +197,6 @@ async function startLocalTournamentFlow(tournamentData: any) {
         const rightP = document.querySelector(".right-controls p");
         if (leftP) leftP.textContent = `Left Player: ${player1.username}`;
         if (rightP) rightP.textContent = `Right Player: ${player2.username}`;
-
-        console.log(`Starting match ${currentMatchIndex + 1}: ${player1.username} vs ${player2.username}`);
 
         await playTournamentMatch({
             id: match.id,
@@ -230,7 +221,7 @@ async function startLocalTournamentFlow(tournamentData: any) {
 }
 
 async function showTournamentMatchesLobby(tournamentData: any) {
-    console.log("showTournamentMatchesLobby called with:", tournamentData);
+
     const matches = tournamentData.matches;
     if (!matches || matches.length === 0) {
         alert("No matches available.");
@@ -250,7 +241,7 @@ async function showTournamentMatchesLobby(tournamentData: any) {
     const tournamentName = tournamentInfo.name || "Tournament";
 
     const matchesWithRooms = await Promise.all(matches.map(async (match: any) => {
-        console.log("Creating private room for match:", match.id);
+
         // Create PRIVATE room for tournament match so it won't appear in public lobby
         const response = await fetch(`https://${apiHost}:8443/api/game/remote-rooms`, {
             method: 'POST',
@@ -262,10 +253,10 @@ async function showTournamentMatchesLobby(tournamentData: any) {
         });
         if (!response.ok) throw new Error("Failed to create room");
         const { roomId } = await response.json();
-        console.log("Created roomId:", roomId, "for match:", match.id);
-        
+
+
         // Update the match with the roomId in the database
-        console.log("Updating match", match.id, "with roomId:", roomId);
+
         const updateResponse = await fetch(`https://${apiHost}:8443/api/tournaments/matches/${match.id}/room`, {
             method: "PUT",
             headers: {
@@ -274,8 +265,8 @@ async function showTournamentMatchesLobby(tournamentData: any) {
             },
             body: JSON.stringify({ roomId })
         });
-        console.log("Update response status:", updateResponse.status);
-        
+
+
         return { ...match, roomId };
     }));
 
@@ -346,7 +337,7 @@ export async function tournamentHandlers() {
             });
 
             const tournamentData = await tournament.json();
-            console.log(tournamentData);
+
             if (tournament.ok) {
                 // Show matches lobby with room creation for the creator
                 showTournamentMatchesLobby(tournamentData);
@@ -514,7 +505,7 @@ export async function tournamentHandlers() {
             });
 
             const tournamentData = await tournament.json();
-            console.log(tournamentData);
+
             if (tournament.ok && tournamentData.shuffledPlayers)
             {
                 const players = tournamentData.shuffledPlayers;
@@ -533,7 +524,7 @@ export async function tournamentHandlers() {
                 method: "POST",
             })
             const tournamentData = await response.json();
-            console.log(tournamentData);
+
             const currentHTML = tournamentContainer?.innerHTML ?? "";
         //if (tournamentContainer)
             //    tournamentContainer.innerHTML = localTournamentPongPage();

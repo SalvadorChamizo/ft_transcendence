@@ -40,7 +40,7 @@ export async function createRemoteTournament(tournamentName: string, tournamentP
     });
 
     const tournamentData = await tournament.json();
-    console.log("TournamentData:", tournamentData);
+
     return tournamentData.tournament.id;
 }
 
@@ -56,7 +56,7 @@ export async function getRemoteTournamentData(tournamentId: number) {
     });
 
     const tournamentData = await tournament.json();
-    console.log("One tournament Data:", tournamentData);
+
     return tournamentData;
 }
 
@@ -72,7 +72,7 @@ export async function getRemoteTournaments() {
     });
 
     const tournamentList = await tournaments.json();
-    console.log("TournamentList:", tournamentList);
+
     return (tournamentList);
 }
 
@@ -145,7 +145,7 @@ export async function openTournamentLobby(tournamentId: number) {
 }
 
 export async function showTournamentMatchesLobbyForPlayers(tournamentId: number) {
-    console.log("showTournamentMatchesLobbyForPlayers called for tournament:", tournamentId);
+
     const token = getAccessToken();
     
     try {
@@ -168,8 +168,8 @@ export async function showTournamentMatchesLobbyForPlayers(tournamentId: number)
         });
 
         const matches = await response.json();
-        console.log("Matches received:", matches);
-        
+
+
         if (!matches || matches.length === 0) {
             alert("No matches available.");
             return;

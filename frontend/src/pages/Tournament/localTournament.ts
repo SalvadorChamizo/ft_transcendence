@@ -79,7 +79,6 @@ export function localTournamentPongPage(): string {
 }
 
 function cleanup() {
-    console.log("[LocalPong] Cleaning up previous game...");
     if (endGameTimeoutId) {
         clearTimeout(endGameTimeoutId);
         endGameTimeoutId = undefined;
@@ -188,7 +187,6 @@ export async function playTournamentMatch(match: {
 
     // Override the global onMatchFinished temporarily
     (window as any).onMatchFinished = (winnerName: string) => {
-        console.log(`[Tournament] Match ${match.id} finished. Winner: ${winnerName}`);
 
         // Call the match's onFinish callback with just the username
         match.onFinish(winnerName);
@@ -203,7 +201,6 @@ export async function playTournamentMatch(match: {
 }
 
 async function startTournamentGame(isAiMode: boolean, playerLeft: string, playerRight: string) {
-    console.log('[LocalPong] startTournamentGame called', { roomId, isAiMode, playerLeft, playerRight });
     // Ensure everything is clean before starting
     cleanup();
 
@@ -228,7 +225,6 @@ async function startTournamentGame(isAiMode: boolean, playerLeft: string, player
     if (socket) cleanup();
 
     const backendSocketUrl = window.location.origin;
-    console.log('[LocalPong] Creating socket to', backendSocketUrl);
     socket = io(backendSocketUrl, {
         transports: ['websocket'],
         auth: { token: "local" }
@@ -241,7 +237,6 @@ async function startTournamentGame(isAiMode: boolean, playerLeft: string, player
         console.warn('[LocalPong] Socket connect_timeout', t);
     });
     socket.on('reconnect_attempt', (n: number) => {
-        console.log('[LocalPong] Socket reconnect_attempt', n);
     });
 
 
@@ -249,35 +244,32 @@ async function startTournamentGame(isAiMode: boolean, playerLeft: string, player
     window.addEventListener("keyup", handleKeyUp);
 
     socket!.on('connect', async () => {
-    console.log(`[LocalPong] Socket connected`, { socketId: socket!.id, roomId });
-    console.log('[LocalPong] Emitting joinRoom', { roomId });
         socket!.emit("joinRoom", { roomId });
 
         try {
             const stopAiResp = await postGame(`/game/${roomId}/stop-ai`);
-            console.log('[LocalPong] stop-ai response', { status: stopAiResp.status });
 
             const initResponse = await postGame(`/game/${roomId}/init`);
-            console.log('[LocalPong] init response', { status: initResponse.status });
+
             if (!initResponse.ok) throw new Error(`init failed (${initResponse.status})`);
 
             // Enable powerup for tournament games to increase ball speed on paddle hits
             const powerupResponse = await postGame(`/game/${roomId}/powerup?enabled=true`);
-            console.log('[LocalPong] powerup response', { status: powerupResponse.status });
+
             if (!powerupResponse.ok) console.warn(`[LocalTournament] Failed to enable powerup (${powerupResponse.status})`);
 
             if (isAiMode) {
                 const startAiResponse = await postGame(`/game/${roomId}/start-ai`);
-                console.log('[LocalPong] start-ai response', { status: startAiResponse.status });
+
                 if (!startAiResponse.ok) throw new Error(`start-ai failed (${startAiResponse.status})`);
             }
 
             const resumeResponse = await postGame(`/game/${roomId}/resume`);
-            console.log('[LocalPong] resume response', { status: resumeResponse.status });
+
             if (!resumeResponse.ok) throw new Error(`resume failed (${resumeResponse.status})`);
 
             isGameRunning = true;
-            console.log("[LocalPong] Game started and resumed.");
+
             gameLoop(isAiMode);
 
         } catch (error: any) {
@@ -291,7 +283,7 @@ async function startTournamentGame(isAiMode: boolean, playerLeft: string, player
     });
 
     socket!.on("gameState", (state: GameState) => {
-        console.log('[LocalPong] Received gameState', state);
+
         gameState = state;
         // basic validation to help debugging
         if (!state || !state.paddles || typeof state.paddles.left?.y === 'undefined') {
@@ -322,7 +314,7 @@ async function startTournamentGame(isAiMode: boolean, playerLeft: string, player
     });
 
     socket!.on("disconnect", (reason: string) => {
-        console.log("[LocalPong] Socket disconnected.", reason);
+
         isGameRunning = false;
         const errorMsg = document.getElementById("errorMessage");
         if (errorMsg) {
@@ -352,7 +344,7 @@ async function startTournamentGame(isAiMode: boolean, playerLeft: string, player
 }
 
 function draw() {
-    console.log('[LocalPong] draw called', { ctxExists: !!ctx, paddles: gameState.paddles, ball: gameState.ball, scores: gameState.scores });
+
     if (!ctx) {
         console.warn('[LocalPong] draw skipped because ctx is null');
         return;
