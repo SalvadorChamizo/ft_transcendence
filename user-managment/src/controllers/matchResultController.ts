@@ -7,13 +7,12 @@ export async function getResultsController(req: FastifyRequest, reply: FastifyRe
 
     try {
         const results = await getResults(id);
-        // Si no hay resultados, devolver array vacío para no romper el dashboard
+
         if (!results || !Array.isArray(results)) {
             return reply.send([]);
         }
         return reply.send(results);
     } catch (err: any) {
-        // En ausencia de partidas, devolvemos 200 [] para un dashboard vacío
         if (err && typeof err.message === 'string' && /not\s*found|no\s*results|empty/i.test(err.message)) {
             return reply.send([]);
         }
