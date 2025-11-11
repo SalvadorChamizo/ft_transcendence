@@ -296,12 +296,13 @@ export const startRemoteTournamentSchema = {
     type: "object",
     required: ["id"],
     properties: {
-      id: { type: "string" },
+      id: { type: "string", description: "Tournament ID" },
     },
   },
   response: {
     200: {
       type: "object",
+      description: "Successfully started remote tournament",
       properties: {
         tournament: {
           type: "object",
@@ -316,6 +317,7 @@ export const startRemoteTournamentSchema = {
         },
         players: {
           type: "array",
+          description: "List of tournament players",
           items: {
             type: "object",
             properties: {
@@ -327,16 +329,17 @@ export const startRemoteTournamentSchema = {
         },
         matches: {
           type: "array",
+          description: "List of first-round matches created when starting the remote tournament",
           items: {
             type: "object",
             properties: {
               id: { type: "number" },
-              player1_id: { type: "number" },
-              player2_id: { type: "number" },
+              player1_id: { type: ["number", "null"] },
+              player2_id: { type: ["number", "null"] },
               round: { type: "number" },
               status: { type: "string" },
             },
-            required: ["id", "player1_id", "player2_id", "round", "status"],
+            required: ["id", "round", "status"],
           },
         },
       },
@@ -344,17 +347,26 @@ export const startRemoteTournamentSchema = {
     },
     400: {
       type: "object",
-      properties: { error: { type: "string" } },
+      description: "Invalid request or tournament cannot be started",
+      properties: {
+        error: { type: "string" },
+      },
       required: ["error"],
     },
     404: {
       type: "object",
-      properties: { error: { type: "string" } },
+      description: "Tournament not found",
+      properties: {
+        error: { type: "string" },
+      },
       required: ["error"],
     },
     500: {
       type: "object",
-      properties: { error: { type: "string" } },
+      description: "Server error while starting remote tournament",
+      properties: {
+        error: { type: "string" },
+      },
       required: ["error"],
     },
   },
@@ -717,7 +729,7 @@ export const getTournamentPlayersSchema = {
 } as const;
 
 export const getTournamentMatchesWithRoomsSchema = {
-  description: "Fetch all matches (including room information) for a given tournament ID.",
+  description: "Fetch all matches (including room information and player data) for a given tournament ID.",
   tags: ["Tournaments"],
   params: {
     type: "object",
@@ -729,30 +741,32 @@ export const getTournamentMatchesWithRoomsSchema = {
   response: {
     200: {
       type: "array",
-      description: "List of matches with room information for the specified tournament.",
+      description: "List of matches with player and room info for the specified tournament.",
       items: {
         type: "object",
         properties: {
           id: { type: "number" },
-          tournament_id: { type: "number" },
           round: { type: ["number", "null"] },
-          player1_id: { type: ["number", "null"] },
-          player2_id: { type: ["number", "null"] },
-          winner_id: { type: ["number", "null"] },
-          score_player1: { type: ["number", "null"] },
-          score_player2: { type: ["number", "null"] },
-          roomId: { type: "string" },
           status: { type: "string", enum: ["pending", "in_progress", "completed"] },
-          created_at: { type: "string", format: "date-time" },
-          updated_at: { type: ["string", "null"], format: "date-time" },
+          roomId: { type: ["string", "null"] },
+          player1: {
+            type: ["object", "null"],
+            properties: {
+              id: { type: ["number", "null"] },
+              username: { type: ["string", "null"] },
+            },
+            required: ["id", "username"],
+          },
+          player2: {
+            type: ["object", "null"],
+            properties: {
+              id: { type: ["number", "null"] },
+              username: { type: ["string", "null"] },
+            },
+            required: ["id", "username"],
+          },
         },
-        required: [
-          "id",
-          "tournament_id",
-          "roomId",
-          "status",
-          "created_at",
-        ],
+        required: ["id", "status", "roomId"],
       },
     },
     404: {
