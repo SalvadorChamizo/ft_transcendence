@@ -355,7 +355,7 @@ export const checkFriendSchema = {
   }
 };
 
-export const register42Schema = {
+/* export const register42Schema = {
   body: {
     type: 'object',
     required: ['email', 'username'],
@@ -369,8 +369,16 @@ export const register42Schema = {
     200: {
       type: 'object',
       properties: {
-        result: { type: 'string' },
-        user: { type: 'object' }
+        result: { type: 'object' },       // <-- must be object
+        user: {                           // <-- define user properties
+          type: 'object',
+          required: ['id', 'username', 'email'],
+          properties: {
+            id: { type: 'integer' },
+            username: { type: 'string' },
+            email: { type: 'string' }
+          }
+        }
       }
     },
     400: {
@@ -380,7 +388,7 @@ export const register42Schema = {
       }
     }
   }
-};
+}; */
 
 export const loginTimeRegisterSchema = {
   body: {

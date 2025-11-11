@@ -26,8 +26,8 @@ export default async function authRoutes(app: FastifyInstance) {
     app.post("/verify-2fa", { schema: verify2FASchema }, verify2FAController);
     app.post("/enable-2fa", { schema: enable2FASchema}, enable2FAController);
     app.post("/generate-qr", { schema: generateQRSchema}, generateQRController);
-    app.get("/42/login", { schema: login42Schema }, login42Controller);
-    app.get("/42/callback", { schema: callback42Schema}, callback42Controller);
+    app.get("/42/login", login42Controller);
+    app.get("/42/callback", callback42Controller);
     app.get("/google/login", { schema: loginGoogleSchema }, loginGoogleController);
     app.get("/google/callback", { schema: callbackGoogleSchema}, callbackGoogleController);
     app.post("/forgot-password", { schema: forgotPasswordSchema}, forgotPasswordController);

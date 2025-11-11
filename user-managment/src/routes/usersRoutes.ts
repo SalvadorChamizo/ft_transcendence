@@ -58,7 +58,7 @@ import {
 
 export default async (fastify: FastifyInstance) => {
     fastify.post("/register", { schema: registerSchema, handler: registerController });
-    fastify.post("/register42",{schema: register42Schema, handler: register42Controller}); //check
+    fastify.post("/register42", register42Controller); //check
     fastify.post("/loginTime",{schema: loginTimeRegisterSchema, handler: loginTimeRegister});
     fastify.get("/me", {schema: getCurrentUserSchema, handler: getCurrentUserController});
     fastify.post("/changeUsername", { schema: usernameChangerSchema, handler: usernameChanger });

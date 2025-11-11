@@ -11,7 +11,7 @@ export const login42Schema = {
   },
 } as const;
 
-export const callback42Schema = {
+/* export const callback42Schema = {
   description: "Handles 42 OAuth callback and redirects user after login",
   tags: ["oauth", "42"],
   querystring: {
@@ -35,7 +35,7 @@ export const callback42Schema = {
       },
     },
   },
-} as const;
+} as const; */
 
 export const loginGoogleSchema = {
   description: "Redirects the user to Google OAuth2 login page",
