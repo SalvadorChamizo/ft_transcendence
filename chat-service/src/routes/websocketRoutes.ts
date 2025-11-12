@@ -30,6 +30,17 @@ export async function websocketRoutes(fastify: FastifyInstance) {
                 return;
             }
 
+            const pingInterval = setInterval(() => {
+                if (connection.readyState === connection.OPEN) {
+                    connection.ping();
+                } else {
+                    clearInterval(pingInterval);
+                }
+            }, 30000);
+
+            connection.on('pong', () => {
+            });
+
             // 3. HANDLE MESSAGES - Process incoming JSON messages
             connection.on('message', (rawMessage: any) => {
                 try {
@@ -65,6 +76,7 @@ export async function websocketRoutes(fastify: FastifyInstance) {
             // 4. HANDLE CLOSE - Clean up when connection closes
             connection.on('close', () => {
                 try {
+                    clearInterval(pingInterval);
                     console.log(`User ${userId} disconnected from WebSocket`);
                     websocketService.handleWebSocketDisconnection(connection);
                     websocketService.removeUserConnection(userId);
@@ -76,6 +88,7 @@ export async function websocketRoutes(fastify: FastifyInstance) {
 
             // 5. HANDLE ERRORS - Log and clean up on errors
             connection.on('error', (error: Error) => {
+                clearInterval(pingInterval);
                 console.error(`WebSocket error for user ${userId}:`, error);
                 try {
                     websocketService.removeUserConnection(userId);
