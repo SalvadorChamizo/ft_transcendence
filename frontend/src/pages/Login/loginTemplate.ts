@@ -47,9 +47,9 @@ export function getLoginHtml() : string {
                     </div>
                 </button>
             </div>
-                <form class="login-form" id="login-form">
-                        <input type="text" id="username" class="form-control" placeholder="Username">
-                        <input type="password" id="password" class="form-control" placeholder="Password">
+                <form class="login-form" id="login-form" autocomplete="on">
+                        <input type="text" id="username" class="form-control" placeholder="Username" autocomplete="username">
+                        <input type="password" id="password" class="form-control" placeholder="Password" autocomplete="current-password">
                         <button type="submit" id="login-button" class="login-submit-button">Login</button>
                         <a class="login-nav-link-password active" href="#/forgot-pass">Forgot password</a>
                     </form>
@@ -57,10 +57,10 @@ export function getLoginHtml() : string {
                 <div class="login-tab-panel" id="signup-tab-panel">
                     <h2 class="login-title">Registration</h2>
                     <hr>
-                    <form class="login-form" id="signup-form">
-                        <input type="text" id="email" class="form-control" placeholder="Email">
-                        <input type="text" id="signup-username" class="form-control" placeholder="Username">
-                        <input type="password" id="signup-password" class="form-control" placeholder="Password">
+                    <form class="login-form" id="signup-form" autocomplete="on">
+                        <input type="text" id="email" class="form-control" placeholder="Email" autocomplete="email">
+                        <input type="text" id="signup-username" class="form-control" placeholder="Username" autocomplete="username">
+                        <input type="password" id="signup-password" class="form-control" placeholder="Password" autocomplete="new-password">
                         <button type="submit" id="signup-button" class="login-submit-button">Signup</button>
                             <div class="terms-wrapper">
                             <label>
