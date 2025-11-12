@@ -9,6 +9,7 @@ import { handleUserSearch } from "./chatUserSearch";
 let chatMessageHandler: ((message: ChatMessage) => void) | null = null;
 
 function handleIncomingMessage(message: ChatMessage) {
+    
     try {
         if (message.type === 'message' && message.data && message.data.event_type === 'game_invitation_accepted') {
             // If acceptance contains a room_id, redirect to private remote pong
@@ -17,12 +18,14 @@ function handleIncomingMessage(message: ChatMessage) {
                 try {
                     // Store pending id (optional) and navigate
                     localStorage.setItem('pendingRemoteRoomId', String(room));
-                } catch (e) {}
+                } catch (e) {
+                }
                 window.location.hash = `#/private-remote-pong?room=${room}`;
                 return;
             }
         }
-    } catch (e) {}
+    } catch (e) {
+    }
 
      if (message.type === 'user_connected') {
         if (message.userId) {
@@ -58,31 +61,33 @@ function handleIncomingMessage(message: ChatMessage) {
             if (contactName) contactName.textContent = 'Deleted User';
         }
     }
-    const conversationId = getActiveConversationId();
-    if (!conversationId)
-        return ;
     
     if (message.type === 'message') {
-        let sendByUser;
-        if (message.userId === getActiveConversationId())
-            sendByUser = false;
-        else
-            sendByUser = true;
-        addMessageToUI({
-            ...message,
-            isSent: sendByUser
-        });
+        const activeConversationId = getActiveConversationId();
+        
+        if (activeConversationId && (message.userId === activeConversationId || message.recipientId === activeConversationId)) {
+            let sendByUser;
+            if (message.userId === activeConversationId)
+                sendByUser = false;
+            else
+                sendByUser = true;
+            addMessageToUI({
+                ...message,
+                isSent: sendByUser
+            });
+        } else {
+        }
         loadConversationsDebounced();
     } else if (message.type === 'typing') {
         // Show typing indicator
         const activeConversationId = getActiveConversationId();
-        if (message.userId === activeConversationId) {
+        if (activeConversationId && message.userId === activeConversationId) {
             showTypingIndicator(true);
         }
     } else if (message.type === 'stop_typing') {
         // Hide typing indicator
         const activeConversationId = getActiveConversationId();
-        if (message.userId === activeConversationId) {
+        if (activeConversationId && message.userId === activeConversationId) {
             showTypingIndicator(false);
         }
     }
@@ -130,6 +135,7 @@ export async function initializeWebSocket() {
         // Don't reconnect if already connected (main.ts already handles this)
         if (!websocketClient.isConnected()) {
             await websocketClient.connect(userId);
+        } else {
         }
         
         // Remove old handler if exists to avoid duplicates
@@ -141,10 +147,10 @@ export async function initializeWebSocket() {
         chatMessageHandler = (message: ChatMessage) => {
             handleIncomingMessage(message);
         };
-            
+        
         // Set up message handler for incoming messages
         websocketClient.onMessage(chatMessageHandler);
-            
+        
         // Update connection status in UI
         updateConnectionStatus(true);
             
@@ -178,18 +184,22 @@ async function updateUserSearchModalStatus() {
 
 // Function to update the active contact's status
 function updateActiveContactStatus() {
-
     const activeConversationId = getActiveConversationId();
+    
     if (activeConversationId != null) {
         const contactStatus = document.getElementById('contact-status');
+        const isOnline = getConnectedUsersSet().has(activeConversationId);
+        
         if (contactStatus) {
-            if (getConnectedUsersSet().has(activeConversationId)) {
+            if (isOnline) {
                 contactStatus.textContent = 'Online';
                 contactStatus.style.color = '#25D366';
             } else {
                 contactStatus.textContent = 'Offline';
                 contactStatus.style.color = '#ff4444';
             }
+        } else {
         }
+    } else {
     }
 }
