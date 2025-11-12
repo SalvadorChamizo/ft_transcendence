@@ -70,8 +70,8 @@ function validateEmail(email: string): boolean {
 }
 
 function validateUsername(username: string): boolean {
-  // Minimum 3 chars and Max 10 char
-  const re = /^().{3,10}$/;
+  // Minimum 3 chars and Max 12 char
+  const re = /^().{3,12}$/;
   return re.test(username);
 }
 

@@ -4,13 +4,13 @@ export function validateEmail(email: string): boolean {
 }
 
 export function validateUsername(username: string): boolean {
-  // Minimum 3 chars, alphanumeric + underscore
-  const re = /^[a-zA-Z0-9_]{3,}$/;
+  // Minimum 3 chars and Max 12 char
+  const re = /^().{3,12}$/;
   return re.test(username);
 }
 
 export function validatePassword(password: string): boolean {
-  // Minimum 8 chars, upper. lower, number, symbol
-  const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]{8,}$/;
+  // Minimum 6 chars, Max 12 char, upper. lower, number, special char
+  const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[-!@#$%^&*(),.?":{}|<>]).{6,12}$/;
   return re.test(password);
 }

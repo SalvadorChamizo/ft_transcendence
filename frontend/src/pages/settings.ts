@@ -171,8 +171,8 @@ export function settingsHandlers(accessToken: string) {
       return;
     }
     
-    if (!newUsername.value || newUsername.value.length < 3 || newUsername.value.length > 10) {
-      errorMessage.textContent = "Username must be between 3-10 characters";
+    if (!newUsername.value || newUsername.value.length < 3 || newUsername.value.length > 12) {
+      errorMessage.textContent = "Username must be between 3-12 characters";
       errorMessage.style.display = "block";
       return;
     }

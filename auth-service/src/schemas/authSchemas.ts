@@ -7,8 +7,8 @@ export const registerSchema = {
         type: "object",
         required: ["username", "password", "email"],
         properties: {
-            username: { type: "string", minLength: 3, maxLength: 20 },
-            password: { type: "string", minLength: 6 },
+            username: { type: "string", minLength: 3, maxLength: 12 },
+            password: { type: "string", minLength: 6, maxLength: 12, pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[-!@#$%^&*(),.?":{}|<>]).+$' },
             email: { type: "string", format: "email" },
         },
     },
