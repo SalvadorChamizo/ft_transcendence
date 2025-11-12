@@ -72,7 +72,7 @@ export default async (fastify: FastifyInstance) => {
     fastify.post("/getUserByEmail", {schema: userGetterByEmailSchema, handler: userGetterByEmail});
     fastify.get("/getAvatar", {schema: avatarGetterSchema, handler: avatarGetterController});
     fastify.post("/changeAvatar", {schema: avatarChangerSchema, handler: avatarChanger});
-    fastify.get("/getResults", {schema: getResultsSchema, handler: getResultsController}    );
+    fastify.get("/getResults", getResultsController);
     fastify.post("/addVictory", { schema: addVictorySchema, handler: addVictoryController});
     fastify.post("/addDefeat", {schema: addDefeatSchema, handler: addDefeatController});
     fastify.get("/getFriends", {schema: getFriendSchema, handler: getFriendController});
