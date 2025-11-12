@@ -102,6 +102,10 @@ export async function pongAiController(fastify: FastifyInstance, io: Server)
                 aiMovementTimers.get(roomId)?.forEach(clearTimeout);
                 aiMovementTimers.set(roomId, []);
 
+                // Reset keys state
+                const k = aiKeyState.get(roomId);
+                if (k) { k.up = false; k.down = false; aiKeyState.set(roomId, k); }
+
                 // Execute the plan
                 console.log(`[AI] Executing plan for room ${roomId}...`);
                 for (const event of events)
