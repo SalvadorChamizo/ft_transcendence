@@ -284,7 +284,7 @@ export function remotePongHandlers() {
     ctx = (document.getElementById("pongCanvas") as HTMLCanvasElement).getContext("2d")!;
 
     // Load public rooms on open
-    loadPublicRooms().catch(err => console.warn("Failed loading rooms", err));
+    loadPublicRooms().catch(err => {});
 
     // If URL contains ?room=<id> (from invitation link), auto-join that room
     try {
@@ -299,7 +299,6 @@ export function remotePongHandlers() {
             return; // skip adding manual create/join listeners duplication
         }
     } catch (err) {
-        console.warn('Failed parsing invite room param', err);
     }
 
     // Only add lobby event listeners for manual games
@@ -342,7 +341,6 @@ async function loadPublicRooms() {
         // GET /game/rooms?public=true via gateway
         const res = await postApi("/game/rooms?public=true", "GET");
         if (!res.ok) {
-            console.warn("Failed fetching rooms:", res.status);
             return;
         }
         const rooms = await res.json();
@@ -457,20 +455,17 @@ function startGame(roomIdToJoin: string) {
                             const resp = await postApiJson(`/game/${data.roomId}/speeds`, body);
                         }
                     } catch (e) {
-                        console.warn('Failed to apply room options for', data.roomId, e);
                     }
                     // Enable powerup for this remote room (speed increases on paddle hit)
                     try {
                         await postApi(`/game/${data.roomId}/powerup?enabled=true`);
                     } catch (e) {
-                        console.warn('[RemotePong] Failed to enable powerup for room', data.roomId, e);
                     }
                     // After initializing and applying options, the room creator will automatically resume the game
                     // so the match actually starts when both players are present.
                     try {
                         await postApi(`/game/${data.roomId}/resume`);
                     } catch (e) {
-                        console.warn('Failed to auto-resume room', data.roomId, e);
                     }
                 }
 
@@ -505,20 +500,21 @@ function startGame(roomIdToJoin: string) {
 
     socket.on("opponentDisconnected", () => {
         const winnerMsg = document.getElementById("winnerMessage")!;
-        winnerMsg.textContent = "Opponent disconnected. You win!";
-        winnerMsg.style.display = "block";
+        if (winnerMsg) {
+            winnerMsg.textContent = "Opponent disconnected. You win!";
+            winnerMsg.style.display = "block";
+        }
         try {
             if (!resultRecorded && playerRole){
                 resultRecorded = true;
                 registerMatchToPongService(playerRole,{
                     left: gameState.scores.left,
                     right: gameState.scores.right
-                }).catch(e => console.warn('Failed to register match on disconnect:', e));
+                }).catch(e => {});
                 sendVictoryToUserManagement().catch(() => {});
             }
         } 
         catch (e) {
-            console.warn('Post-disconnect winner flow failed:', e);
         }
         endGame();
     });
@@ -632,7 +628,7 @@ function checkWinner() {
                 .then((matchId) => {
                     if (matchId) {
                     }
-                }).catch((e) => console.warn('Failed to register match', e));
+                }).catch((e) => {});
 
             sendVictoryToUserManagement().catch(() => {});
         } else {
@@ -650,14 +646,12 @@ async function sendVictoryToUserManagement() {
         if (!userId) {
             const userStr = localStorage.getItem("user");
             if (!userStr) {
-                console.warn("No user id available (token/localStorage); cannot send victory.");
                 return;
             }
             const user = JSON.parse(userStr);
             userId = user?.id ?? user?.userId ?? null;
         }
         if (!userId) {
-            console.warn("Unable to resolve userId for victory.");
             return;
         }
 
@@ -677,14 +671,12 @@ async function sendDefeatToUserManagement() {
         if (!userId) {
             const userStr = localStorage.getItem("user");
             if (!userStr) {
-                console.warn("No user id available (token/localStorage); cannot send defeat.");
                 return;
             }
             const user = JSON.parse(userStr);
             userId = user?.id ?? user?.userId ?? null;
         }
         if (!userId) {
-            console.warn("Unable to resolve userId for defeat.");
             return;
         }
 

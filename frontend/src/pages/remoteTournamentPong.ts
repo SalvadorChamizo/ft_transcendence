@@ -267,7 +267,6 @@ function startGame(roomIdToJoin: string) {
                 try {
                     await postApi(`/game/${data.roomId}/powerup?enabled=true`);
                 } catch (e) {
-                    console.warn('[TournamentPong] No se pudo habilitar powerup:', e);
                 }
 
                 isGameRunning = false;
@@ -317,7 +316,6 @@ function startGame(roomIdToJoin: string) {
             }
         } 
         catch (e){
-            console.warn('Tournament winner flow on disconnect failed:', e);
         }
 
         endGame();
@@ -378,14 +376,12 @@ async function sendDefeatToUserManagement() {
         if (!userId) {
             const userStr = localStorage.getItem("user");
             if (!userStr) {
-                console.warn("No user id available (token/localStorage); cannot send defeat.");
                 return;
             }
             const user = JSON.parse(userStr);
             userId = user?.id ?? user?.userId ?? null;
         }
         if (!userId) {
-            console.warn("Unable to resolve userId for defeat.");
             return;
         }
 
@@ -404,14 +400,12 @@ async function sendVictoryToUserManagement() {
         if (!userId) {
             const userStr = localStorage.getItem("user");
             if (!userStr) {
-                console.warn("No user id available (token/localStorage); cannot send victory.");
                 return;
             }
             const user = JSON.parse(userStr);
             userId = user?.id ?? user?.userId ?? null;
         }
         if (!userId) {
-            console.warn("Unable to resolve userId for victory.");
             return;
         }
 

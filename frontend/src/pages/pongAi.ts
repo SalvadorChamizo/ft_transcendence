@@ -199,7 +199,6 @@ function startGameVsAI() {
         try {
             await postGame(`/game/${roomId}/powerup?enabled=true`);
         } catch (e) {
-            console.warn('[PongAi] Failed to enable powerup for room', roomId, e);
         }
 
         // Start AI on the backend game controller (guard against double start)

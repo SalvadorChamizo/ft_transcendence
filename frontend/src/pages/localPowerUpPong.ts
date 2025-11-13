@@ -230,7 +230,6 @@ async function applySpeedsToRoom(roomIdToSet: string) {
     try {
         await postGameJson(`/game/${roomIdToSet}/speeds`, body);
     } catch (e) {
-        console.warn('Failed to set speeds for room', roomIdToSet, e);
     }
 }
 
@@ -311,7 +310,8 @@ async function startGame(isAiMode: boolean) {
         },
         reconnection: true,
         reconnectionDelay: 1000,
-        reconnectionAttempts: 5
+        reconnectionAttempts: 5,
+        autoConnect: false
     });
 
     window.addEventListener("keydown", handleKeyDown);
@@ -319,7 +319,6 @@ async function startGame(isAiMode: boolean) {
 
     // Register all socket event handlers BEFORE the socket connects
     socket!.on('connect_error', (error: Error) => {
-        console.error('[LocalPowerUpPong] Socket connection error:', error);
         const errorMsg = document.getElementById("errorMessage");
         if (errorMsg) {
             errorMsg.textContent = `Connection error: ${error.message}. Please check your connection.`;
@@ -328,7 +327,6 @@ async function startGame(isAiMode: boolean) {
     });
 
     socket!.on('error', (error: Error) => {
-        console.error('[LocalPowerUpPong] Socket error:', error);
     });
 
     socket!.on("gameState", (state: GameState) => {
@@ -345,7 +343,6 @@ async function startGame(isAiMode: boolean) {
             errorMsg.textContent = 'The local room is full. Try again later or use remote mode.';
             errorMsg.style.display = "block";
         }
-        console.warn('Attempted to join full local room', payload);
         cleanup();
     });
 
@@ -402,7 +399,6 @@ async function startGame(isAiMode: boolean) {
             try {
                 await postGame(`/game/${currentRoomId}/powerup?enabled=true&random=true`);
             } catch (e) {
-                console.warn('[LocalPowerUpPong] Failed to enable powerup for room', currentRoomId, e);
             }
 
             // If playing vs AI, request the backend to start the AI opponent
@@ -426,6 +422,9 @@ async function startGame(isAiMode: boolean) {
             if (btn1vAI) btn1vAI.disabled = false;
         }
     });
+    
+    // Now that all event handlers are registered, manually connect the socket
+    socket!.connect();
 }
 
 function checkWinner() {

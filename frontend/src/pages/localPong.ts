@@ -425,7 +425,6 @@ async function startGame(isAiMode: boolean) {
             errorMsg.textContent = 'The local room is full. Try again later or use remote mode.';
             errorMsg.style.display = "block";
         }
-        console.warn('Attempted to join full local room', payload);
         cleanup();
     });
 

@@ -184,7 +184,6 @@ export async function privateRemotePongHandlers() {
             // ignore localStorage errors (e.g., privacy modes)
         }
     } catch (err) {
-        console.warn('Failed parsing invite room param', err);
     }
 
     // Create & register private room. Try /game/rooms { private: true } then fallback.
@@ -211,7 +210,6 @@ export async function privateRemotePongHandlers() {
                 await postApiJson(`/game/rooms/${roomId}/add-player`, { playerId: String(userId) });
             }
         } catch (e) {
-            console.warn('[PrivateRemotePong] Failed to persist creator in room', e);
         }
 
         // Show shareable invite for the creator
@@ -320,7 +318,6 @@ function startGame(roomIdToJoin: string) {
                 await postApiJson(`/game/rooms/${roomId}/add-player`, { playerId: String(userId) });
             }
         } catch (e) {
-            console.warn('[PrivateRemotePong] Failed to persist player in room', e);
         }
     });
 
@@ -344,7 +341,6 @@ function startGame(roomIdToJoin: string) {
                     try {
                         await postApi(`/game/${data.roomId}/powerup?enabled=true`);
                     } catch (e) {
-                        console.warn('[PrivateRemotePong] Failed to enable powerup for room', data.roomId, e);
                     }
                     // Only the room creator should call resume to actually start the match
                     if (isRoomCreator) {
@@ -463,7 +459,7 @@ function checkWinner() {
         resultRecorded = true;
         if (playerRole === winnerSide) {
             registerMatchToPongService(winnerSide, { left: gameState.scores.left, right: gameState.scores.right })
-                .catch((e) => console.warn('Failed to register match', e));
+                .catch((e) => {});
 
             sendVictoryToUserManagement().catch(() => {});
         } else {

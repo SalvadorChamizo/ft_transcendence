@@ -151,7 +151,6 @@ function checkWinner() {
     const rightP = document.querySelector(".right-controls p") as HTMLElement | null;
 
     if (!leftP || !rightP) {
-        console.warn("Controls not ready yet");
         return;
     }
 
@@ -231,7 +230,6 @@ async function startTournamentGame(isAiMode: boolean, playerLeft: string, player
     socket.on('connect_error', (err: any) => {
     });
     socket.on('connect_timeout', (t: any) => {
-        console.warn('[LocalPong] Socket connect_timeout', t);
     });
     socket.on('reconnect_attempt', (n: number) => {
     });
@@ -252,8 +250,6 @@ async function startTournamentGame(isAiMode: boolean, playerLeft: string, player
 
             // Enable powerup for tournament games to increase ball speed on paddle hits
             const powerupResponse = await postGame(`/game/${roomId}/powerup?enabled=true`);
-
-            if (!powerupResponse.ok) console.warn(`[LocalTournament] Failed to enable powerup (${powerupResponse.status})`);
 
             if (isAiMode) {
                 const startAiResponse = await postGame(`/game/${roomId}/start-ai`);
@@ -281,10 +277,6 @@ async function startTournamentGame(isAiMode: boolean, playerLeft: string, player
     socket!.on("gameState", (state: GameState) => {
 
         gameState = state;
-        // basic validation to help debugging
-        if (!state || !state.paddles || typeof state.paddles.left?.y === 'undefined') {
-            console.warn('[LocalPong] Invalid gameState received', state);
-        }
         draw();
         if (state.gameEnded) checkWinner();
     });
@@ -295,7 +287,6 @@ async function startTournamentGame(isAiMode: boolean, playerLeft: string, player
             errorMsg.textContent = 'La sala local está llena. Intenta más tarde o usa el modo remoto.';
             errorMsg.style.display = "block";
         }
-        console.warn('Attempted to join full local room', payload);
         cleanup();
     });
 

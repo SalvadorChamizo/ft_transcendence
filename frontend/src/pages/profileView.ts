@@ -79,7 +79,7 @@ async function resolveCurrentUsername(): Promise<string | null> {
     if (token) headers['Authorization'] = `Bearer ${token}`;
     const resp = await fetch(`https://${window.location.hostname}:8443/api/users/me`, { headers });
     let body: any = null;
-    try { body = await resp.json(); } catch (e) { console.warn('[profile] /users/me invalid json', e); }
+    try { body = await resp.json(); } catch (e) { }
     if (resp.ok && body && body.user && body.user.username) {
       return body.user.username;
     }
@@ -92,7 +92,6 @@ async function resolveCurrentUsername(): Promise<string | null> {
     if (stored) return stored;
   } catch (err) { /* ignore */ }
 
-  console.warn('[profile] resolveCurrentUsername: could not determine username');
   return null;
 }
 

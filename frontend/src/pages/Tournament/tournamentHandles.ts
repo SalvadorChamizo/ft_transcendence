@@ -124,8 +124,6 @@ async function startRemoteTournamentFlow(tournamentData: any) {
                 const winningPlayer = [player1, player2].find(p => winnerName.includes(p.username));
                 if (winningPlayer) {
                     winners[match.id] = { id: winningPlayer.id, username: winningPlayer.username };
-                } else {
-                    console.warn("Winner not found for match:", match.id, winnerName);
                 }
 
                 currentMatchIndex++;
@@ -207,8 +205,6 @@ async function startLocalTournamentFlow(tournamentData: any) {
                 const winningPlayer = [player1, player2].find(p => winnerName.includes(p.username));
                 if (winningPlayer) {
                     winners[match.id] = { id: winningPlayer.id, username: winningPlayer.username };
-                } else {
-                    console.warn("Winner not found for match:", match.id, winnerName);
                 }
 
                 currentMatchIndex++;
